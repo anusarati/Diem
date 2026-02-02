@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Expo / Metro
+.expo/
+dist/
+web-build/
+
+# Build outputs
+*.tsbuildinfo
+build/
+ios/Pods/
+ios/build/
+android/build/
+android/app/build/
+*.xcworkspace
+*.xcodeproj
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Logs and debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS and IDE
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+.vscode/
+
+# Testing and coverage
+coverage/
+.nyc_output/
+
+# Optional: uncomment to ignore lock file (most projects commit it)
+# package-lock.json
