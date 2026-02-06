@@ -1,0 +1,17 @@
+import { Model } from "@nozbe/watermelondb";
+import { date, field, json, text } from "@nozbe/watermelondb/decorators";
+import type { ConstraintType } from "../../types/domain";
+
+const sanitizeJson = (raw: any) => raw || {};
+
+export default class Constraint extends Model {
+	static table = "constraints";
+
+	@text("type") type!: ConstraintType;
+
+	@text("activity_id") activityId?: string;
+	@text("category_id") categoryId?: string;
+	@json("value", sanitizeJson) value!: any;
+	@field("is_active") isActive!: boolean;
+	@date("created_at") createdAt!: Date;
+}
