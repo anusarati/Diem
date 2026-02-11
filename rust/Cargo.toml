@@ -1,0 +1,11 @@
+[package]
+name = "diem-scheduler"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.10"
+thiserror = "2.0"
+log = "0.4"
+smallvec = "1.15"
+genetic_algorithm = "0.26" 
