@@ -1,4 +1,4 @@
-use crate::solver::types::{GlobalConstraint, Problem, TimeScope};
+use crate::solver::types::{ActivityId, GlobalConstraint, Problem, TimeScope, TimeSlot};
 use genetic_algorithm::chromosome::Chromosome;
 use genetic_algorithm::fitness::{Fitness, FitnessValue};
 use genetic_algorithm::genotype::RangeGenotype;
@@ -7,6 +7,8 @@ use std::collections::HashMap;
 #[derive(Clone, Debug)]
 pub struct DiemFitness {
     pub problem: Problem,
+    pub heatmap_lookup: HashMap<(ActivityId, TimeSlot), f32>,
+    pub markov_lookup: HashMap<(ActivityId, ActivityId), f32>,
 }
 
 impl DiemFitness {
@@ -21,6 +23,15 @@ impl DiemFitness {
     const WEIGHT_MARKOV: f32 = 5.0;
 
     const MARKOV_GAP_TOLERANCE: u16 = 2; // 30 minutes
+
+    pub fn new(problem: Problem) -> Self {
+        let (heatmap_lookup, markov_lookup) = problem.build_lookup_maps();
+        Self {
+            problem,
+            heatmap_lookup,
+            markov_lookup,
+        }
+    }
 }
 
 impl Fitness for DiemFitness {
@@ -107,7 +118,7 @@ impl Fitness for DiemFitness {
 
             // Score: Priority & Heatmap
             score += activity.priority * Self::WEIGHT_PRIORITY;
-            if let Some(prob) = self.problem.heatmap.get(&(activity.id, start_time)) {
+            if let Some(prob) = self.heatmap_lookup.get(&(activity.id, start_time)) {
                 score += prob * Self::WEIGHT_HEATMAP;
             }
 
@@ -195,7 +206,7 @@ impl Fitness for DiemFitness {
                     // Markov Reward
                     let prev_id = self.problem.activities[prev.act_idx].id;
                     let curr_id = activity.id;
-                    if let Some(prob) = self.problem.markov_matrix.get(&(prev_id, curr_id)) {
+                    if let Some(prob) = self.markov_lookup.get(&(prev_id, curr_id)) {
                         score += prob * Self::WEIGHT_MARKOV;
                     }
                 }
@@ -224,7 +235,7 @@ impl Fitness for DiemFitness {
                 }
             }
 
-            // --- E. OUTPUT BINDINGS (Strictly After) ---
+            // --- E. OUTPUT BINDINGS ---
             for binding in &activity.output_bindings {
                 if (binding.valid_weekdays & (1 << curr.weekday)) == 0 {
                     continue;

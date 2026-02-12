@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Represents a 15-minute time slot.
@@ -8,27 +9,27 @@ pub type TimeSlot = u16;
 pub type ActivityId = usize;
 pub type CategoryId = usize;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ActivityType {
     Fixed,    // Immutable
     Floating, // Optimization variable
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum TimeScope {
     SameDay,
     SameWeek,
     SameMonth,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FrequencyTarget {
     pub scope: TimeScope,
     pub target_count: u16,
     pub weight: f32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Binding {
     /// Disjunctive Normal Form (OR of ANDs)
     pub required_sets: Vec<Vec<ActivityId>>,
@@ -40,7 +41,7 @@ pub struct Binding {
     pub weight: f32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Activity {
     pub id: ActivityId,
     pub activity_type: ActivityType,
@@ -57,7 +58,7 @@ pub struct Activity {
     pub frequency_targets: Vec<FrequencyTarget>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum GlobalConstraint {
     ForbiddenZone {
         start: TimeSlot,
@@ -71,15 +72,40 @@ pub enum GlobalConstraint {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Problem {
     pub activities: Vec<Activity>,
     pub floating_indices: Vec<usize>,
     pub fixed_indices: Vec<usize>,
     pub global_constraints: Vec<GlobalConstraint>,
-    // Sparse map for Heatmap is better if specific slots matter.
-    // Flattening to Vec<f32> might be faster if dense, but sparse is safer for memory.
-    pub heatmap: HashMap<(ActivityId, TimeSlot), f32>,
-    pub markov_matrix: HashMap<(ActivityId, ActivityId), f32>,
+
+    // Using simple vectors for serialization safety across the bridge
+    // (ActivityId, TimeSlot, Probability)
+    pub heatmap: Vec<(ActivityId, TimeSlot, f32)>,
+    // (FromActivityId, ToActivityId, Probability)
+    pub markov_matrix: Vec<(ActivityId, ActivityId, f32)>,
+
     pub total_slots: u16,
+}
+
+impl Problem {
+    // Helper to build fast lookup maps (transient)
+    pub fn build_lookup_maps(
+        &self,
+    ) -> (
+        HashMap<(ActivityId, TimeSlot), f32>,
+        HashMap<(ActivityId, ActivityId), f32>,
+    ) {
+        let mut h_map = HashMap::new();
+        for (a, t, p) in &self.heatmap {
+            h_map.insert((*a, *t), *p);
+        }
+
+        let mut m_map = HashMap::new();
+        for (f, t, p) in &self.markov_matrix {
+            m_map.insert((*f, *t), *p);
+        }
+
+        (h_map, m_map)
+    }
 }

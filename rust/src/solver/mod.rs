@@ -25,9 +25,7 @@ pub fn solve(
         .build()
         .map_err(|e| format!("Genotype build error: {:?}", e))?;
 
-    let fitness = DiemFitness {
-        problem: problem.clone(),
-    };
+    let fitness = DiemFitness::new(problem.clone());
 
     let evolve = Evolve::builder()
         .with_genotype(genotype)

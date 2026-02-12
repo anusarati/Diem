@@ -1,3 +1,4 @@
+pub mod bridge;
 pub mod solver;
 
 pub use solver::solve;
