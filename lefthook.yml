@@ -3,4 +3,8 @@ pre-commit:
   commands:
     biome-check:
       glob: "*.{js,ts,cjs,mjs,jsx,tsx,json,jsonc}"
-      run: npx @biomejs/biome check --staged --write --no-errors-on-unmatched {staged_files}
+      run: npx @biomejs/biome check --write --no-errors-on-unmatched {staged_files} && git diff --exit-code --quiet {staged_files}
+    cargo-fmt:
+      glob: "rust/**/*.rs" 
+      root: "rust/" 
+      run: cargo fmt && git diff --exit-code --quiet .
