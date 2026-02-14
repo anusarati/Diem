@@ -1,4 +1,5 @@
 import {
+	addColumns,
 	createTable,
 	schemaMigrations,
 } from "@nozbe/watermelondb/Schema/migrations";
@@ -48,6 +49,53 @@ export default schemaMigrations({
 						{ name: "co_occurrence_count", type: "number" },
 						{ name: "anchor_sample_size", type: "number" },
 						{ name: "last_observed_at", type: "number" },
+					],
+				}),
+			],
+		},
+		{
+			toVersion: 3,
+			steps: [
+				addColumns({
+					table: "activity_history",
+					columns: [
+						{
+							name: "local_day_bucket",
+							type: "string",
+							isOptional: true,
+							isIndexed: true,
+						},
+						{
+							name: "local_week_bucket",
+							type: "string",
+							isOptional: true,
+							isIndexed: true,
+						},
+						{
+							name: "local_month_bucket",
+							type: "string",
+							isOptional: true,
+							isIndexed: true,
+						},
+						{ name: "bucket_timezone", type: "string", isOptional: true },
+					],
+				}),
+				createTable({
+					name: "frequency_ema_state",
+					columns: [
+						{ name: "activity_id", type: "string", isIndexed: true },
+						{ name: "scope", type: "string", isIndexed: true },
+						{ name: "ema_value", type: "number" },
+						{ name: "sample_size", type: "number" },
+						{ name: "open_bucket_key", type: "string", isOptional: true },
+						{ name: "open_bucket_count", type: "number" },
+						{
+							name: "last_closed_bucket_key",
+							type: "string",
+							isOptional: true,
+						},
+						{ name: "dirty", type: "boolean" },
+						{ name: "updated_at", type: "number", isIndexed: true },
 					],
 				}),
 			],

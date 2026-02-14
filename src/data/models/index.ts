@@ -2,6 +2,7 @@ import Activity from "./Activity";
 import ActivityHistory from "./ActivityHistory";
 import Constraint from "./Constraint";
 import ExternalCalendarIntegration from "./ExternalCalendarIntegration";
+import FrequencyEmaState from "./FrequencyEmaState";
 import Goal from "./Goal";
 import GoalProgress from "./GoalProgress";
 import HNetArcCount from "./HNetArcCount";
@@ -24,6 +25,7 @@ export const modelClasses = [
 	MarkovTransitionCount,
 	HNetArcCount,
 	HNetPairCount,
+	FrequencyEmaState,
 	GoalProgress,
 	ExternalCalendarIntegration,
 ];
@@ -40,6 +42,7 @@ export {
 	MarkovTransitionCount,
 	HNetArcCount,
 	HNetPairCount,
+	FrequencyEmaState,
 	GoalProgress,
 	ExternalCalendarIntegration,
 };

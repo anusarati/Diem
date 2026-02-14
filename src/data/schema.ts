@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export default appSchema({
-	version: 2,
+	version: 3,
 	tables: [
 		tableSchema({
 			name: "users",
@@ -146,11 +146,48 @@ export default appSchema({
 				{ name: "predicted_duration", type: "number" },
 				{ name: "actual_start_time", type: "number", isOptional: true },
 				{ name: "actual_duration", type: "number", isOptional: true },
+				{
+					name: "local_day_bucket",
+					type: "string",
+					isOptional: true,
+					isIndexed: true,
+				},
+				{
+					name: "local_week_bucket",
+					type: "string",
+					isOptional: true,
+					isIndexed: true,
+				},
+				{
+					name: "local_month_bucket",
+					type: "string",
+					isOptional: true,
+					isIndexed: true,
+				},
+				{ name: "bucket_timezone", type: "string", isOptional: true },
 				{ name: "was_completed", type: "boolean" },
 				{ name: "was_skipped", type: "boolean" },
 				{ name: "was_replaced", type: "boolean" },
 				{ name: "notes", type: "string", isOptional: true },
 				{ name: "created_at", type: "number" },
+			],
+		}),
+		tableSchema({
+			name: "frequency_ema_state",
+			columns: [
+				{ name: "activity_id", type: "string", isIndexed: true },
+				{ name: "scope", type: "string", isIndexed: true },
+				{ name: "ema_value", type: "number" },
+				{ name: "sample_size", type: "number" },
+				{ name: "open_bucket_key", type: "string", isOptional: true },
+				{ name: "open_bucket_count", type: "number" },
+				{
+					name: "last_closed_bucket_key",
+					type: "string",
+					isOptional: true,
+				},
+				{ name: "dirty", type: "boolean" },
+				{ name: "updated_at", type: "number", isIndexed: true },
 			],
 		}),
 		tableSchema({

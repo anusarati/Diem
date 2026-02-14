@@ -16,6 +16,10 @@ export default class ActivityHistory extends Model {
 	@field("predicted_duration") predictedDuration!: number;
 	@date("actual_start_time") actualStartTime?: Date;
 	@field("actual_duration") actualDuration?: number;
+	@text("local_day_bucket") localDayBucket?: string;
+	@text("local_week_bucket") localWeekBucket?: string;
+	@text("local_month_bucket") localMonthBucket?: string;
+	@text("bucket_timezone") bucketTimezone?: string;
 	@field("was_completed") wasCompleted!: boolean;
 	@field("was_skipped") wasSkipped!: boolean;
 	@field("was_replaced") wasReplaced!: boolean;
