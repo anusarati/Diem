@@ -20,10 +20,10 @@
 		"react-native-svg": "15.12.1",
 		"react-native-web": "~0.21.2"
 	},
-"devDependencies": {
-    "@babel/plugin-proposal-decorators": "^7.29.0",
-    "@biomejs/biome": "^2.3.14",
-    "babel-preset-expo": "~54.0.0",
+	"devDependencies": {
+		"@babel/plugin-proposal-decorators": "^7.29.0",
+		"@biomejs/biome": "^2.3.14",
+		"babel-preset-expo": "~54.0.0",
 		"@types/react": "~19.1.10",
 		"lefthook": "^2.1.0",
 		"typescript": "^5.9.3"
