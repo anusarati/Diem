@@ -3,3 +3,7 @@ node_modules
 rust/target
 build
 .gradle
+.gradle-local
+.idea
+.cxx
+.vscode

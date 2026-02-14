@@ -1,0 +1,5 @@
+rootProject.name = 'diem-scheduler'
+
+// Map the :react-native-nitro-modules project to the node_modules directory
+include ':react-native-nitro-modules'
+project(':react-native-nitro-modules').projectDir = new File(rootProject.projectDir, '../../../node_modules/react-native-nitro-modules/android')
