@@ -21,9 +21,10 @@ interface DraggableBlockProps extends TimeBlockProps {
     height: number;
     startHour: number;
     onUpdate: (id: string, newStartTime: string) => void;
+    onDragStateChange?: (isDragging: boolean) => void;
 }
 
-function DraggableTimeBlock({ top, height, startHour, onUpdate, ...props }: DraggableBlockProps) {
+function DraggableTimeBlock({ top, height, startHour, onUpdate, onDragStateChange, ...props }: DraggableBlockProps) {
     const pan = React.useRef(new Animated.ValueXY()).current;
 
     // We strictly track the vertical delta
@@ -31,7 +32,11 @@ function DraggableTimeBlock({ top, height, startHour, onUpdate, ...props }: Drag
         PanResponder.create({
             onMoveShouldSetPanResponder: (_, gestureState) => {
                 // Only capture if moved vertically significantly
-                return Math.abs(gestureState.dy) > 5;
+                const isVerticalDrag = Math.abs(gestureState.dy) > 5;
+                if (isVerticalDrag) {
+                    onDragStateChange?.(true);
+                }
+                return isVerticalDrag;
             },
             onPanResponderGrant: () => {
                 pan.setOffset({
@@ -78,6 +83,7 @@ function DraggableTimeBlock({ top, height, startHour, onUpdate, ...props }: Drag
                 if (newTime !== props.startTime) {
                     onUpdate(props.id, newTime);
                 }
+                onDragStateChange?.(false);
             },
             onPanResponderTerminate: () => {
                 // Return to original on cancel
@@ -85,6 +91,7 @@ function DraggableTimeBlock({ top, height, startHour, onUpdate, ...props }: Drag
                     toValue: { x: 0, y: 0 },
                     useNativeDriver: false
                 }).start();
+                onDragStateChange?.(false);
             }
         })
     ).current;
@@ -118,6 +125,7 @@ export function TimelineCanvas({
     onUpdateActivity
 }: TimelineCanvasProps & { onUpdateActivity?: (id: string, newStartTime: string) => void }) {
     const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
+    const [scrollingEnabled, setScrollingEnabled] = React.useState(true);
 
     // Helper to calculate position
     const getPosition = (timeString: string, durationMinutes: number) => {
@@ -129,7 +137,11 @@ export function TimelineCanvas({
     };
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} scrollEnabled={true}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.contentContainer}
+            scrollEnabled={scrollingEnabled}
+        >
             <View style={styles.gridContainer}>
                 {/* Render Grid Lines & Time Labels */}
                 {hours.map((hour) => (
@@ -153,6 +165,7 @@ export function TimelineCanvas({
                             startHour={startHour}
                             onPress={() => onActivityPress?.(activity.id)}
                             onUpdate={(id, time) => onUpdateActivity?.(id, time)}
+                            onDragStateChange={(isDragging) => setScrollingEnabled(!isDragging)}
                         />
                     );
                 })}

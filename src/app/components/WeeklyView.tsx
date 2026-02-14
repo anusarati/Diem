@@ -1,8 +1,8 @@
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Animated, PanResponder, Pressable, LayoutChangeEvent } from 'react-native';
 import { colors, spacing } from '../theme';
-import { TimeBlockProps } from './TimeBlock';
+import type { TimeBlockProps } from './TimeBlock';
 
 interface WeeklyViewProps {
     activities: TimeBlockProps[];
@@ -10,10 +10,140 @@ interface WeeklyViewProps {
     endHour?: number;
     onActivityPress?: (id: string) => void;
     onDayPress?: (dayIndex: number) => void;
+    weekStartDate?: Date;
+    onUpdateActivity?: (id: string, day: string, newStartTime: string) => void;
 }
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const HOUR_HEIGHT = 40; // Smaller height for condensed view
+const HOUR_HEIGHT = 40;
+const TIME_COL_WIDTH = 30;
+
+interface DraggableWeeklyBlockProps extends Omit<TimeBlockProps, 'onPress'> {
+    top: number;
+    height: number;
+    left: number;
+    width: number;
+    startHour: number;
+    endHour: number;
+    columnWidth: number;
+    onUpdate: (id: string, day: string, newStartTime: string) => void;
+    onDragStateChange?: (isDragging: boolean) => void;
+    onPress?: (id: string) => void;
+}
+
+function DraggableWeeklyBlock({
+    top,
+    height,
+    left,
+    width,
+    startHour,
+    endHour,
+    columnWidth,
+    onUpdate,
+    onDragStateChange,
+    onPress,
+    ...props
+}: DraggableWeeklyBlockProps) {
+    const pan = useRef(new Animated.ValueXY()).current;
+
+    const panResponder = useRef(
+        PanResponder.create({
+            onMoveShouldSetPanResponder: (_, gestureState) => {
+                const isDrag = Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
+                if (isDrag) onDragStateChange?.(true);
+                return isDrag;
+            },
+            onPanResponderGrant: () => {
+                pan.setOffset({
+                    x: (pan.x as any)._value,
+                    y: (pan.y as any)._value
+                });
+                pan.setValue({ x: 0, y: 0 });
+            },
+            onPanResponderMove: Animated.event(
+                [null, { dx: pan.x, dy: pan.y }],
+                { useNativeDriver: false }
+            ),
+            onPanResponderRelease: (_, gestureState) => {
+                pan.flattenOffset();
+
+                const deltaX = (pan.x as any)._value; // approximate
+                const deltaY = (pan.y as any)._value; // approximate
+
+                const colShift = Math.round(deltaX / columnWidth);
+                const currentDayIndex = DAYS.indexOf(props.day || 'Mon');
+                let newDayIndex = currentDayIndex + colShift;
+                newDayIndex = Math.max(0, Math.min(6, newDayIndex)); // Clamp 0-6
+                const newDay = DAYS[newDayIndex];
+
+                const pixelsPerMin = HOUR_HEIGHT / 60;
+                // Parse time carefully
+                const [hStr, mStr] = props.startTime.split(':');
+                const originalMinFromStart = ((parseInt(hStr) - startHour) * 60) + parseInt(mStr);
+
+                const rowShiftPixels = deltaY;
+                const deltaMin = rowShiftPixels / pixelsPerMin;
+                let totalNewMin = originalMinFromStart + deltaMin;
+                totalNewMin = Math.round(totalNewMin / 15) * 15; // Snap to 15m
+
+                const maxMinutes = (endHour - startHour + 1) * 60 - props.durationMinutes;
+                const clampedMinutes = Math.max(0, Math.min(maxMinutes, totalNewMin));
+
+                const newH = Math.floor(clampedMinutes / 60) + startHour;
+                const newM = clampedMinutes % 60;
+                const newTime = `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`;
+
+                const finalDeltaX = (newDayIndex - currentDayIndex) * columnWidth;
+                const finalDeltaY = (clampedMinutes * pixelsPerMin) - (originalMinFromStart * pixelsPerMin);
+
+                Animated.spring(pan, {
+                    toValue: { x: finalDeltaX, y: finalDeltaY },
+                    useNativeDriver: false,
+                    speed: 100 // fast snap
+                }).start();
+
+                if (newDay !== props.day || newTime !== props.startTime) {
+                    onUpdate(props.id, newDay, newTime);
+                }
+
+                onDragStateChange?.(false);
+            },
+            onPanResponderTerminate: () => {
+                Animated.spring(pan, {
+                    toValue: { x: 0, y: 0 },
+                    useNativeDriver: false
+                }).start();
+                onDragStateChange?.(false);
+            }
+        })
+    ).current;
+
+    return (
+        <Animated.View
+            style={{
+                position: 'absolute',
+                left: left,
+                top: top,
+                width: width - 4, // padding
+                height: Math.max(height - 2, 16),
+                backgroundColor: props.categoryColor || colors.primary,
+                opacity: props.type === 'predicted' ? 0.5 : 0.9,
+                borderRadius: 4,
+                transform: [{ translateX: pan.x }, { translateY: pan.y }],
+                zIndex: 20,
+            }}
+            {...panResponder.panHandlers}
+        >
+            {/* Simple content render if height allows */}
+            {height > 20 && (
+                <Text style={{ fontSize: 10, color: '#fff', padding: 2 }} numberOfLines={1}>
+                    {props.title}
+                </Text>
+            )}
+        </Animated.View>
+    );
+}
+
 
 export function WeeklyView({
     activities,
@@ -21,72 +151,118 @@ export function WeeklyView({
     endHour = 23,
     onActivityPress,
     onDayPress,
+    weekStartDate = new Date(),
+    onUpdateActivity,
 }: WeeklyViewProps) {
     const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
+    const [scrollingEnabled, setScrollingEnabled] = useState(true);
+    const [columnWidth, setColumnWidth] = useState(0);
 
-    // Helper: Filter activities by day
-    const getActivitiesForDay = (dayIndex: number) => {
-        const dayLabel = DAYS[dayIndex];
-        return activities.filter((a) => (a.day || 'Mon') === dayLabel); // Default to Mon if missing
+    const handleLayout = (event: LayoutChangeEvent) => {
+        const { width } = event.nativeEvent.layout;
+        // Divide total width by 7 days
+        setColumnWidth(width / 7);
     };
 
-    const getPosition = (timeString: string, durationMinutes: number) => {
-        const [h, m] = timeString.split(':').map(Number);
+    const getPosition = (day: string, timeString: string, durationMinutes: number) => {
+        const dayIndex = DAYS.indexOf(day || 'Mon');
+        if (dayIndex === -1) return null;
+
+        const [h, m] = timeString?.split(':').map(Number) || [startHour, 0];
         const totalMinutesFromStart = (h - startHour) * 60 + m;
+
         const top = (totalMinutesFromStart / 60) * HOUR_HEIGHT;
+        top + 40; // Add margin for header? No, 'dayGrid' starts below header?
+        // Wait, the activities are absolutely positioned. We need to respect the header offset.
+        // The structure below puts headers inside the day column flow.
+        // We will render activities relative to the DayGrid container (excluding headers).
+
         const height = (durationMinutes / 60) * HOUR_HEIGHT;
-        return { top, height };
+        const left = dayIndex * columnWidth;
+
+        return { top, height, left };
     };
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.contentContainer}
+            scrollEnabled={scrollingEnabled}
+        >
             <View style={styles.row}>
                 {/* Time Labels Column */}
-                <View style={styles.timeColumn}>
+                <View style={[styles.timeColumn, { width: TIME_COL_WIDTH }]}>
                     {hours.map((hour) => (
-                        <Text key={hour} style={[styles.timeLabel, { top: (hour - startHour) * HOUR_HEIGHT }]}>
+                        <Text key={hour} style={[styles.timeLabel, { top: (hour - startHour) * HOUR_HEIGHT + 35 }]}>
+                            {/* +35 accounts for header height roughly */}
                             {hour}
                         </Text>
                     ))}
                 </View>
 
-                {/* Days Columns */}
-                {DAYS.map((day, index) => (
-                    <Pressable
-                        key={day}
-                        style={styles.dayColumn}
-                        onPress={() => onDayPress?.(index)}
-                    >
-                        <Text style={styles.dayHeader}>{day}</Text>
-                        <View style={styles.dayGrid}>
-                            {hours.map((h) => (
-                                <View key={h} style={[styles.gridCell, { height: HOUR_HEIGHT }]} />
+                {/* Main Grid Container */}
+                <View style={{ flex: 1 }}>
+                    {/* Header Row */}
+                    <View style={{ flexDirection: 'row', height: 40 }}>
+                        {DAYS.map((day, index) => {
+                            const date = new Date(weekStartDate);
+                            date.setDate(weekStartDate.getDate() + index);
+                            const dateString = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                            return (
+                                <Pressable
+                                    key={day}
+                                    style={styles.dayHeaderCell}
+                                    onPress={() => onDayPress?.(index)}
+                                >
+                                    <Text style={styles.dayHeader}>{day}</Text>
+                                    <Text style={styles.dateHeader}>{dateString}</Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+
+                    {/* Grid Lines Area */}
+                    <View style={{ position: 'relative' }} onLayout={handleLayout}>
+                        {/* Background Grid */}
+                        <View style={{ flexDirection: 'row', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+                            {DAYS.map((day) => (
+                                <View key={day} style={styles.dayColumnLine}>
+                                    {hours.map((h) => (
+                                        <View key={h} style={[styles.gridCell, { height: HOUR_HEIGHT }]} />
+                                    ))}
+                                </View>
                             ))}
-
-                            {/* Render Activities for this day */}
-                            {getActivitiesForDay(index).map((activity) => {
-                                const { top, height } = getPosition(activity.startTime, activity.durationMinutes);
-                                const isPredicted = activity.type === 'predicted';
-
-                                return (
-                                    <TouchableOpacity
-                                        key={activity.id}
-                                        onPress={() => onActivityPress?.(activity.id)}
-                                        style={[
-                                            styles.miniBlock,
-                                            {
-                                                top,
-                                                height: Math.max(height - 2, 16),
-                                                backgroundColor: activity.categoryColor || colors.primary,
-                                                opacity: isPredicted ? 0.5 : 0.9,
-                                            }
-                                        ]}
-                                    />
-                                );
-                            })}
                         </View>
-                    </Pressable>
-                ))}
+
+                        {/* Ghost logic to ensure height matches content */}
+                        <View style={{ opacity: 0 }}>
+                            {hours.map(h => <View key={h} style={{ height: HOUR_HEIGHT }} />)}
+                        </View>
+
+                        {/* Activities Layer */}
+                        {columnWidth > 0 && activities.map(activity => {
+                            const pos = getPosition(activity.day || 'Mon', activity.startTime, activity.durationMinutes);
+                            if (!pos) return null;
+
+                            return (
+                                <DraggableWeeklyBlock
+                                    key={activity.id + activity.startTime + activity.day}
+                                    {...activity}
+                                    top={pos.top}
+                                    height={pos.height}
+                                    left={pos.left}
+                                    width={columnWidth}
+                                    columnWidth={columnWidth}
+                                    startHour={startHour}
+                                    endHour={endHour}
+                                    onPress={() => onActivityPress?.(activity.id)}
+                                    onUpdate={(id, d, t) => onUpdateActivity?.(id, d, t)}
+                                    onDragStateChange={(isDragging) => setScrollingEnabled(!isDragging)}
+                                />
+                            );
+                        })}
+                    </View>
+                </View>
             </View>
         </ScrollView>
     );
@@ -98,7 +274,7 @@ const styles = StyleSheet.create({
     row: { flexDirection: 'row' },
     timeColumn: {
         width: 30,
-        marginTop: 24, // Offset for day header
+        marginTop: 0, // Reset margin since we handle spacing manually
         alignItems: 'center',
     },
     timeLabel: {
@@ -107,34 +283,34 @@ const styles = StyleSheet.create({
         color: colors.slate400,
         transform: [{ translateY: -6 }],
     },
-    dayColumn: {
+    dayHeaderCell: {
         flex: 1,
         alignItems: 'center',
-        borderLeftWidth: 1,
-        borderLeftColor: colors.slate100,
+        justifyContent: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: colors.slate200,
+        backgroundColor: colors.backgroundLight, // ensure opaque
+        zIndex: 10,
     },
     dayHeader: {
         fontSize: 12,
         fontWeight: '600',
         color: colors.slate600,
-        marginBottom: 8,
         textTransform: 'uppercase',
     },
-    dayGrid: {
-        width: '100%',
-        position: 'relative',
+    dateHeader: {
+        fontSize: 10,
+        color: colors.slate400,
+        marginTop: 2,
+    },
+    dayColumnLine: {
+        flex: 1,
+        borderLeftWidth: 1,
+        borderLeftColor: colors.slate100,
     },
     gridCell: {
         width: '100%',
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(241, 245, 249, 0.5)', // Very light divider
-    },
-    miniBlock: {
-        position: 'absolute',
-        left: 2,
-        right: 2,
-        borderRadius: 4,
-        minHeight: 10,
+        borderBottomColor: 'rgba(241, 245, 249, 0.5)',
     },
 });
-

@@ -1,32 +1,31 @@
 {
-	"compilerOptions": {
-		/* --- React Native Specifics --- */
-		"target": "esnext",
-		"module": "esnext",
-		"moduleResolution": "node",
-		"lib": ["esnext"],
-		"jsx": "react-jsx",
-
-		"allowSyntheticDefaultImports": true,
-		"esModuleInterop": true,
-
-		"resolveJsonModule": true,
-
-		/* --- WatermelonDB Requirements --- */
-		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true,
-		"useDefineForClassFields": false,
-
-		/* --- Strictness & Safety --- */
-		"strict": true,
-		"noUncheckedIndexedAccess": true,
-		"verbatimModuleSyntax": true,
-		"isolatedModules": true,
-		"skipLibCheck": true,
-
-		/* --- Output --- */
-		"noEmit": true
-	},
-	"include": ["src/**/*"],
-	"exclude": ["node_modules", "babel.config.js"]
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "lib": [
+      "esnext"
+    ],
+    "jsx": "react-jsx",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js"
+  ],
+  "extends": "expo/tsconfig.base"
 }

@@ -4,7 +4,7 @@ import { colors, spacing } from '../theme';
 import { TimelineCanvas } from '../components/TimelineCanvas';
 import { WeeklyView } from '../components/WeeklyView';
 import { SegmentedControl } from '../components/SegmentedControl';
-import { TimeBlockProps } from '../components/TimeBlock';
+import type { TimeBlockProps } from '../components/TimeBlock';
 import { AddActivitySheet } from '../components/AddActivitySheet';
 import { ActivityActionMenu } from '../components/ActivityActionMenu';
 import { ROUTES } from '../constants/routes';
@@ -205,6 +205,15 @@ export function ScheduleScreen({ onNavigate }: Props) {
         }));
     };
 
+    const handleWeeklyUpdate = (id: string, day: string, newStartTime: string) => {
+        setActivities((prev) => prev.map((a) => {
+            if (a.id === id) {
+                return { ...a, day, startTime: newStartTime };
+            }
+            return a;
+        }));
+    };
+
     const handleSheetClose = () => {
         setIsAddSheetVisible(false);
         setEditingActivity(null); // Clear edit state on close
@@ -246,6 +255,8 @@ export function ScheduleScreen({ onNavigate }: Props) {
                     <WeeklyView
                         activities={activities}
                         onActivityPress={handleActivityPress}
+                        weekStartDate={mondayDate}
+                        onUpdateActivity={handleWeeklyUpdate}
                         onDayPress={(dayIndex) => {
                             const dayLabel = DAYS[dayIndex];
                             setSelectedDay(dayLabel);
