@@ -11,6 +11,7 @@ import { ActivityRow } from "../components/ActivityRow";
 import { IconButton } from "../components/IconButton";
 import { ProgressCircle } from "../components/ProgressCircle";
 import { ROUTES } from "../constants/routes";
+import { sampleActivityItems } from "../data/sampleData";
 import { colors, spacing } from "../theme";
 import type { ActivityItem, AppRoute } from "../types";
 
@@ -20,45 +21,9 @@ type Props = {
 	activities?: ActivityItem[];
 };
 
-/** Default sample data when no activities are passed. Replace with DB/API in app. */
-const SAMPLE_ACTIVITIES: ActivityItem[] = [
-	{
-		id: "1",
-		title: "Morning Meditation",
-		subtitle: "10 mins • Self-care",
-		icon: "self_improvement",
-		iconBg: "marshmallow",
-		completed: true,
-	},
-	{
-		id: "2",
-		title: "Draft Project Proposal",
-		subtitle: "2 hours • Work",
-		icon: "edit_note",
-		iconBg: "primary",
-		completed: false,
-	},
-	{
-		id: "3",
-		title: "Water the plants",
-		subtitle: "5 mins • Home",
-		icon: "local_florist",
-		iconBg: "neutral",
-		completed: false,
-	},
-	{
-		id: "4",
-		title: "Evening Reflection",
-		subtitle: "15 mins • Journaling",
-		icon: "book_2",
-		iconBg: "marshmallow",
-		completed: false,
-	},
-];
-
 export function HomeScreen({ onNavigate, activities: propActivities }: Props) {
 	const [activities, setActivities] = useState<ActivityItem[]>(
-		propActivities ?? SAMPLE_ACTIVITIES,
+		propActivities ?? sampleActivityItems,
 	);
 
 	const completedCount = activities.filter((a) => a.completed).length;
@@ -101,13 +66,13 @@ export function HomeScreen({ onNavigate, activities: propActivities }: Props) {
 					</View>
 				</View>
 
-				{/* Tasks */}
+				{/* Activities (intentions) */}
 				<ScrollView
 					style={styles.scroll}
 					contentContainerStyle={styles.scrollContent}
 				>
-					<View style={styles.tasksSection}>
-						<View style={styles.tasksHeader}>
+					<View style={styles.activitiesSection}>
+						<View style={styles.activitiesHeader}>
 							<Text style={styles.sectionLabel}>Your Intentions</Text>
 							<View style={styles.badge}>
 								<Text style={styles.badgeText}>3 Priorities</Text>
@@ -201,8 +166,8 @@ const styles = StyleSheet.create({
 	},
 	scroll: { flex: 1 },
 	scrollContent: { paddingHorizontal: spacing.xl, paddingBottom: 100 },
-	tasksSection: { marginBottom: spacing.lg },
-	tasksHeader: {
+	activitiesSection: { marginBottom: spacing.lg },
+	activitiesHeader: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",

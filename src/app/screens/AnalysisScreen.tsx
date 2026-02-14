@@ -8,30 +8,31 @@ import {
 	View,
 } from "react-native";
 import { ActivityBarRow } from "../components/ActivityBarRow";
-import { BehaviorHeatmap } from "../components/BehaviorHeatmap";
+import { CategoryHeatmap } from "../components/CategoryHeatmap";
+import { CausalNetView } from "../components/CausalNetView";
 import { GoalTimeRow } from "../components/GoalTimeRow";
 import { IconButton } from "../components/IconButton";
-import { PetriNetView } from "../components/PetriNetView";
 import { ProgressCircle } from "../components/ProgressCircle";
 import { SegmentedControl } from "../components/SegmentedControl";
 import { ROUTES } from "../constants/routes";
 import {
 	sampleActivityBreakdown,
+	sampleCausalNetEdges,
+	sampleCausalNetNodes,
 	sampleGoalTimeData,
-	sampleHeatmapData,
+	sampleHeatmapByCategory,
+	sampleHeatmapCategories,
 	sampleMagicHours,
-	samplePetriArcs,
-	samplePetriPlaces,
-	samplePetriTransitions,
 } from "../data/sampleData";
 import { colors } from "../theme";
 import type {
 	ActivityBreakdownItem,
 	AppRoute,
+	CategoryHeatmapOption,
+	CausalNetEdge,
+	CausalNetNode,
 	GoalTimeData,
-	PetriNetArc,
-	PetriNetPlace,
-	PetriNetTransition,
+	HeatmapDataByCategory,
 } from "../types";
 
 type Props = {
@@ -40,24 +41,27 @@ type Props = {
 	activityBreakdown?: ActivityBreakdownItem[];
 	/** Override goal time data. Omit to use sample data. */
 	goalTimeData?: GoalTimeData[];
-	/** Override Petri net. Omit to use sample data. */
-	petriPlaces?: PetriNetPlace[];
-	petriTransitions?: PetriNetTransition[];
-	petriArcs?: PetriNetArc[];
-	/** Override heatmap (7×12). Omit to use sample data. */
-	heatmapData?: number[][];
+	/** Causal net: nodes = activities (labeled), edges = causal dependencies. */
+	causalNetNodes?: CausalNetNode[];
+	causalNetEdges?: CausalNetEdge[];
+	/** Per-category heatmap: categories + data. Select a category to see likelihood by day & time. */
+	heatmapCategories?: CategoryHeatmapOption[];
+	heatmapByCategory?: HeatmapDataByCategory;
 };
 
 export function AnalysisScreen({
 	onNavigate,
 	activityBreakdown = sampleActivityBreakdown,
 	goalTimeData = sampleGoalTimeData,
-	petriPlaces = samplePetriPlaces,
-	petriTransitions = samplePetriTransitions,
-	petriArcs = samplePetriArcs,
-	heatmapData = sampleHeatmapData,
+	causalNetNodes = sampleCausalNetNodes,
+	causalNetEdges = sampleCausalNetEdges,
+	heatmapCategories = sampleHeatmapCategories,
+	heatmapByCategory = sampleHeatmapByCategory,
 }: Props) {
 	const [timeframe, setTimeframe] = useState("Week");
+	const [selectedHeatmapCategoryId, setSelectedHeatmapCategoryId] = useState(
+		heatmapCategories[0]?.id ?? "work",
+	);
 	const magicHours = sampleMagicHours;
 
 	return (
@@ -179,25 +183,30 @@ export function AnalysisScreen({
 					</View>
 				</View>
 
-				{/* Petri Net – behavior model */}
+				{/* Causal net – scheduling model (activities + causal links) */}
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Behavior model (Petri Net)</Text>
+					<Text style={styles.sectionTitle}>Scheduling model (Causal net)</Text>
 					<View style={styles.breakdownCard}>
-						<PetriNetView
-							places={petriPlaces}
-							transitions={petriTransitions}
-							arcs={petriArcs}
+						<CausalNetView
+							nodes={causalNetNodes}
+							edges={causalNetEdges}
 							width={320}
-							height={200}
+							height={220}
 						/>
 					</View>
 				</View>
 
-				{/* Behavior heatmap */}
+				{/* Per-category likelihood: select category first */}
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Behavior heatmap</Text>
+					<Text style={styles.sectionTitle}>Where you do an activity</Text>
 					<View style={styles.breakdownCard}>
-						<BehaviorHeatmap data={heatmapData} columnCount={12} />
+						<CategoryHeatmap
+							categories={heatmapCategories}
+							heatmapByCategory={heatmapByCategory}
+							selectedCategoryId={selectedHeatmapCategoryId}
+							onSelectCategory={setSelectedHeatmapCategoryId}
+							columnCount={12}
+						/>
 					</View>
 				</View>
 
@@ -229,7 +238,7 @@ export function AnalysisScreen({
 						<View style={styles.tipRow}>
 							<Text style={styles.tipIcon}>💡</Text>
 							<Text style={styles.tipText}>
-								You're a morning lark! Most of your tasks get finished before
+								You're a morning lark! Most of your activities get finished before
 								lunch. 🥐
 							</Text>
 						</View>
@@ -244,7 +253,7 @@ export function AnalysisScreen({
 						</View>
 						<Text style={styles.finalTipTitle}>A little tip for you...</Text>
 						<Text style={styles.finalTipBody}>
-							You complete tasks{" "}
+							You complete activities{" "}
 							<Text style={styles.finalTipBold}>20% more consistently</Text> in
 							the late morning. Try scheduling your biggest goals before 11:30
 							AM tomorrow for that extra feeling of success! ✨

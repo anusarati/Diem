@@ -2,7 +2,11 @@ import React from "react";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import Svg, { Circle, Line, Rect } from "react-native-svg";
 import { colors } from "../theme";
-import type { PetriNetArc, PetriNetPlace, PetriNetTransition } from "../types";
+import type {
+	PetriNetArc,
+	PetriNetPlace,
+	PetriNetTransition,
+} from "../types/analysis";
 
 type Props = {
 	places: PetriNetPlace[];
