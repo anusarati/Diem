@@ -38,13 +38,19 @@ export function HomeScreen({ onNavigate, activities: propActivities }: Props) {
 		);
 	};
 
+	const todayLabel = new Date().toLocaleDateString(undefined, {
+		weekday: "long",
+		month: "long",
+		day: "numeric",
+	});
+
 	return (
 		<SafeAreaView style={styles.safe}>
 			<View style={styles.container}>
 				{/* Top App Bar */}
 				<View style={styles.header}>
 					<View>
-						<Text style={styles.date}>Monday, October 24</Text>
+						<Text style={styles.date}>{todayLabel}</Text>
 						<Text style={styles.greeting}>
 							Good morning, <Text style={styles.name}>Sophie</Text>
 						</Text>
