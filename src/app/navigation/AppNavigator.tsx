@@ -1,22 +1,20 @@
-import React, { useState } from 'react';
-import { HomeScreen } from '../screens/HomeScreen';
-import { AnalysisScreen } from '../screens/AnalysisScreen';
-import { ROUTES } from '../constants/routes';
+import { useState } from "react";
+import { ROUTES } from "../constants/routes";
+import { AnalysisScreen } from "../screens/AnalysisScreen";
+import { HomeScreen } from "../screens/HomeScreen";
+import type { AppRoute } from "../types";
 
 /**
  * Simple state-based navigator. Replace with @react-navigation/native
  * when you add the dependency (e.g. Stack + Bottom Tabs).
  */
 export function AppNavigator() {
-  const [currentRoute, setCurrentRoute] = useState(ROUTES.HOME);
+	const [currentRoute, setCurrentRoute] = useState<AppRoute>(ROUTES.HOME);
 
-  const handleNavigate = (route: string) => setCurrentRoute(route);
+	const handleNavigate = (route: AppRoute) => setCurrentRoute(route);
 
-  switch (currentRoute) {
-    case ROUTES.ANALYSIS:
-      return <AnalysisScreen onNavigate={handleNavigate} />;
-    case ROUTES.HOME:
-    default:
-      return <HomeScreen onNavigate={handleNavigate} />;
-  }
+	if (currentRoute === ROUTES.ANALYSIS) {
+		return <AnalysisScreen onNavigate={handleNavigate} />;
+	}
+	return <HomeScreen onNavigate={handleNavigate} />;
 }

@@ -1,5 +1,4 @@
-import React from 'react';
-import { AppNavigator } from './navigation/AppNavigator';
+import { AppNavigator } from "./navigation/AppNavigator";
 
 /**
  * App entry for React Native.
@@ -9,5 +8,5 @@ import { AppNavigator } from './navigation/AppNavigator';
  *   export default function Main() { return <App />; }
  */
 export function App() {
-  return <AppNavigator />;
+	return <AppNavigator />;
 }
