@@ -14,6 +14,7 @@ export default class ScheduledEvent extends Model {
 		activities: { type: "belongs_to", key: "activity_id" },
 	} as const;
 
+	@text("activity_id") activityId!: string;
 	@relation("activities", "activity_id") activity!: Relation<Activity>;
 
 	@text("category_id") categoryId!: string;

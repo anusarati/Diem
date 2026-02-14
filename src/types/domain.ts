@@ -80,15 +80,7 @@ export interface FrequencyGoalValue {
 
 // --- Learning & Mining Types ---
 
-/**
- * Defines what kind of statistical profile is stored in UserBehavior.
- */
 export enum UserBehaviorMetric {
-	// Probability of Activity Y happening given Activity X happened just before.
-	// key_param: Predecessor Activity ID
-	// value: Probability (0.0 - 1.0)
-	HEURISTIC_DEPENDENCY = "HEURISTIC_DEPENDENCY",
-
 	// Probability of Activity occurring at a specific time of day.
 	// key_param: TimeSlot index
 	// value: Probability Density (0.0 - 1.0)
@@ -100,9 +92,6 @@ export enum UserBehaviorMetric {
 	OBSERVED_FREQUENCY = "OBSERVED_FREQUENCY",
 }
 
-/**
- * Keys for OBSERVED_FREQUENCY metric in UserBehavior
- */
 export enum BehaviorPeriod {
 	DAILY = "DAILY",
 	WEEKLY = "WEEKLY",
@@ -114,4 +103,17 @@ export enum BehaviorPeriod {
 	FRI = "FRI",
 	SAT = "SAT",
 	SUN = "SUN",
+}
+
+// --- Heuristics-Net Storage Types ---
+
+export enum HNetTimeScope {
+	SAME_DAY = "SameDay",
+	SAME_WEEK = "SameWeek",
+	SAME_MONTH = "SameMonth",
+}
+
+export enum HNetPairType {
+	SUCCESSOR_PAIR = "SUCCESSOR_PAIR",
+	PREDECESSOR_PAIR = "PREDECESSOR_PAIR",
 }

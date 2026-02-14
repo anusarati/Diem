@@ -5,19 +5,18 @@ import type { BehaviorPeriod, UserBehaviorMetric } from "../../types/domain";
 export default class UserBehavior extends Model {
 	static table = "user_behavior";
 
-	// The activity this behavior relates to (e.g., the successor in a dependency)
+	// Optional activity this behavior relates to.
 	@text("activity_id") activityId?: string;
 
 	// Grouping for aggregate stats (e.g., "Work" category heatmap)
 	@text("category_id") categoryId!: string;
 
-	// The type of statistical profile (HEATMAP, DEPENDENCY, FREQUENCY)
+	// The type of statistical profile (HEATMAP, FREQUENCY).
 	@text("metric") metric!: UserBehaviorMetric;
 
 	/**
 	 * Stores the dimension key:
 	 * - For HEATMAP: The TimeSlot index (e.g., "48" for 12:00 PM)
-	 * - For DEPENDENCY: The Predecessor Activity ID (UUID string)
 	 * - For FREQUENCY: The Period Enum (e.g., "DAILY", "MON")
 	 */
 	@text("key_param") keyParam!: string;
@@ -25,7 +24,6 @@ export default class UserBehavior extends Model {
 	/**
 	 * Stores the statistical weight:
 	 * - For HEATMAP: Probability (0.0 - 1.0)
-	 * - For DEPENDENCY: Dependency Score / Probability (0.0 - 1.0)
 	 * - For FREQUENCY: Observed Count (e.g., 1.5)
 	 */
 	@field("value") value!: number;

@@ -9,6 +9,7 @@ export default class ActivityHistory extends Model {
 		activities: { type: "belongs_to", key: "activity_id" },
 	} as const;
 
+	@text("activity_id") activityId!: string;
 	@relation("activities", "activity_id") activity!: Relation<Activity>;
 
 	@date("predicted_start_time") predictedStartTime!: Date;
