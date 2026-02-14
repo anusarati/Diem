@@ -1,0 +1,6 @@
+{
+	"name": "diem-scheduler",
+	"version": "0.1.0",
+	"description": "Rust-powered Diem scheduler Nitro module",
+	"main": "src/index.ts"
+}

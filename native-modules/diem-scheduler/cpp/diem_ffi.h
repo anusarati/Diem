@@ -18,4 +18,5 @@ extern "C" {
 
     uint8_t* diem_alloc(size_t size);
     void diem_free(uint8_t* ptr, size_t size);
+    void diem_result_free(uint8_t* ptr, size_t len);
 }

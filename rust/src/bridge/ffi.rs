@@ -38,10 +38,10 @@ pub unsafe extern "C" fn diem_solve(
 
     match solver::solve(problem, max_generations, time_limit_ms) {
         Ok(results) => match serialize_result(&results) {
-            Ok(mut msgpack_bytes) => {
-                let len = msgpack_bytes.len();
-                let ptr = msgpack_bytes.as_mut_ptr();
-                std::mem::forget(msgpack_bytes);
+            Ok(msgpack_bytes) => {
+                let boxed = msgpack_bytes.into_boxed_slice();
+                let len = boxed.len();
+                let ptr = Box::into_raw(boxed) as *mut u8;
 
                 DiemResult { ptr, len }
             }

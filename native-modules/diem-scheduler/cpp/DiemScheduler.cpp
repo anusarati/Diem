@@ -22,7 +22,7 @@ std::shared_ptr<ArrayBuffer> DiemScheduler::solve(
     auto output = ArrayBuffer::allocate(result.len);
     if (result.len > 0) {
         std::memcpy(output->data(), result.ptr, result.len);
-        diem_free(result.ptr, result.len);
+        diem_result_free(result.ptr, result.len);
     }
 
     return output;
