@@ -4,10 +4,10 @@ Reusable mobile UI: screens, components, theme, and types. Aligned with main (Ac
 
 ## Structure
 
-- **`types/`** – App-level types: `AppRoute`, `ActivityItem`, `GoalTimeData`, `ActivityBreakdownItem`, Petri net and heatmap types. Use these for props and when wiring to DB/API.
-- **`components/`** – Reusable UI: `ActivityRow`, `ProgressCircle`, `ActivityBarRow`, `GoalTimeRow`, `SegmentedControl`, `PetriNetView`, `BehaviorHeatmap`, `IconButton`.
+- **`types/`** – App-level types: `AppRoute`, `ActivityItem`, `GoalTimeData`, `ActivityBreakdownItem`, causal net (`CausalNetNode`, `CausalNetEdge`), and category heatmap (`CategoryHeatmapOption`, `HeatmapDataByCategory`). Use these for props and when wiring to DB/API.
+- **`components/`** – Reusable UI: `ActivityRow`, `ProgressCircle`, `ActivityBarRow`, `GoalTimeRow`, `SegmentedControl`, `CausalNetView`, `CategoryHeatmap`, `BehaviorHeatmap`, `IconButton`.
 - **`screens/`** – Home and Analysis screens. Accept optional data props; fall back to sample data when omitted.
-- **`data/sampleData.ts`** – Sample/demo data for development. Replace with WatermelonDB or API when wiring the app.
+- **`data/sampleData.ts`** – Sample/demo data: `sampleActivityItems`, `sampleActivityBreakdown`, `sampleGoalTimeData`, `sampleCausalNetNodes` / `sampleCausalNetEdges`, `sampleHeatmapCategories` / `sampleHeatmapByCategory`. Replace with WatermelonDB or API when wiring the app.
 - **`theme/`** – Colors and spacing
 - **`navigation/`** – Simple state-based navigator (swap for `@react-navigation/native` when ready)
 - **`constants/`** – Route names
@@ -16,9 +16,9 @@ Reusable mobile UI: screens, components, theme, and types. Aligned with main (Ac
 
 1. **Types**: Import from `src/app/types` for consistent shapes (e.g. `ActivityItem`, `GoalTimeData`, `AppRoute`).
 2. **Screens**: Pass data via props to override sample data:
-   - `HomeScreen`: optional `activities?: ActivityItem[]`
-   - `AnalysisScreen`: optional `activityBreakdown`, `goalTimeData`, `petriPlaces` / `petriTransitions` / `petriArcs`, `heatmapData`
-3. **Sample data**: Import from `src/app/data/sampleData` when you need defaults or fixtures.
+   - `HomeScreen`: optional `activities?: ActivityItem[]` (default: `sampleActivityItems`)
+   - `AnalysisScreen`: optional `activityBreakdown`, `goalTimeData`, `causalNetNodes` / `causalNetEdges`, `heatmapCategories` / `heatmapByCategory`
+3. **Sample data**: Import from `src/app/data/sampleData` (e.g. `sampleActivityItems`, `sampleHeatmapByCategory`) when you need defaults or fixtures.
 
 ## Mounting the app
 
@@ -37,6 +37,6 @@ Reusable mobile UI: screens, components, theme, and types. Aligned with main (Ac
 ## Screens
 
 - **Home** – Greeting, today’s focus (progress circle), activity list with checkboxes, FAB, bottom nav. Uses `ActivityItem[]` (activities, not tasks).
-- **Analysis** – Insights header, score card, Focus/Flow stats, Day/Week/Month toggle, activity breakdown, time per goal & projected, Petri net, behavior heatmap, tip card.
+- **Analysis** – Insights header, score card, Focus/Flow stats, Day/Week/Month toggle, activity breakdown, time per goal & projected, **causal net** (activity-labeled nodes + causal edges), **per-category heatmap** (select a category to see likelihood by day & time), tip card.
 
 Navigation: chart icon (Home) → Analysis; home pill (Analysis) → Home.
