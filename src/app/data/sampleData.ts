@@ -6,11 +6,49 @@
 import { colors } from "../theme";
 import type {
 	ActivityBreakdownItem,
+	ActivityItem,
+	CategoryHeatmapOption,
+	CausalNetEdge,
+	CausalNetNode,
 	GoalTimeData,
-	PetriNetArc,
-	PetriNetPlace,
-	PetriNetTransition,
+	HeatmapDataByCategory,
 } from "../types";
+
+/** Sample activity list for Home "intentions". Replace with DB/API when wiring the app. */
+export const sampleActivityItems: ActivityItem[] = [
+	{
+		id: "1",
+		title: "Morning Meditation",
+		subtitle: "10 mins • Self-care",
+		icon: "self_improvement",
+		iconBg: "marshmallow",
+		completed: true,
+	},
+	{
+		id: "2",
+		title: "Draft Project Proposal",
+		subtitle: "2 hours • Work",
+		icon: "edit_note",
+		iconBg: "primary",
+		completed: false,
+	},
+	{
+		id: "3",
+		title: "Water the plants",
+		subtitle: "5 mins • Home",
+		icon: "local_florist",
+		iconBg: "neutral",
+		completed: false,
+	},
+	{
+		id: "4",
+		title: "Evening Reflection",
+		subtitle: "15 mins • Journaling",
+		icon: "book_2",
+		iconBg: "marshmallow",
+		completed: false,
+	},
+];
 
 export const sampleActivityBreakdown: ActivityBreakdownItem[] = [
 	{ label: "Work", value: "2h 45m", color: colors.peachDark, percent: 45 },
@@ -60,34 +98,68 @@ export const sampleGoalTimeData: GoalTimeData[] = [
 	},
 ];
 
-export const samplePetriPlaces: PetriNetPlace[] = [
-	{ id: "p1", x: 60, y: 100, tokens: 1 },
-	{ id: "p2", x: 160, y: 50 },
-	{ id: "p3", x: 160, y: 150 },
-	{ id: "p4", x: 260, y: 100, tokens: 1 },
+/** Causal net: nodes = activities (labeled), edges = causal dependencies. */
+export const sampleCausalNetNodes: CausalNetNode[] = [
+	{ id: "work", activityLabel: "Work", x: 60, y: 100 },
+	{ id: "break", activityLabel: "Break", x: 160, y: 50 },
+	{ id: "focus", activityLabel: "Focus", x: 160, y: 150 },
+	{ id: "done", activityLabel: "Done", x: 260, y: 100 },
 ];
 
-export const samplePetriTransitions: PetriNetTransition[] = [
-	{ id: "t1", x: 110, y: 100 },
-	{ id: "t2", x: 210, y: 100 },
+export const sampleCausalNetEdges: CausalNetEdge[] = [
+	{ from: "work", to: "break" },
+	{ from: "work", to: "focus" },
+	{ from: "break", to: "done" },
+	{ from: "focus", to: "done" },
 ];
 
-export const samplePetriArcs: PetriNetArc[] = [
-	{ from: "p1", to: "t1" },
-	{ from: "t1", to: "p2" },
-	{ from: "t1", to: "p3" },
-	{ from: "p2", to: "t2" },
-	{ from: "p3", to: "t2" },
-	{ from: "t2", to: "p4" },
+/** Category options for the heatmap (select which activity/category to show). */
+export const sampleHeatmapCategories: CategoryHeatmapOption[] = [
+	{ id: "work", label: "Work" },
+	{ id: "study", label: "Study" },
+	{ id: "exercise", label: "Exercise" },
+	{ id: "leisure", label: "Leisure" },
 ];
 
-/** 7 days × 12 time slots; value 0–1 = intensity. */
-export const sampleHeatmapData: number[][] = [
-	[0.1, 0.2, 0.7, 0.9, 0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0],
-	[0.1, 0.3, 0.8, 0.85, 0.75, 0.6, 0.5, 0.35, 0.25, 0.15, 0.1, 0],
-	[0.05, 0.2, 0.65, 0.9, 0.85, 0.7, 0.55, 0.4, 0.3, 0.2, 0.1, 0],
-	[0.1, 0.25, 0.7, 0.88, 0.8, 0.65, 0.5, 0.4, 0.3, 0.2, 0.1, 0],
-	[0.15, 0.3, 0.75, 0.82, 0.7, 0.55, 0.45, 0.35, 0.25, 0.15, 0.1, 0],
-	[0.2, 0.4, 0.5, 0.5, 0.4, 0.35, 0.3, 0.25, 0.2, 0.2, 0.15, 0.1],
-	[0.1, 0.2, 0.3, 0.35, 0.3, 0.25, 0.2, 0.2, 0.15, 0.15, 0.1, 0.05],
-];
+/** Per-category likelihood: 7 days × 12 time slots, 0–1 = likelihood of doing that category. */
+export const sampleHeatmapByCategory: HeatmapDataByCategory = {
+	work: [
+		[0.1, 0.3, 0.8, 0.95, 0.9, 0.85, 0.7, 0.5, 0.3, 0.2, 0.1, 0],
+		[0.1, 0.35, 0.85, 0.9, 0.85, 0.75, 0.6, 0.4, 0.25, 0.15, 0.1, 0],
+		[0.05, 0.25, 0.75, 0.95, 0.9, 0.8, 0.65, 0.5, 0.3, 0.2, 0.1, 0],
+		[0.1, 0.3, 0.8, 0.9, 0.85, 0.7, 0.55, 0.4, 0.3, 0.2, 0.1, 0],
+		[0.15, 0.35, 0.8, 0.85, 0.75, 0.6, 0.5, 0.35, 0.25, 0.15, 0.1, 0],
+		[0.05, 0.1, 0.2, 0.25, 0.2, 0.15, 0.1, 0.1, 0.05, 0.05, 0, 0],
+		[0, 0.05, 0.1, 0.1, 0.05, 0.05, 0, 0, 0, 0, 0, 0],
+	],
+	study: [
+		[0.2, 0.4, 0.5, 0.6, 0.7, 0.75, 0.7, 0.6, 0.4, 0.3, 0.2, 0.1],
+		[0.15, 0.35, 0.6, 0.7, 0.75, 0.7, 0.65, 0.5, 0.35, 0.25, 0.15, 0.1],
+		[0.1, 0.3, 0.55, 0.75, 0.8, 0.75, 0.65, 0.5, 0.35, 0.2, 0.1, 0.05],
+		[0.15, 0.35, 0.6, 0.7, 0.75, 0.7, 0.6, 0.45, 0.3, 0.2, 0.1, 0.05],
+		[0.2, 0.4, 0.65, 0.7, 0.65, 0.55, 0.45, 0.35, 0.25, 0.15, 0.1, 0.05],
+		[0.3, 0.5, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.2, 0.15, 0.1],
+		[0.25, 0.4, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.15, 0.1, 0.05],
+	],
+	exercise: [
+		[0.1, 0.2, 0.3, 0.25, 0.2, 0.15, 0.2, 0.35, 0.5, 0.4, 0.2, 0.1],
+		[0.05, 0.15, 0.25, 0.2, 0.2, 0.2, 0.25, 0.4, 0.5, 0.35, 0.2, 0.1],
+		[0.1, 0.2, 0.3, 0.25, 0.2, 0.2, 0.25, 0.35, 0.45, 0.35, 0.2, 0.1],
+		[0.05, 0.15, 0.25, 0.3, 0.25, 0.2, 0.25, 0.4, 0.5, 0.4, 0.2, 0.1],
+		[0.1, 0.2, 0.35, 0.4, 0.35, 0.3, 0.35, 0.45, 0.5, 0.35, 0.2, 0.1],
+		[0.2, 0.4, 0.5, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15],
+		[0.3, 0.5, 0.6, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.2, 0.15],
+	],
+	leisure: [
+		[0.05, 0.1, 0.15, 0.2, 0.2, 0.25, 0.35, 0.5, 0.6, 0.65, 0.6, 0.5],
+		[0.05, 0.1, 0.2, 0.25, 0.25, 0.3, 0.4, 0.5, 0.6, 0.6, 0.55, 0.45],
+		[0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.45, 0.55, 0.6, 0.55, 0.45],
+		[0.05, 0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5, 0.6, 0.6, 0.55, 0.5],
+		[0.1, 0.15, 0.25, 0.3, 0.35, 0.4, 0.45, 0.55, 0.6, 0.6, 0.55, 0.5],
+		[0.2, 0.35, 0.5, 0.55, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.45, 0.4],
+		[0.25, 0.4, 0.55, 0.6, 0.6, 0.6, 0.55, 0.5, 0.5, 0.45, 0.4, 0.35],
+	],
+};
+
+/** @deprecated Use sampleHeatmapByCategory + sampleHeatmapCategories for per-category heatmap. */
+export const sampleHeatmapData: number[][] = sampleHeatmapByCategory.work;

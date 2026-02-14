@@ -8,8 +8,9 @@ export type AppRoute = "Home" | "Analysis" | "Calendar" | "Profile";
 export type { ActivityItem, ActivityItemIconBg } from "./activity";
 export type {
 	ActivityBreakdownItem,
+	CategoryHeatmapOption,
+	CausalNetEdge,
+	CausalNetNode,
 	GoalTimeData,
-	PetriNetArc,
-	PetriNetPlace,
-	PetriNetTransition,
+	HeatmapDataByCategory,
 } from "./analysis";
