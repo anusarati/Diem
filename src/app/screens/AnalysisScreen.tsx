@@ -238,8 +238,8 @@ export function AnalysisScreen({
 						<View style={styles.tipRow}>
 							<Text style={styles.tipIcon}>💡</Text>
 							<Text style={styles.tipText}>
-								You're a morning lark! Most of your activities get finished before
-								lunch. 🥐
+								You're a morning lark! Most of your activities get finished
+								before lunch. 🥐
 							</Text>
 						</View>
 					</View>
