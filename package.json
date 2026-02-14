@@ -1,27 +1,16 @@
 {
-  "name": "diem",
-  "version": "0.0.1",
-  "private": true,
-  "main": "expo/AppEntry.js",
-  "scripts": {
-    "dev": "expo start",
-    "start": "expo start",
-    "test": "echo \"No tests yet\""
-  },
-  "dependencies": {
-    "expo": "~54.0.0",
-    "expo-status-bar": "~3.0.9",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "react-native": "0.81.5",
-    "react-native-svg": "15.12.1",
-    "react-native-web": "~0.21.2"
-  },
-  "devDependencies": {
-    "@types/react": "~19.1.10",
-    "typescript": "~5.3.0"
-  },
-  "overrides": {
-    "fast-xml-parser": "^5.3.4"
-  }
+	"name": "diem",
+	"type": "module",
+	"devDependencies": {
+		"@babel/plugin-proposal-decorators": "^7.29.0",
+		"@biomejs/biome": "^2.3.14",
+		"lefthook": "^2.1.0",
+		"typescript": "^5.9.3"
+	},
+	"scripts": {
+		"prepare": "lefthook install"
+	},
+	"dependencies": {
+		"@nozbe/watermelondb": "^0.28.0"
+	}
 }

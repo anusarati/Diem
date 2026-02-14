@@ -1,0 +1,17 @@
+pre-commit:
+  parallel: true
+  commands:
+    biome-check:
+      glob: "*.{js,ts,cjs,mjs,jsx,tsx,json,jsonc}"
+      run: npx @biomejs/biome check --write --no-errors-on-unmatched {staged_files} && git diff --exit-code --quiet {staged_files}
+    cargo-fmt:
+      glob: "rust/**/*.rs" 
+      root: "rust/" 
+      run: cargo fmt && git diff --exit-code --quiet .
+    cargo-check:
+      glob: "rust/**/*.rs"
+      root: "rust/"
+      run: cargo check
+    type-check:
+      glob: "*.{ts,tsx}"
+      run: npx tsc --noEmit
