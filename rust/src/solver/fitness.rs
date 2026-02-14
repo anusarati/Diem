@@ -351,3 +351,163 @@ impl Fitness for DiemFitness {
         Some(final_score as isize)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::solver::types::{
+        Activity, ActivityType, Binding, FrequencyTarget, Problem, TimeScope,
+    };
+    use genetic_algorithm::chromosome::Chromosome;
+    use genetic_algorithm::genotype::{Genotype, RangeGenotype};
+
+    fn base_activity(id: usize) -> Activity {
+        Activity {
+            id,
+            activity_type: ActivityType::Floating,
+            duration_slots: 2,
+            priority: 1.0,
+            assigned_start: None,
+            category_id: 0,
+            input_bindings: vec![],
+            output_bindings: vec![],
+            frequency_targets: Vec::<FrequencyTarget>::new(),
+        }
+    }
+
+    fn genotype_for(genes_size: usize, total_slots: u16) -> RangeGenotype<u16> {
+        RangeGenotype::builder()
+            .with_genes_size(genes_size)
+            .with_allele_range(0..=total_slots)
+            .build()
+            .expect("genotype should build for tests")
+    }
+
+    #[test]
+    fn input_binding_penalizes_when_predecessor_not_seen() {
+        let mut a = base_activity(0);
+        let mut b = base_activity(1);
+        a.priority = 0.0;
+        b.priority = 0.0;
+
+        b.input_bindings.push(Binding {
+            required_sets: vec![vec![0]],
+            time_scope: TimeScope::SameDay,
+            valid_weekdays: 0b1111111,
+            weight: 100.0,
+        });
+
+        let problem = Problem {
+            activities: vec![a, b],
+            floating_indices: vec![0, 1],
+            fixed_indices: vec![],
+            global_constraints: vec![],
+            heatmap: vec![],
+            markov_matrix: vec![],
+            total_slots: 96,
+        };
+
+        let genotype = genotype_for(2, problem.total_slots);
+        let mut fitness = DiemFitness::new(problem.clone());
+        let valid = Chromosome::new(vec![5, 20]);
+        let invalid = Chromosome::new(vec![20, 5]);
+
+        let valid_score = fitness
+            .calculate_for_chromosome(&valid, &genotype)
+            .expect("fitness should be computed");
+
+        let mut fitness = DiemFitness::new(problem);
+        let invalid_score = fitness
+            .calculate_for_chromosome(&invalid, &genotype)
+            .expect("fitness should be computed");
+
+        assert!(
+            valid_score > invalid_score,
+            "input binding should penalize invalid ordering"
+        );
+    }
+
+    #[test]
+    fn weekday_mask_skips_binding_outside_applicable_day() {
+        let mut a = base_activity(0);
+        let mut b = base_activity(1);
+        a.priority = 0.0;
+        b.priority = 0.0;
+
+        b.input_bindings.push(Binding {
+            required_sets: vec![vec![0]],
+            time_scope: TimeScope::SameDay,
+            valid_weekdays: 1 << 0, // Monday only
+            weight: 200.0,
+        });
+
+        let problem = Problem {
+            activities: vec![a, b],
+            floating_indices: vec![0, 1],
+            fixed_indices: vec![],
+            global_constraints: vec![],
+            heatmap: vec![],
+            markov_matrix: vec![],
+            total_slots: 96 * 2,
+        };
+
+        // Day 1 (Tuesday in solver's weekday mapping), so Monday-only binding is ignored.
+        let genotype = genotype_for(2, problem.total_slots);
+        let chromosome = Chromosome::new(vec![96 + 20, 96 + 5]);
+
+        let mut with_mask = DiemFitness::new(problem.clone());
+        let masked_score = with_mask
+            .calculate_for_chromosome(&chromosome, &genotype)
+            .expect("fitness should be computed");
+
+        // Same binding but applicable every weekday should apply penalty.
+        let mut no_mask_problem = problem;
+        no_mask_problem.activities[1].input_bindings[0].valid_weekdays = 0b1111111;
+        let mut without_mask = DiemFitness::new(no_mask_problem);
+        let unmasked_score = without_mask
+            .calculate_for_chromosome(&chromosome, &genotype)
+            .expect("fitness should be computed");
+
+        assert!(
+            masked_score > unmasked_score,
+            "weekday mask should prevent penalty on non-applicable days"
+        );
+    }
+
+    #[test]
+    fn markov_reward_applies_within_gap_tolerance() {
+        let mut a = base_activity(0);
+        let mut b = base_activity(1);
+        a.priority = 0.0;
+        b.priority = 0.0;
+
+        let problem = Problem {
+            activities: vec![a, b],
+            floating_indices: vec![0, 1],
+            fixed_indices: vec![],
+            global_constraints: vec![],
+            heatmap: vec![],
+            markov_matrix: vec![(0, 1, 1.0)],
+            total_slots: 96,
+        };
+
+        let genotype = genotype_for(2, problem.total_slots);
+        let within_gap = Chromosome::new(vec![0, 4]); // gap = 2 slots after A ends
+        let outside_gap = Chromosome::new(vec![0, 5]); // gap = 3 slots
+
+        let mut fitness = DiemFitness::new(problem.clone());
+        let within_score = fitness
+            .calculate_for_chromosome(&within_gap, &genotype)
+            .expect("fitness should be computed");
+
+        let mut fitness = DiemFitness::new(problem);
+        let outside_score = fitness
+            .calculate_for_chromosome(&outside_gap, &genotype)
+            .expect("fitness should be computed");
+
+        assert!(
+            within_score > outside_score,
+            "markov reward should be applied only within gap tolerance"
+        );
+    }
+}
