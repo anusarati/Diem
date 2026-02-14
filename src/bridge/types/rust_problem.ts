@@ -8,6 +8,13 @@ export interface RustFrequencyTarget {
 	weight: number;
 }
 
+export interface RustUserFrequencyConstraint {
+	scope: TimeScope;
+	min_count: number | null;
+	max_count: number | null;
+	penalty_weight: number;
+}
+
 export interface RustBinding {
 	required_sets: number[][];
 	time_scope: TimeScope;
@@ -25,6 +32,7 @@ export interface RustActivity {
 	input_bindings: RustBinding[];
 	output_bindings: RustBinding[];
 	frequency_targets: RustFrequencyTarget[];
+	user_frequency_constraints: RustUserFrequencyConstraint[];
 }
 
 export type RustGlobalConstraint =

@@ -122,7 +122,12 @@ export class HeuristicInjector {
 		const warnings: string[] = [];
 		const markovMatrix = this.buildMarkovMatrix(input, warnings);
 		const heatmap = this.buildHeatmap(input, warnings);
-		this.injectFrequencyTargets(input, warnings);
+		const injectedFrequencyCount = this.injectFrequencyTargets(input, warnings);
+		if (injectedFrequencyCount === 0) {
+			warnings.push(
+				"No OBSERVED_FREQUENCY rows were injected; learned frequency reward is inactive.",
+			);
+		}
 		const hnetIR = this.injectBindings(input, warnings);
 
 		return {
@@ -215,7 +220,8 @@ export class HeuristicInjector {
 	private injectFrequencyTargets(
 		input: HeuristicInjectorInput,
 		warnings: string[],
-	): void {
+	): number {
+		let injected = 0;
 		for (const row of input.userBehavior) {
 			if (row.metric !== UserBehaviorMetric.OBSERVED_FREQUENCY) {
 				continue;
@@ -255,7 +261,9 @@ export class HeuristicInjector {
 				target_count: Math.max(0, Math.round(row.value)),
 				weight: this.options.frequencyWeight,
 			});
+			injected += 1;
 		}
+		return injected;
 	}
 
 	private injectBindings(

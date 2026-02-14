@@ -30,6 +30,14 @@ pub struct FrequencyTarget {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserFrequencyConstraint {
+    pub scope: TimeScope,
+    pub min_count: Option<u16>,
+    pub max_count: Option<u16>,
+    pub penalty_weight: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Binding {
     /// Disjunctive Normal Form (OR of ANDs)
     pub required_sets: Vec<Vec<ActivityId>>,
@@ -55,7 +63,10 @@ pub struct Activity {
     pub output_bindings: Vec<Binding>,
 
     // Objectives
+    #[serde(default)]
     pub frequency_targets: Vec<FrequencyTarget>,
+    #[serde(default)]
+    pub user_frequency_constraints: Vec<UserFrequencyConstraint>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

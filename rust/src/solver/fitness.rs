@@ -320,7 +320,64 @@ impl Fitness for DiemFitness {
             }
         }
 
-        // --- 5. CHECK CUMULATIVE TIME CONSTRAINTS ---
+        // --- 5. USER FREQUENCY CONSTRAINTS (RELATIVELY HARD PENALTY) ---
+        for activity in &self.problem.activities {
+            for constraint in &activity.user_frequency_constraints {
+                match constraint.scope {
+                    TimeScope::SameDay => {
+                        for d in 0..num_days {
+                            let actual = total_day_counts[d][activity.id];
+                            if let Some(min_count) = constraint.min_count {
+                                if actual < min_count {
+                                    penalties +=
+                                        (min_count - actual) as f32 * constraint.penalty_weight;
+                                }
+                            }
+                            if let Some(max_count) = constraint.max_count {
+                                if actual > max_count {
+                                    penalties +=
+                                        (actual - max_count) as f32 * constraint.penalty_weight;
+                                }
+                            }
+                        }
+                    }
+                    TimeScope::SameWeek => {
+                        for w in 0..num_weeks {
+                            let actual = total_week_counts[w][activity.id];
+                            if let Some(min_count) = constraint.min_count {
+                                if actual < min_count {
+                                    penalties +=
+                                        (min_count - actual) as f32 * constraint.penalty_weight;
+                                }
+                            }
+                            if let Some(max_count) = constraint.max_count {
+                                if actual > max_count {
+                                    penalties +=
+                                        (actual - max_count) as f32 * constraint.penalty_weight;
+                                }
+                            }
+                        }
+                    }
+                    TimeScope::SameMonth => {
+                        let actual = total_month_counts[activity.id];
+                        if let Some(min_count) = constraint.min_count {
+                            if actual < min_count {
+                                penalties +=
+                                    (min_count - actual) as f32 * constraint.penalty_weight;
+                            }
+                        }
+                        if let Some(max_count) = constraint.max_count {
+                            if actual > max_count {
+                                penalties +=
+                                    (actual - max_count) as f32 * constraint.penalty_weight;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- 6. CHECK CUMULATIVE TIME CONSTRAINTS ---
         // O(C * B_active) where B_active is number of buckets with data
         for constraint in &self.problem.global_constraints {
             if let GlobalConstraint::CumulativeTime {
@@ -357,6 +414,7 @@ mod tests {
     use super::*;
     use crate::solver::types::{
         Activity, ActivityType, Binding, FrequencyTarget, Problem, TimeScope,
+        UserFrequencyConstraint,
     };
     use genetic_algorithm::chromosome::Chromosome;
     use genetic_algorithm::genotype::{Genotype, RangeGenotype};
@@ -372,6 +430,7 @@ mod tests {
             input_bindings: vec![],
             output_bindings: vec![],
             frequency_targets: Vec::<FrequencyTarget>::new(),
+            user_frequency_constraints: Vec::<UserFrequencyConstraint>::new(),
         }
     }
 
@@ -508,6 +567,94 @@ mod tests {
         assert!(
             within_score > outside_score,
             "markov reward should be applied only within gap tolerance"
+        );
+    }
+
+    #[test]
+    fn user_frequency_min_penalizes_shortfall() {
+        let mut a = base_activity(0);
+        a.priority = 0.0;
+        a.user_frequency_constraints.push(UserFrequencyConstraint {
+            scope: TimeScope::SameDay,
+            min_count: Some(1),
+            max_count: None,
+            penalty_weight: 500.0,
+        });
+
+        let problem = Problem {
+            activities: vec![a],
+            floating_indices: vec![0],
+            fixed_indices: vec![],
+            global_constraints: vec![],
+            heatmap: vec![],
+            markov_matrix: vec![],
+            total_slots: 96 * 2,
+        };
+
+        let genotype = genotype_for(1, problem.total_slots);
+        let chromosome = Chromosome::new(vec![2]);
+
+        let mut fitness = DiemFitness::new(problem.clone());
+        let constrained_score = fitness
+            .calculate_for_chromosome(&chromosome, &genotype)
+            .expect("fitness should be computed");
+
+        let mut unconstrained = problem;
+        unconstrained.activities[0]
+            .user_frequency_constraints
+            .clear();
+        let mut fitness = DiemFitness::new(unconstrained);
+        let unconstrained_score = fitness
+            .calculate_for_chromosome(&chromosome, &genotype)
+            .expect("fitness should be computed");
+
+        assert!(
+            constrained_score < unconstrained_score,
+            "minimum frequency constraint should reduce score when unmet"
+        );
+    }
+
+    #[test]
+    fn user_frequency_max_penalizes_overshoot() {
+        let mut a = base_activity(0);
+        a.priority = 0.0;
+        a.user_frequency_constraints.push(UserFrequencyConstraint {
+            scope: TimeScope::SameDay,
+            min_count: None,
+            max_count: Some(0),
+            penalty_weight: 500.0,
+        });
+
+        let problem = Problem {
+            activities: vec![a],
+            floating_indices: vec![0],
+            fixed_indices: vec![],
+            global_constraints: vec![],
+            heatmap: vec![],
+            markov_matrix: vec![],
+            total_slots: 96,
+        };
+
+        let genotype = genotype_for(1, problem.total_slots);
+        let chromosome = Chromosome::new(vec![0]);
+
+        let mut fitness = DiemFitness::new(problem.clone());
+        let constrained_score = fitness
+            .calculate_for_chromosome(&chromosome, &genotype)
+            .expect("fitness should be computed");
+
+        let mut unconstrained = problem;
+        unconstrained.activities[0]
+            .user_frequency_constraints
+            .clear();
+        let mut fitness = DiemFitness::new(unconstrained);
+        let unconstrained_score = fitness
+            .calculate_for_chromosome(&chromosome, &genotype)
+            .expect("fitness should be computed");
+
+        assert!(
+            constrained_score < unconstrained_score,
+            "maximum frequency constraint should penalize overshoot"
         );
     }
 }

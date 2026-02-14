@@ -75,10 +75,17 @@ export interface UserSequenceValue {
 
 export interface FrequencyGoalValue {
 	scope: TimeScope;
-	targetCount: number;
+	minCount?: number;
+	maxCount?: number;
 }
 
 // --- Learning & Mining Types ---
+
+export enum FrequencyEmaScope {
+	DAILY = "DAILY",
+	WEEKLY = "WEEKLY",
+	MONTHLY = "MONTHLY",
+}
 
 export enum UserBehaviorMetric {
 	// Probability of Activity occurring at a specific time of day.

@@ -60,6 +60,7 @@ const buildFloatingActivity = (
 		input_bindings: [],
 		output_bindings: [],
 		frequency_targets: [],
+		user_frequency_constraints: [],
 	};
 };
 
@@ -86,6 +87,7 @@ const buildFixedEventActivity = (
 		input_bindings: [],
 		output_bindings: [],
 		frequency_targets: [],
+		user_frequency_constraints: [],
 	};
 };
 

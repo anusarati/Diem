@@ -12,7 +12,7 @@ import type { RustActivity, RustGlobalConstraint } from "../types";
 import { allWeekdaysMask } from "./time_slots";
 
 const HARD_BINDING_WEIGHT = 1_000_000;
-const USER_FREQUENCY_WEIGHT = 5;
+const USER_FREQUENCY_PENALTY_WEIGHT = 50_000;
 
 const forbiddenZoneValueType = arkType({
 	startSlot: "number",
@@ -32,7 +32,8 @@ const userSequenceBaseType = arkType({
 
 const frequencyGoalValueType = arkType({
 	scope: `"${TimeScope.SAME_DAY}" | "${TimeScope.SAME_WEEK}" | "${TimeScope.SAME_MONTH}"`,
-	targetCount: "number",
+	"minCount?": "number",
+	"maxCount?": "number",
 });
 
 export interface ConstraintMapperInput {
@@ -101,9 +102,24 @@ const asFrequency = (value: unknown): FrequencyGoalValue | null => {
 		return null;
 	}
 	const typed = value as FrequencyGoalValue;
+	const minCount =
+		typeof typed.minCount === "number"
+			? Math.max(0, Math.floor(typed.minCount))
+			: undefined;
+	const maxCount =
+		typeof typed.maxCount === "number"
+			? Math.max(0, Math.floor(typed.maxCount))
+			: undefined;
+	if (minCount === undefined && maxCount === undefined) {
+		return null;
+	}
+	if (minCount !== undefined && maxCount !== undefined && maxCount < minCount) {
+		return null;
+	}
 	return {
 		scope: typed.scope,
-		targetCount: Math.max(0, Math.floor(typed.targetCount)),
+		minCount,
+		maxCount,
 	};
 };
 
@@ -240,10 +256,11 @@ export class ConstraintMapper {
 						break;
 					}
 
-					activity.frequency_targets.push({
+					activity.user_frequency_constraints.push({
 						scope: value.scope,
-						target_count: value.targetCount,
-						weight: USER_FREQUENCY_WEIGHT,
+						min_count: value.minCount ?? null,
+						max_count: value.maxCount ?? null,
+						penalty_weight: USER_FREQUENCY_PENALTY_WEIGHT,
 					});
 					break;
 				}
