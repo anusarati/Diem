@@ -3,6 +3,7 @@ import {
 	StyleSheet,
 	Text,
 	TouchableOpacity,
+	View,
 	type ViewStyle,
 } from "react-native";
 import { colors, spacing } from "../../../app/theme";

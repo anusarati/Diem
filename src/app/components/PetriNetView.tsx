@@ -53,7 +53,7 @@ export function PetriNetView({
 		<View style={[styles.wrap, { width: w, height: h }]}>
 			<Svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
 				{/* Arcs */}
-				{arcs.map((arc, _i) => {
+				{arcs.map((arc, i) => {
 					const from = getNodeCoords(arc.from, places, transitions);
 					const to = getNodeCoords(arc.to, places, transitions);
 					if (!from || !to) return null;

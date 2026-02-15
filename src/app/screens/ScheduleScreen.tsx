@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TimelineCanvas } from "../../features/timeline/TimelineCanvas";
 import { ActivityActionMenu } from "../components/ActivityActionMenu";
