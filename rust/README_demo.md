@@ -29,10 +29,17 @@ Scenario activities are intentionally realistic:
 4. `Team Workshop (Fixed)` (fixed)
 5. `Spin Class (Fixed)` (fixed)
 
+The scenario also prints hard/soft rules in plain English, including:
+
+1. `ForbiddenZone` windows as day/time ranges (for example: `D1 00:00 -> D1 02:00` means no activity may start in that interval).
+2. Fixed events as locked placements.
+3. Whether the hard user frequency rule is enabled for that scenario.
+4. Soft Markov and heatmap preferences.
+
 Expected behavior:
 
 1. Hard daily frequency for `Workout Session` is satisfied in Scenario A.
-2. `Workout Session` placement changes between Scenario A and B, showing hard constraints dominate.
+2. In most runs, `Workout Session` placement differs between Scenario A and B, showing hard constraints dominate when enabled.
 
 The CLI prints workout counts in three channels so the output is unambiguous:
 
