@@ -2,7 +2,7 @@ import { Model } from "@nozbe/watermelondb";
 import { date, field, json, text } from "@nozbe/watermelondb/decorators";
 import type { RecurrenceFrequency } from "../../types/domain";
 
-const sanitizeDays = (raw: any) => (Array.isArray(raw) ? raw : []);
+const sanitizeDays = (raw: unknown) => (Array.isArray(raw) ? raw : []);
 
 export default class RecurringActivity extends Model {
 	static table = "recurring_activities";

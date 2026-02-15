@@ -8,7 +8,8 @@ import type {
 	UserSequenceValue,
 } from "../../types/domain";
 
-const sanitizeJson = (raw: any) => raw || {};
+const sanitizeJson = (raw: unknown) =>
+	typeof raw === "object" && raw !== null ? raw : {};
 
 export type ConstraintValue =
 	| ForbiddenZoneValue
