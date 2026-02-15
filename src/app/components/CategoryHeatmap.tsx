@@ -24,10 +24,11 @@ type Props = {
 
 function intensityToColor(intensity: number): string {
 	if (intensity <= 0) return colors.slate50;
-	const r = 93;
-	const g = 186;
-	const b = 149;
-	const a = 0.2 + intensity * 0.8;
+	// Brown theme: primary #8B6914 -> 139, 105, 20
+	const r = 139;
+	const g = 105;
+	const b = 20;
+	const a = 0.2 + intensity * 0.5;
 	return `rgba(${r},${g},${b},${a})`;
 }
 
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
 		borderRadius: 9999,
 		backgroundColor: colors.slate100,
 	},
-	pillSelected: { backgroundColor: colors.mintDark },
+	pillSelected: { backgroundColor: colors.primary },
 	pillText: { fontSize: 12, fontWeight: "600", color: colors.slate500 },
 	pillTextSelected: { color: colors.white },
 	gridWrap: { flexDirection: "row", alignItems: "center" },
