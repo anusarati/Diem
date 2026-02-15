@@ -3,30 +3,36 @@
 	"version": "0.0.1",
 	"private": true,
 	"type": "module",
+	"devDependencies": {
+		"@babel/plugin-proposal-decorators": "^7.29.0",
+		"babel-preset-expo": "~54.0.0",
+		"@biomejs/biome": "^2.3.14",
+		"@react-native-community/cli": "^20.1.1",
+		"lefthook": "^2.1.0",
+		"nitrogen": "^0.33.9",
+		"typescript": "^5.9.3",
+		"@types/react": "~19.1.10"
+	},
 	"main": "expo/AppEntry.js",
 	"scripts": {
 		"dev": "expo start",
 		"start": "expo start",
 		"test": "echo \"No tests yet\"",
-		"prepare": "lefthook install"
+		"prepare": "lefthook install",
+		"demo:solver": "cargo run --manifest-path rust/Cargo.toml --example quick_solver_demo"
 	},
 	"dependencies": {
 		"@nozbe/watermelondb": "^0.28.0",
+		"arktype": "^2.1.29",
+		"msgpackr": "^1.11.8",
+		"react-native-nitro-modules": "^0.33.9",
 		"expo": "~54.0.0",
 		"expo-status-bar": "~3.0.9",
-		"react": "19.1.0",
-		"react-dom": "19.1.0",
-		"react-native": "0.81.5",
-		"react-native-svg": "15.12.1",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0",
+		"react-native": "^0.81.5",
+		"react-native-svg": "^15.12.1",
 		"react-native-web": "~0.21.2"
-	},
-	"devDependencies": {
-		"@babel/plugin-proposal-decorators": "^7.29.0",
-		"@biomejs/biome": "^2.3.14",
-		"babel-preset-expo": "~54.0.0",
-		"@types/react": "~19.1.10",
-		"lefthook": "^2.1.0",
-		"typescript": "^5.9.3"
 	},
 	"overrides": {
 		"fast-xml-parser": "^5.3.4"

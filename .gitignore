@@ -1,6 +1,12 @@
 # Dependencies
 node_modules/
 node_modules
+rust/target
+.gradle
+.gradle-local
+.idea
+.cxx
+.vscode
 
 # Expo / Metro
 .expo/

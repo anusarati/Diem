@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export default appSchema({
-	version: 1,
+	version: 3,
 	tables: [
 		tableSchema({
 			name: "users",
@@ -97,11 +97,45 @@ export default appSchema({
 					isIndexed: true,
 				},
 				{ name: "category_id", type: "string", isIndexed: true },
-				{ name: "metric", type: "string" }, // HEURISTIC_DEPENDENCY | HEATMAP_PROBABILITY
-				{ name: "key_param", type: "string" }, // Stores "TimeOfDay" or "DependentActivityID"
+				{ name: "metric", type: "string" }, // HEATMAP_PROBABILITY | OBSERVED_FREQUENCY
+				{ name: "key_param", type: "string" }, // Stores "TimeOfDay" or "Period"
 				{ name: "value", type: "number" }, // Probability (0-1) or Count
 				{ name: "sample_size", type: "number" },
 				{ name: "last_updated", type: "number" },
+			],
+		}),
+		tableSchema({
+			name: "markov_transition_counts",
+			columns: [
+				{ name: "from_activity_id", type: "string", isIndexed: true },
+				{ name: "to_activity_id", type: "string", isIndexed: true },
+				{ name: "count", type: "number" },
+				{ name: "last_observed_at", type: "number" },
+			],
+		}),
+		tableSchema({
+			name: "hnet_arc_counts",
+			columns: [
+				{ name: "predecessor_activity_id", type: "string", isIndexed: true },
+				{ name: "successor_activity_id", type: "string", isIndexed: true },
+				{ name: "time_scope", type: "string", isIndexed: true },
+				{ name: "weekday_mask", type: "number" },
+				{ name: "count", type: "number" },
+				{ name: "last_observed_at", type: "number" },
+			],
+		}),
+		tableSchema({
+			name: "hnet_pair_counts",
+			columns: [
+				{ name: "anchor_activity_id", type: "string", isIndexed: true },
+				{ name: "first_activity_id", type: "string", isIndexed: true },
+				{ name: "second_activity_id", type: "string", isIndexed: true },
+				{ name: "pair_type", type: "string", isIndexed: true },
+				{ name: "time_scope", type: "string", isIndexed: true },
+				{ name: "weekday_mask", type: "number" },
+				{ name: "co_occurrence_count", type: "number" },
+				{ name: "anchor_sample_size", type: "number" },
+				{ name: "last_observed_at", type: "number" },
 			],
 		}),
 		tableSchema({
@@ -112,11 +146,48 @@ export default appSchema({
 				{ name: "predicted_duration", type: "number" },
 				{ name: "actual_start_time", type: "number", isOptional: true },
 				{ name: "actual_duration", type: "number", isOptional: true },
+				{
+					name: "local_day_bucket",
+					type: "string",
+					isOptional: true,
+					isIndexed: true,
+				},
+				{
+					name: "local_week_bucket",
+					type: "string",
+					isOptional: true,
+					isIndexed: true,
+				},
+				{
+					name: "local_month_bucket",
+					type: "string",
+					isOptional: true,
+					isIndexed: true,
+				},
+				{ name: "bucket_timezone", type: "string", isOptional: true },
 				{ name: "was_completed", type: "boolean" },
 				{ name: "was_skipped", type: "boolean" },
 				{ name: "was_replaced", type: "boolean" },
 				{ name: "notes", type: "string", isOptional: true },
 				{ name: "created_at", type: "number" },
+			],
+		}),
+		tableSchema({
+			name: "frequency_ema_state",
+			columns: [
+				{ name: "activity_id", type: "string", isIndexed: true },
+				{ name: "scope", type: "string", isIndexed: true },
+				{ name: "ema_value", type: "number" },
+				{ name: "sample_size", type: "number" },
+				{ name: "open_bucket_key", type: "string", isOptional: true },
+				{ name: "open_bucket_count", type: "number" },
+				{
+					name: "last_closed_bucket_key",
+					type: "string",
+					isOptional: true,
+				},
+				{ name: "dirty", type: "boolean" },
+				{ name: "updated_at", type: "number", isIndexed: true },
 			],
 		}),
 		tableSchema({

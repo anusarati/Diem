@@ -1,0 +1,48 @@
+# Solver Demo
+
+## Quick Run
+
+From repo root:
+
+```bash
+npm run demo:solver
+```
+
+Direct cargo command:
+
+```bash
+cargo run --manifest-path rust/Cargo.toml --example quick_solver_demo
+```
+
+## What It Demonstrates
+
+The demo runs two scenarios:
+
+1. Scenario A (`Hard + Soft`): hard user frequency constraint plus soft learned signals.
+2. Scenario B (`Soft-only`): same setup, but hard user frequency removed.
+
+Scenario activities are intentionally realistic:
+
+1. `Deep Work: API Design` (floating)
+2. `Workout Session (Flexible)` (floating)
+3. `Inbox & Admin` (floating)
+4. `Team Workshop (Fixed)` (fixed)
+5. `Spin Class (Fixed)` (fixed)
+
+Expected behavior:
+
+1. Hard daily frequency for `Workout Session` is satisfied in Scenario A.
+2. `Workout Session` placement changes between Scenario A and B, showing hard constraints dominate.
+
+The CLI prints workout counts in three channels so the output is unambiguous:
+
+1. `fixed + flexible`
+2. `flexible only`
+3. `fixed only`
+
+In this scenario, `Spin Class (Fixed)` and `Workout Session (Flexible)` share the workout activity id, so both contribute to the hard daily count.
+
+## PASS/FAIL Notes
+
+The example asserts invariants instead of exact slot snapshots.
+This is intentional because the genetic solver is stochastic and exact placements can vary run to run.
