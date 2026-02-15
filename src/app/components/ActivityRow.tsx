@@ -6,39 +6,25 @@ type Props = {
 	activity: ActivityItem;
 	onToggle: () => void;
 	last?: boolean;
+	onPress?: () => void;
 };
 
-const iconBgMap = {
-	marshmallow: { bg: "#FEE2E2", icon: colors.red300 },
-	primary: { bg: "rgba(19, 236, 164, 0.1)", icon: colors.primary },
-	neutral: { bg: colors.slate100, icon: colors.slate400 },
-};
-
-const ICONS: Record<string, string> = {
-	self_improvement: "🧘",
-	edit_note: "📝",
-	local_florist: "🌱",
-	book_2: "📖",
-};
-
-export function ActivityRow({ activity, onToggle, last }: Props) {
-	const { bg } = iconBgMap[activity.iconBg];
-	const iconChar = ICONS[activity.icon] ?? "•";
-
+export function ActivityRow({ activity, onToggle, last, onPress }: Props) {
 	return (
 		<View style={[styles.row, !last && styles.border]}>
-			<View style={[styles.iconBox, { backgroundColor: bg }]}>
-				<Text style={styles.iconText}>{iconChar}</Text>
-			</View>
-			<View style={styles.content}>
-				<Text style={styles.title}>{activity.title}</Text>
-				<Text style={styles.subtitle}>{activity.subtitle}</Text>
-			</View>
 			<Pressable
 				onPress={onToggle}
 				style={[styles.checkbox, activity.completed && styles.checkboxChecked]}
 			>
 				{activity.completed && <Text style={styles.checkmark}>✓</Text>}
+			</Pressable>
+			<Pressable style={styles.content} onPress={onPress}>
+				<Text
+					style={[styles.title, activity.completed && styles.titleCompleted]}
+				>
+					{activity.title}
+				</Text>
+				<Text style={styles.subtitle}>{activity.subtitle}</Text>
 			</Pressable>
 		</View>
 	);
@@ -51,17 +37,10 @@ const styles = StyleSheet.create({
 		paddingVertical: 16,
 		gap: 16,
 	},
-	border: { borderBottomWidth: 0.5, borderBottomColor: "#E5E7EB" },
-	iconBox: {
-		width: 40,
-		height: 40,
-		borderRadius: 12,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	iconText: { fontSize: 18 },
+	border: { borderBottomWidth: 0.5, borderBottomColor: colors.slate200 },
 	content: { flex: 1 },
 	title: { fontSize: 15, fontWeight: "300", color: colors.slate700 },
+	titleCompleted: { textDecorationLine: "line-through", color: colors.slate400 },
 	subtitle: {
 		fontSize: 11,
 		fontWeight: "300",
@@ -73,7 +52,7 @@ const styles = StyleSheet.create({
 		height: 24,
 		borderRadius: 12,
 		borderWidth: 1,
-		borderColor: "#d1d5db",
+		borderColor: colors.slate300,
 		alignItems: "center",
 		justifyContent: "center",
 	},
