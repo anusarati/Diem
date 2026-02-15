@@ -1,12 +1,9 @@
-import { AppNavigator } from "./navigation/AppNavigator";
+import { AuthGate } from "./components/AuthGate";
 
 /**
  * App entry for React Native.
- * Use this as the root component in your App.tsx or index.js:
- *
- *   import { App } from './src/app';
- *   export default function Main() { return <App />; }
+ * Shows login/register when not logged in; main app (with per-user data) when logged in.
  */
 export function App() {
-	return <AppNavigator />;
+	return <AuthGate />;
 }

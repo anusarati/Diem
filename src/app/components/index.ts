@@ -1,9 +1,14 @@
 export { ActivityBarRow } from "./ActivityBarRow";
 export { ActivityRow } from "./ActivityRow";
+export { AddScheduledActivityModal } from "./AddScheduledActivityModal";
+export { AddTaskModal } from "./AddTaskModal";
 export { BehaviorHeatmap } from "./BehaviorHeatmap";
+export { BottomNav } from "./BottomNav";
 export { CategoryHeatmap } from "./CategoryHeatmap";
 export { CausalNetView } from "./CausalNetView";
+export { Dropdown } from "./Dropdown";
 export { GoalTimeRow } from "./GoalTimeRow";
 export { IconButton } from "./IconButton";
 export { ProgressCircle } from "./ProgressCircle";
+export { ScheduledActivityRow } from "./ScheduledActivityRow";
 export { SegmentedControl } from "./SegmentedControl";

@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, type ViewStyle } from "react-native";
+import { colors } from "../theme";
 
 type Props = {
 	icon: string;
@@ -6,9 +7,9 @@ type Props = {
 	style?: ViewStyle;
 	iconStyle?: object;
 	filled?: boolean;
+	variant?: "default" | "soft";
 };
 
-// Simple text-based icons (replace with @expo/vector-icons or react-native-vector-icons)
 const ICONS: Record<string, string> = {
 	settings: "⚙",
 	home: "🏠",
@@ -34,12 +35,19 @@ export function IconButton({
 	style,
 	iconStyle,
 	filled: _filled,
+	variant = "default",
 }: Props) {
 	const char = ICONS[icon] ?? icon;
+	const isSoft = variant === "soft";
 	return (
 		<Pressable
 			onPress={onPress}
-			style={({ pressed }) => [styles.btn, style, pressed && styles.pressed]}
+			style={({ pressed }) => [
+				styles.btn,
+				isSoft && styles.btnSoft,
+				style,
+				pressed && styles.pressed,
+			]}
 		>
 			<Text style={[styles.icon, iconStyle]}>{char}</Text>
 		</Pressable>
@@ -50,12 +58,16 @@ const styles = StyleSheet.create({
 	btn: {
 		width: 40,
 		height: 40,
-		borderRadius: 9999,
+		borderRadius: 12,
 		alignItems: "center",
 		justifyContent: "center",
-		backgroundColor: "#fff",
+		backgroundColor: colors.white,
 		borderWidth: 1,
-		borderColor: "#F1F5F9",
+		borderColor: colors.slate200,
+	},
+	btnSoft: {
+		backgroundColor: colors.slate50,
+		borderColor: colors.slate200,
 	},
 	pressed: { opacity: 0.8 },
 	icon: { fontSize: 20 },

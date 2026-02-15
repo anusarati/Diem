@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { colors } from "../theme";
 
 type Props = {
 	options: string[];
@@ -40,12 +41,7 @@ const styles = StyleSheet.create({
 	},
 	optionSelected: {
 		backgroundColor: "#fff",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.05,
-		shadowRadius: 2,
-		elevation: 2,
 	},
 	text: { fontSize: 14, fontWeight: "700", color: "#94A3B8" },
-	textSelected: { color: "#5DBA95" },
+	textSelected: { color: colors.primary },
 });

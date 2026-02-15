@@ -1,15 +1,22 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "../theme";
-import type { ActivityItem } from "../types";
+import type { ScheduledActivity } from "../types";
 
 type Props = {
-	activity: ActivityItem;
+	activity: ScheduledActivity;
 	onToggle: () => void;
-	last?: boolean;
 	onPress?: () => void;
+	last?: boolean;
 };
 
-export function ActivityRow({ activity, onToggle, last, onPress }: Props) {
+export function ScheduledActivityRow({
+	activity,
+	onToggle,
+	onPress,
+	last,
+}: Props) {
+	const subtitle = `${activity.startTime} – ${activity.durationMinutes} min • ${activity.category}`;
+
 	return (
 		<View style={[styles.row, !last && styles.border]}>
 			<Pressable
@@ -24,7 +31,7 @@ export function ActivityRow({ activity, onToggle, last, onPress }: Props) {
 				>
 					{activity.title}
 				</Text>
-				<Text style={styles.subtitle}>{activity.subtitle}</Text>
+				<Text style={styles.subtitle}>{subtitle}</Text>
 			</Pressable>
 		</View>
 	);

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-	Pressable,
+	ActivityIndicator,
 	SafeAreaView,
 	ScrollView,
 	StyleSheet,
@@ -11,19 +11,9 @@ import { ActivityBarRow } from "../components/ActivityBarRow";
 import { CategoryHeatmap } from "../components/CategoryHeatmap";
 import { CausalNetView } from "../components/CausalNetView";
 import { GoalTimeRow } from "../components/GoalTimeRow";
-import { IconButton } from "../components/IconButton";
 import { ProgressCircle } from "../components/ProgressCircle";
 import { SegmentedControl } from "../components/SegmentedControl";
-import { ROUTES } from "../constants/routes";
-import {
-	sampleActivityBreakdown,
-	sampleCausalNetEdges,
-	sampleCausalNetNodes,
-	sampleGoalTimeData,
-	sampleHeatmapByCategory,
-	sampleHeatmapCategories,
-	sampleMagicHours,
-} from "../data/sampleData";
+import { loadAnalyticsData } from "../data/analyticsData";
 import { colors } from "../theme";
 import type {
 	ActivityBreakdownItem,
@@ -37,32 +27,86 @@ import type {
 
 type Props = {
 	onNavigate: (route: AppRoute) => void;
-	/** Override activity breakdown (e.g. from DB). Omit to use sample data. */
-	activityBreakdown?: ActivityBreakdownItem[];
-	/** Override goal time data. Omit to use sample data. */
-	goalTimeData?: GoalTimeData[];
-	/** Causal net: nodes = activities (labeled), edges = causal dependencies. */
-	causalNetNodes?: CausalNetNode[];
-	causalNetEdges?: CausalNetEdge[];
-	/** Per-category heatmap: categories + data. Select a category to see likelihood by day & time. */
-	heatmapCategories?: CategoryHeatmapOption[];
-	heatmapByCategory?: HeatmapDataByCategory;
 };
 
-export function AnalysisScreen({
-	onNavigate,
-	activityBreakdown = sampleActivityBreakdown,
-	goalTimeData = sampleGoalTimeData,
-	causalNetNodes = sampleCausalNetNodes,
-	causalNetEdges = sampleCausalNetEdges,
-	heatmapCategories = sampleHeatmapCategories,
-	heatmapByCategory = sampleHeatmapByCategory,
-}: Props) {
-	const [timeframe, setTimeframe] = useState("Week");
-	const [selectedHeatmapCategoryId, setSelectedHeatmapCategoryId] = useState(
-		heatmapCategories[0]?.id ?? "work",
-	);
-	const magicHours = sampleMagicHours;
+type Timeframe = "Day" | "Week" | "Month";
+
+export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
+	const [timeframe, setTimeframe] = useState<Timeframe>("Week");
+	const [selectedHeatmapCategoryId, setSelectedHeatmapCategoryId] =
+		useState("Work");
+	const [loading, setLoading] = useState(true);
+	const [activityBreakdown, setActivityBreakdown] = useState<
+		ActivityBreakdownItem[]
+	>([]);
+	const [goalTimeData, setGoalTimeData] = useState<GoalTimeData[]>([]);
+	const [causalNetNodes, setCausalNetNodes] = useState<CausalNetNode[]>([]);
+	const [causalNetEdges, setCausalNetEdges] = useState<CausalNetEdge[]>([]);
+	const [heatmapCategories, setHeatmapCategories] = useState<
+		CategoryHeatmapOption[]
+	>([]);
+	const [heatmapByCategory, setHeatmapByCategory] =
+		useState<HeatmapDataByCategory>({});
+	const [magicHours, setMagicHours] = useState<number[]>([]);
+	const [magicHoursDescription, setMagicHoursDescription] = useState("");
+	const [score, setScore] = useState(0);
+	const [scoreMessage, setScoreMessage] = useState("");
+	const [scoreSub, setScoreSub] = useState("");
+	const [focusPercent, setFocusPercent] = useState(0);
+	const [flowMinutes, setFlowMinutes] = useState(0);
+
+	const load = useCallback(async () => {
+		setLoading(true);
+		try {
+			const data = await loadAnalyticsData(timeframe);
+			setActivityBreakdown(data.activityBreakdown);
+			setGoalTimeData(data.goalTimeData);
+			setCausalNetNodes(data.causalNetNodes);
+			setCausalNetEdges(data.causalNetEdges);
+			setHeatmapCategories(data.heatmapCategories);
+			setHeatmapByCategory(data.heatmapByCategory);
+			setMagicHours(data.magicHours);
+			setMagicHoursDescription(data.magicHoursDescription ?? "");
+			setScore(data.score);
+			setScoreMessage(data.scoreMessage);
+			setScoreSub(data.scoreSub);
+			setFocusPercent(data.focusPercent);
+			setFlowMinutes(data.flowMinutes);
+			if (data.heatmapCategories[0]) {
+				setSelectedHeatmapCategoryId((prev) =>
+					data.heatmapCategories.some((c) => c.id === prev)
+						? prev
+						: data.heatmapCategories[0].id,
+				);
+			}
+		} finally {
+			setLoading(false);
+		}
+	}, [timeframe]);
+
+	useEffect(() => {
+		load();
+	}, [load]);
+
+	const flowLabel =
+		flowMinutes < 60
+			? `${flowMinutes}m`
+			: `${Math.floor(flowMinutes / 60)}h ${flowMinutes % 60}m`;
+
+	if (loading) {
+		return (
+			<SafeAreaView style={styles.safe}>
+				<View style={styles.header}>
+					<Text style={styles.headerLabel}>Analytics</Text>
+					<Text style={styles.headerTitle}>Where your time goes</Text>
+				</View>
+				<View style={styles.loadingWrap}>
+					<ActivityIndicator size="large" color={colors.primary} />
+					<Text style={styles.loadingText}>Loading…</Text>
+				</View>
+			</SafeAreaView>
+		);
+	}
 
 	return (
 		<SafeAreaView style={styles.safe}>
@@ -70,29 +114,18 @@ export function AnalysisScreen({
 				style={styles.scroll}
 				contentContainerStyle={styles.scrollContent}
 			>
-				{/* Sticky header */}
 				<View style={styles.header}>
-					<View style={styles.headerRow}>
-						<View style={styles.avatar} />
-						<View style={styles.navPills}>
-							<Pressable
-								onPress={() => onNavigate(ROUTES.HOME)}
-								style={styles.pill}
-							>
-								<Text style={styles.pillIcon}>🏠</Text>
-							</Pressable>
-							<View style={[styles.pill, styles.pillActive]}>
-								<Text style={[styles.pillIcon, styles.pillIconActive]}>📊</Text>
-								<Text style={styles.pillLabel}>Analytics</Text>
-							</View>
-							<Pressable style={styles.pill}>
-								<Text style={styles.pillIcon}>📅</Text>
-							</Pressable>
-						</View>
-						<IconButton icon="celebration" style={styles.celebBtn} />
-					</View>
-					<Text style={styles.headerLabel}>Insights Dashboard</Text>
+					<Text style={styles.headerLabel}>Analytics</Text>
 					<Text style={styles.headerTitle}>Where your time goes</Text>
+				</View>
+
+				{/* Day / Week / Month */}
+				<View style={styles.segmentWrap}>
+					<SegmentedControl
+						options={["Day", "Week", "Month"]}
+						selected={timeframe}
+						onSelect={(v) => setTimeframe(v as Timeframe)}
+					/>
 				</View>
 
 				{/* Score card */}
@@ -102,59 +135,52 @@ export function AnalysisScreen({
 						<View style={styles.scoreRow}>
 							<View style={styles.scoreCircleWrap}>
 								<ProgressCircle
-									percentage={85}
+									percentage={score}
 									size={96}
 									strokeWidth={10}
-									color={colors.mintDark}
+									color={colors.primary}
 									trackColor="rgba(255,255,255,0.4)"
 									showLabel={false}
 								/>
 								<View style={styles.scoreCircleLabel}>
-									<Text style={styles.scoreCircleValue}>85</Text>
-									<Text style={styles.scoreCircleSub}>Yay!</Text>
+									<Text style={styles.scoreCircleValue}>{score}</Text>
+									<Text style={styles.scoreCircleSub}>
+										{score >= 80 ? "Yay!" : score >= 60 ? "OK" : "—"}
+									</Text>
 								</View>
 							</View>
 							<View style={styles.scoreText}>
-								<Text style={styles.scoreTitle}>You're doing amazing!</Text>
-								<Text style={styles.scoreSubtitle}>
-									Your productivity score is higher than 80% of your typical
-									Mondays. Keep that spark! 🌟
-								</Text>
+								<Text style={styles.scoreTitle}>{scoreMessage}</Text>
+								<Text style={styles.scoreSubtitle}>{scoreSub}</Text>
 							</View>
 						</View>
 					</View>
 				</View>
 
-				{/* Two stat cards */}
 				<View style={styles.statsRow}>
 					<View style={[styles.statCard, styles.statPeach]}>
-						<Text style={styles.statIcon}>❤</Text>
-						<Text style={styles.statValue}>92%</Text>
+						<Text style={styles.statValue}>{focusPercent}%</Text>
 						<Text style={styles.statLabel}>Focus</Text>
+						<Text style={styles.statHint}>Tasks you completed</Text>
 					</View>
 					<View style={[styles.statCard, styles.statLavender]}>
-						<Text style={styles.statIconLavender}>🕐</Text>
-						<Text style={styles.statValue}>6h 20m</Text>
-						<Text style={styles.statLabel}>Flow Time</Text>
+						<Text style={styles.statValue}>{flowLabel}</Text>
+						<Text style={styles.statLabel}>Flow time</Text>
+						<Text style={styles.statHint}>Scheduled blocks</Text>
 					</View>
-				</View>
-
-				{/* Day / Week / Month */}
-				<View style={styles.segmentWrap}>
-					<SegmentedControl
-						options={["Day", "Week", "Month"]}
-						selected={timeframe}
-						onSelect={setTimeframe}
-					/>
 				</View>
 
 				{/* Activity Breakdown */}
 				<View style={styles.section}>
 					<View style={styles.breakdownHeader}>
 						<Text style={styles.breakdownTitle}>Activity Breakdown</Text>
-						<View style={styles.breakdownBadge}>
-							<Text style={styles.breakdownBadgeText}>+12% productivity</Text>
-						</View>
+						{activityBreakdown.some((a) => a.label !== "No data") && (
+							<View style={styles.breakdownBadge}>
+								<Text style={styles.breakdownBadgeText}>
+									From your schedule
+								</Text>
+							</View>
+						)}
 					</View>
 					<View style={styles.breakdownCard}>
 						{activityBreakdown.map((a) => (
@@ -172,6 +198,11 @@ export function AnalysisScreen({
 				{/* Time per goal + projected time */}
 				<View style={styles.section}>
 					<Text style={styles.sectionTitle}>Time per goal & projected</Text>
+					<Text style={styles.goalHint}>
+						Done = time you logged when marking tasks done. Target = planned
+						time (scheduled duration). Projected = extrapolated to end of
+						period.
+					</Text>
 					<View style={styles.breakdownCard}>
 						{goalTimeData.map((g, i) => (
 							<GoalTimeRow
@@ -210,9 +241,8 @@ export function AnalysisScreen({
 					</View>
 				</View>
 
-				{/* Magic Hours */}
 				<View style={styles.section}>
-					<Text style={styles.magicTitle}>Your "Magic Hours" 🪄</Text>
+					<Text style={styles.magicTitle}>Your magic hours</Text>
 					<View style={styles.magicCard}>
 						<View style={styles.magicGrid}>
 							{/* biome-ignore-start lint/suspicious/noArrayIndexKey: fixed 12 time slots */}
@@ -222,7 +252,7 @@ export function AnalysisScreen({
 									style={[
 										styles.magicBar,
 										{
-											backgroundColor: `rgba(93, 186, 149, ${opacity})`,
+											backgroundColor: `rgba(139, 105, 20, ${0.15 + opacity * 0.5})`,
 											borderColor: "#fff",
 										},
 									]}
@@ -236,10 +266,9 @@ export function AnalysisScreen({
 							<Text style={styles.magicLabelText}>Night</Text>
 						</View>
 						<View style={styles.tipRow}>
-							<Text style={styles.tipIcon}>💡</Text>
 							<Text style={styles.tipText}>
-								You're a morning lark! Most of your activities get finished
-								before lunch. 🥐
+								{magicHoursDescription ||
+									"Add scheduled activities to see when you're most active."}
 							</Text>
 						</View>
 					</View>
@@ -248,15 +277,18 @@ export function AnalysisScreen({
 				{/* Bottom tip card */}
 				<View style={styles.section}>
 					<View style={styles.finalTipCard}>
-						<View style={styles.finalTipBadge}>
-							<Text style={styles.finalTipBadgeIcon}>✨</Text>
-						</View>
-						<Text style={styles.finalTipTitle}>A little tip for you...</Text>
+						<Text style={styles.finalTipTitle}>A little tip for you</Text>
 						<Text style={styles.finalTipBody}>
-							You complete activities{" "}
-							<Text style={styles.finalTipBold}>20% more consistently</Text> in
-							the late morning. Try scheduling your biggest goals before 11:30
-							AM tomorrow for that extra feeling of success! ✨
+							{focusPercent >= 80 ? (
+								<>You're completing most of your tasks. Keep it up!</>
+							) : (
+								<>
+									You complete activities{" "}
+									<Text style={styles.finalTipBold}>{focusPercent}%</Text> of
+									the time. Try blocking time in your schedule for top
+									priorities.
+								</>
+							)}
 						</Text>
 					</View>
 				</View>
@@ -272,43 +304,11 @@ const styles = StyleSheet.create({
 	header: {
 		paddingHorizontal: 24,
 		paddingTop: 16,
-		paddingBottom: 8,
-		backgroundColor: "rgba(253, 255, 255, 0.8)",
+		paddingBottom: 16,
+		backgroundColor: colors.white,
+		borderBottomWidth: 1,
+		borderBottomColor: colors.slate100,
 	},
-	headerRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		marginBottom: 16,
-	},
-	avatar: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		backgroundColor: colors.mint,
-		borderWidth: 4,
-		borderColor: colors.mint,
-	},
-	navPills: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 24,
-		backgroundColor: "rgba(241, 245, 249, 0.5)",
-		paddingHorizontal: 16,
-		paddingVertical: 8,
-		borderRadius: 9999,
-	},
-	pill: { flexDirection: "row", alignItems: "center", gap: 4 },
-	pillActive: {},
-	pillIcon: { fontSize: 20, color: colors.slate400 },
-	pillIconActive: { color: colors.mintDark },
-	pillLabel: {
-		fontSize: 10,
-		fontWeight: "700",
-		textTransform: "uppercase",
-		color: colors.mintDark,
-	},
-	celebBtn: { backgroundColor: colors.lavender },
 	headerLabel: {
 		fontSize: 10,
 		fontWeight: "700",
@@ -318,6 +318,13 @@ const styles = StyleSheet.create({
 		marginBottom: 4,
 	},
 	headerTitle: { fontSize: 24, fontWeight: "700", color: colors.slate800 },
+	loadingWrap: {
+		flex: 1,
+		justifyContent: "center",
+		alignItems: "center",
+		gap: 12,
+	},
+	loadingText: { fontSize: 14, color: colors.slate500 },
 	section: { paddingHorizontal: 24, marginTop: 16 },
 	scoreCard: {
 		borderRadius: 24,
@@ -327,11 +334,6 @@ const styles = StyleSheet.create({
 		borderColor: colors.white,
 		backgroundColor: colors.mint,
 		position: "relative",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 8 },
-		shadowOpacity: 0.04,
-		shadowRadius: 30,
-		elevation: 4,
 	},
 	scoreCardGlow: {
 		position: "absolute",
@@ -382,16 +384,9 @@ const styles = StyleSheet.create({
 		borderRadius: 24,
 		borderWidth: 1,
 		borderColor: colors.white,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 8 },
-		shadowOpacity: 0.04,
-		shadowRadius: 30,
-		elevation: 4,
 	},
 	statPeach: { backgroundColor: colors.peach },
 	statLavender: { backgroundColor: colors.lavender },
-	statIcon: { marginBottom: 4, fontSize: 24 },
-	statIconLavender: { marginBottom: 4, fontSize: 24 },
 	statValue: { fontSize: 18, fontWeight: "700", color: colors.slate800 },
 	statLabel: {
 		fontSize: 11,
@@ -400,6 +395,12 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 		letterSpacing: 1,
 		marginTop: 4,
+	},
+	statHint: {
+		fontSize: 10,
+		color: colors.slate400,
+		marginTop: 2,
+		textAlign: "center",
 	},
 	segmentWrap: { paddingHorizontal: 24, paddingVertical: 8, marginTop: 8 },
 	breakdownHeader: {
@@ -419,13 +420,19 @@ const styles = StyleSheet.create({
 	breakdownBadgeText: {
 		fontSize: 12,
 		fontWeight: "700",
-		color: colors.mintDark,
+		color: colors.primary,
 	},
 	sectionTitle: {
 		fontSize: 18,
 		fontWeight: "700",
 		color: colors.slate800,
-		marginBottom: 16,
+		marginBottom: 8,
+		paddingHorizontal: 4,
+	},
+	goalHint: {
+		fontSize: 12,
+		color: colors.slate500,
+		marginBottom: 12,
 		paddingHorizontal: 4,
 	},
 	breakdownCard: {
@@ -434,11 +441,6 @@ const styles = StyleSheet.create({
 		padding: 24,
 		borderWidth: 1,
 		borderColor: colors.slate100,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 8 },
-		shadowOpacity: 0.04,
-		shadowRadius: 30,
-		elevation: 4,
 	},
 	magicTitle: {
 		fontSize: 18,
@@ -453,11 +455,6 @@ const styles = StyleSheet.create({
 		padding: 24,
 		borderWidth: 1,
 		borderColor: "rgba(226, 232, 240, 0.6)",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 8 },
-		shadowOpacity: 0.04,
-		shadowRadius: 30,
-		elevation: 4,
 	},
 	magicGrid: {
 		flexDirection: "row",
@@ -492,7 +489,6 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: colors.slate100,
 	},
-	tipIcon: { fontSize: 18 },
 	tipText: { flex: 1, fontSize: 12, color: colors.slate600, fontWeight: "500" },
 	finalTipCard: {
 		backgroundColor: colors.softPink,
@@ -501,32 +497,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: colors.white,
 		position: "relative",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 8 },
-		shadowOpacity: 0.04,
-		shadowRadius: 30,
-		elevation: 4,
 	},
-	finalTipBadge: {
-		position: "absolute",
-		left: -8,
-		top: -8,
-		transform: [{ rotate: "12deg" }],
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		backgroundColor: colors.white,
-		alignItems: "center",
-		justifyContent: "center",
-		borderWidth: 1,
-		borderColor: colors.softPink,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.05,
-		shadowRadius: 2,
-		elevation: 2,
-	},
-	finalTipBadgeIcon: { fontSize: 20 },
 	finalTipTitle: {
 		fontSize: 16,
 		fontWeight: "700",
