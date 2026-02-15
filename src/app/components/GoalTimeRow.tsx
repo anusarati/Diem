@@ -22,10 +22,12 @@ export function GoalTimeRow({ goal, last }: Props) {
 			<View style={styles.header}>
 				<Text style={styles.label}>{goal.label}</Text>
 				<View style={styles.badges}>
+					<Text style={styles.doneLabel}>Done</Text>
 					<Text style={styles.value}>
 						{formatMinutes(goal.completedMinutes)}
 					</Text>
 					<Text style={styles.sep}>/</Text>
+					<Text style={styles.targetLabel}>Target</Text>
 					<Text style={styles.target}>{formatMinutes(goal.targetMinutes)}</Text>
 				</View>
 			</View>
@@ -68,9 +70,11 @@ const styles = StyleSheet.create({
 		marginBottom: 6,
 	},
 	label: { fontSize: 14, fontWeight: "700", color: colors.slate700 },
-	badges: { flexDirection: "row", alignItems: "baseline", gap: 4 },
+	badges: { flexDirection: "row", alignItems: "baseline", gap: 4, flexWrap: "wrap" },
+	doneLabel: { fontSize: 10, fontWeight: "600", color: colors.slate400, textTransform: "uppercase", marginRight: 2 },
 	value: { fontSize: 14, fontWeight: "700", color: colors.mintDark },
 	sep: { fontSize: 12, color: colors.slate400 },
+	targetLabel: { fontSize: 10, fontWeight: "600", color: colors.slate400, textTransform: "uppercase", marginRight: 2 },
 	target: { fontSize: 12, fontWeight: "600", color: colors.slate500 },
 	projectedRow: {
 		flexDirection: "row",
