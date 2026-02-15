@@ -1,86 +1,93 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors } from '../theme';
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { colors } from "../theme";
 
 type Task = {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: string;
-  iconBg: 'marshmallow' | 'primary' | 'neutral';
-  completed: boolean;
+	id: string;
+	title: string;
+	subtitle: string;
+	icon: string;
+	iconBg: "marshmallow" | "primary" | "neutral";
+	completed: boolean;
 };
 
 type Props = {
-  task: Task;
-  onToggle: () => void;
-  last?: boolean;
+	task: Task;
+	onToggle: () => void;
+	last?: boolean;
 };
 
 const iconBgMap = {
-  marshmallow: { bg: '#FEE2E2', icon: colors.red300 },
-  primary: { bg: 'rgba(19, 236, 164, 0.1)', icon: colors.primary },
-  neutral: { bg: colors.slate100, icon: colors.slate400 },
+	marshmallow: { bg: "#FEE2E2", icon: colors.red300 },
+	primary: { bg: "rgba(19, 236, 164, 0.1)", icon: colors.primary },
+	neutral: { bg: colors.slate100, icon: colors.slate400 },
 };
 
 const ICONS: Record<string, string> = {
-  self_improvement: '🧘',
-  edit_note: '📝',
-  local_florist: '🌱',
-  book_2: '📖',
+	self_improvement: "🧘",
+	edit_note: "📝",
+	local_florist: "🌱",
+	book_2: "📖",
 };
 
 export function TaskRow({ task, onToggle, last }: Props) {
-  const { bg, icon } = iconBgMap[task.iconBg];
-  const iconChar = ICONS[task.icon] ?? '•';
+	const { bg, icon } = iconBgMap[task.iconBg];
+	const iconChar = ICONS[task.icon] ?? "•";
 
-  return (
-    <View style={[styles.row, !last && styles.border]}>
-      <View style={[styles.iconBox, { backgroundColor: bg }]}>
-        <Text style={styles.iconText}>{iconChar}</Text>
-      </View>
-      <View style={styles.content}>
-        <Text style={styles.title}>{task.title}</Text>
-        <Text style={styles.subtitle}>{task.subtitle}</Text>
-      </View>
-      <Pressable
-        onPress={onToggle}
-        style={[styles.checkbox, task.completed && styles.checkboxChecked]}
-      >
-        {task.completed && <Text style={styles.checkmark}>✓</Text>}
-      </Pressable>
-    </View>
-  );
+	return (
+		<View style={[styles.row, !last && styles.border]}>
+			<View style={[styles.iconBox, { backgroundColor: bg }]}>
+				<Text style={styles.iconText}>{iconChar}</Text>
+			</View>
+			<View style={styles.content}>
+				<Text style={styles.title}>{task.title}</Text>
+				<Text style={styles.subtitle}>{task.subtitle}</Text>
+			</View>
+			<Pressable
+				onPress={onToggle}
+				style={[styles.checkbox, task.completed && styles.checkboxChecked]}
+			>
+				{task.completed && <Text style={styles.checkmark}>✓</Text>}
+			</Pressable>
+		</View>
+	);
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    gap: 16,
-  },
-  border: { borderBottomWidth: 0.5, borderBottomColor: '#E5E7EB' },
-  iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconText: { fontSize: 18 },
-  content: { flex: 1 },
-  title: { fontSize: 15, fontWeight: '300', color: colors.slate700 },
-  subtitle: { fontSize: 11, fontWeight: '300', color: colors.slate400, marginTop: 2 },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: { borderColor: colors.primary, backgroundColor: 'transparent' },
-  checkmark: { color: colors.primary, fontSize: 14, fontWeight: '600' },
+	row: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingVertical: 16,
+		gap: 16,
+	},
+	border: { borderBottomWidth: 0.5, borderBottomColor: "#E5E7EB" },
+	iconBox: {
+		width: 40,
+		height: 40,
+		borderRadius: 12,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	iconText: { fontSize: 18 },
+	content: { flex: 1 },
+	title: { fontSize: 15, fontWeight: "300", color: colors.slate700 },
+	subtitle: {
+		fontSize: 11,
+		fontWeight: "300",
+		color: colors.slate400,
+		marginTop: 2,
+	},
+	checkbox: {
+		width: 24,
+		height: 24,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: "#d1d5db",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	checkboxChecked: {
+		borderColor: colors.primary,
+		backgroundColor: "transparent",
+	},
+	checkmark: { color: colors.primary, fontSize: 14, fontWeight: "600" },
 });

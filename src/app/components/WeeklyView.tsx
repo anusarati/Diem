@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
 	Animated,
 	type LayoutChangeEvent,
@@ -72,7 +72,7 @@ function DraggableWeeklyBlock({
 			onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
 				useNativeDriver: false,
 			}),
-			onPanResponderRelease: (_, gestureState) => {
+			onPanResponderRelease: (_, _gestureState) => {
 				pan.flattenOffset();
 
 				const deltaX = (pan.x as any)._value; // approximate
@@ -82,13 +82,14 @@ function DraggableWeeklyBlock({
 				const currentDayIndex = DAYS.indexOf(props.day || "Mon");
 				let newDayIndex = currentDayIndex + colShift;
 				newDayIndex = Math.max(0, Math.min(6, newDayIndex)); // Clamp 0-6
-				const newDay = DAYS[newDayIndex];
+				const newDay = DAYS[newDayIndex] || "Mon";
 
 				const pixelsPerMin = HOUR_HEIGHT / 60;
 				// Parse time carefully
-				const [hStr, mStr] = props.startTime.split(":");
+				const [hStr, mStr] = props.startTime.split(":") as [string, string];
 				const originalMinFromStart =
-					(parseInt(hStr) - startHour) * 60 + parseInt(mStr);
+					(parseInt(hStr || "0", 10) - startHour) * 60 +
+					parseInt(mStr || "0", 10);
 
 				const rowShiftPixels = deltaY;
 				const deltaMin = rowShiftPixels / pixelsPerMin;
@@ -129,6 +130,9 @@ function DraggableWeeklyBlock({
 		}),
 	).current;
 
+	const isPredicted = props.type === "predicted";
+	const isFlexible = props.type === "flexible";
+
 	return (
 		<Animated.View
 			style={{
@@ -137,18 +141,32 @@ function DraggableWeeklyBlock({
 				top: top,
 				width: width - 4, // padding
 				height: Math.max(height - 2, 16),
-				backgroundColor: props.categoryColor || colors.primary,
-				opacity: props.type === "predicted" ? 0.5 : 0.9,
+				backgroundColor: isPredicted
+					? `${props.categoryColor || colors.primary}20`
+					: props.categoryColor || colors.primary,
+				opacity: 0.9,
 				borderRadius: 4,
 				transform: [{ translateX: pan.x }, { translateY: pan.y }],
 				zIndex: 20,
+				// Add border styles
+				borderWidth: isPredicted || isFlexible ? 2 : 0,
+				borderStyle: isPredicted ? "dotted" : isFlexible ? "dashed" : "solid",
+				borderColor: isPredicted
+					? colors.slate600
+					: isFlexible
+						? "rgba(255,255,255,0.8)"
+						: "transparent",
 			}}
 			{...panResponder.panHandlers}
 		>
 			{/* Simple content render if height allows */}
 			{height > 20 && (
 				<Text
-					style={{ fontSize: 10, color: "#fff", padding: 2 }}
+					style={{
+						fontSize: 10,
+						color: isPredicted ? colors.slate600 : "#fff",
+						padding: 2,
+					}}
 					numberOfLines={1}
 				>
 					{props.title}
@@ -189,7 +207,9 @@ export function WeeklyView({
 		if (dayIndex === -1) return null;
 
 		const [h, m] = timeString?.split(":").map(Number) || [startHour, 0];
-		const totalMinutesFromStart = (h - startHour) * 60 + m;
+		const hVal = h ?? startHour;
+		const mVal = m ?? 0;
+		const totalMinutesFromStart = (hVal - startHour) * 60 + mVal;
 
 		const top = (totalMinutesFromStart / 60) * HOUR_HEIGHT;
 		top + 40; // Add margin for header? No, 'dayGrid' starts below header?

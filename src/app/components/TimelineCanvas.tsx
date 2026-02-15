@@ -127,7 +127,7 @@ function DraggableTimeBlock({
 			<TimeBlock
 				{...props}
 				style={{ height: "100%" }} // Fill container
-				onPress={() => props.onPress?.(props.id)}
+				onPress={() => props.onPress?.()}
 			/>
 		</Animated.View>
 	);

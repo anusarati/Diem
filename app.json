@@ -1,12 +1,24 @@
 {
-  "expo": {
-    "name": "Diem",
-    "slug": "diem",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "userInterfaceStyle": "light",
-    "splash": { "backgroundColor": "#F9FBFB" },
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.diem.app" },
-    "android": { "adaptiveIcon": { "backgroundColor": "#F9FBFB" }, "package": "com.diem.app" }
-  }
+	"expo": {
+		"name": "Diem",
+		"slug": "diem",
+		"version": "1.0.0",
+		"orientation": "portrait",
+		"userInterfaceStyle": "light",
+		"sdkVersion": "54.0.0",
+		"splash": {
+			"backgroundColor": "#F9FBFB"
+		},
+		"ios": {
+			"supportsTablet": true,
+			"bundleIdentifier": "com.diem.app"
+		},
+		"android": {
+			"adaptiveIcon": {
+				"backgroundColor": "#F9FBFB"
+			},
+			"package": "com.diem.app"
+		},
+		"plugins": ["expo-asset", "expo-router"]
+	}
 }

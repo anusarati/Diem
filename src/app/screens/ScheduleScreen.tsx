@@ -1,17 +1,11 @@
-import React, { useState } from "react";
-import {
-	Platform,
-	Pressable,
-	SafeAreaView,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { TimelineCanvas } from "../../features/timeline/TimelineCanvas";
 import { ActivityActionMenu } from "../components/ActivityActionMenu";
 import { AddActivitySheet } from "../components/AddActivitySheet";
 import { SegmentedControl } from "../components/SegmentedControl";
 import type { TimeBlockProps } from "../components/TimeBlock";
-import { TimelineCanvas } from "../components/TimelineCanvas";
 import { WeeklyView } from "../components/WeeklyView";
 import { ROUTES } from "../constants/routes";
 import { colors, spacing } from "../theme";
