@@ -10,7 +10,8 @@
 		"typescript": "^5.9.3"
 	},
 	"scripts": {
-		"prepare": "lefthook install"
+		"prepare": "lefthook install",
+		"demo:solver": "cargo run --manifest-path rust/Cargo.toml --example quick_solver_demo"
 	},
 	"dependencies": {
 		"@nozbe/watermelondb": "^0.28.0",
