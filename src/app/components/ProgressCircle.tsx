@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import { colors } from "../theme";
 
 const SIZE = 64;
 const STROKE = 3;
@@ -22,8 +23,8 @@ export function ProgressCircle({
 	percentage,
 	size = SIZE,
 	strokeWidth = STROKE,
-	color = "#13eca4",
-	trackColor = "#E2E8F0",
+	color = colors.primary,
+	trackColor = colors.slate200,
 	showLabel = true,
 	label,
 }: Props) {
