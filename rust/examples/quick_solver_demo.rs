@@ -110,6 +110,7 @@ fn build_scenario(name: &'static str, with_hard_frequency: bool) -> DemoScenario
                 scope: TimeScope::SameDay,
                 min_count: Some(1),
                 max_count: None,
+                deadline_end: None,
                 penalty_weight: 50_000.0,
             });
     }
@@ -336,14 +337,23 @@ fn print_plain_english_rules(scenario: &DemoScenario) {
                 );
             }
             GlobalConstraint::CumulativeTime {
+                activity_id,
                 category_id,
                 period_slots,
                 min_duration,
                 max_duration,
+                deadline_end,
             } => {
                 println!(
-                    "    - CumulativeTime: in each {}-slot window, category {:?} total duration must stay within {}..={} slots.",
-                    period_slots, category_id, min_duration, max_duration
+                    "    - CumulativeTime: in each {}-slot window, activity {:?} / category {:?} total duration must stay within {}..={} slots{}.",
+                    period_slots,
+                    activity_id,
+                    category_id,
+                    min_duration,
+                    max_duration,
+                    deadline_end
+                        .map(|slot| format!(" (deadline mode: count only events ending by {})", slot_to_label(slot)))
+                        .unwrap_or_default()
                 );
             }
         }

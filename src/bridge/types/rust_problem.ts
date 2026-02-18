@@ -12,6 +12,7 @@ export interface RustUserFrequencyConstraint {
 	scope: TimeScope;
 	min_count: number | null;
 	max_count: number | null;
+	deadline_end: number | null;
 	penalty_weight: number;
 }
 
@@ -44,10 +45,12 @@ export type RustGlobalConstraint =
 	  }
 	| {
 			CumulativeTime: {
+				activity_id: number | null;
 				category_id: number | null;
 				period_slots: number;
 				min_duration: number;
 				max_duration: number;
+				deadline_end: number | null;
 			};
 	  };
 

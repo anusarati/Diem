@@ -161,6 +161,7 @@ mod tests {
                 scope: types::TimeScope::SameDay,
                 min_count: Some(1),
                 max_count: None,
+                deadline_end: None,
                 penalty_weight: 50_000.0,
             });
 

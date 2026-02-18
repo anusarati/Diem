@@ -4,6 +4,45 @@ use genetic_algorithm::fitness::{Fitness, FitnessValue};
 use genetic_algorithm::genotype::RangeGenotype;
 use std::collections::HashMap;
 
+#[derive(Clone, Debug, Default)]
+struct DurationPrefixIndex {
+    ends: Vec<TimeSlot>,
+    prefix_sum: Vec<u32>,
+}
+
+impl DurationPrefixIndex {
+    fn from_events(mut events: Vec<(TimeSlot, u16)>) -> Self {
+        if events.is_empty() {
+            return Self::default();
+        }
+
+        events.sort_unstable_by_key(|(end, _)| *end);
+        let mut ends = Vec::with_capacity(events.len());
+        let mut prefix_sum = Vec::with_capacity(events.len());
+        let mut running_total = 0u32;
+        for (end, duration) in events {
+            ends.push(end);
+            running_total += duration as u32;
+            prefix_sum.push(running_total);
+        }
+
+        Self { ends, prefix_sum }
+    }
+
+    fn sum_leq(&self, deadline: TimeSlot) -> u32 {
+        let idx = self.ends.partition_point(|&end| end <= deadline);
+        if idx == 0 {
+            0
+        } else {
+            self.prefix_sum[idx - 1]
+        }
+    }
+}
+
+fn count_ends_leq(sorted_ends: &[TimeSlot], deadline: TimeSlot) -> u32 {
+    sorted_ends.partition_point(|&end| end <= deadline) as u32
+}
+
 #[derive(Clone, Debug)]
 pub struct DiemFitness {
     pub problem: Problem,
@@ -59,30 +98,18 @@ impl Fitness for DiemFitness {
         let num_days = (self.problem.total_slots / 96) as usize + 1;
         let num_weeks = (self.problem.total_slots / 672) as usize + 1;
         let floating_count = self.problem.floating_indices.len();
-
-        // --- 0. SETUP CUMULATIVE TRACKING ---
-        // Identify which (Category, Period) pairs need tracking to avoid O(C*N) lookups later.
-        // Map: CategoryId -> Vec<PeriodSlots>
-        let mut category_tracking: HashMap<usize, Vec<u16>> = HashMap::new();
-        // Map: (CategoryId, PeriodSlots) -> HashMap<BucketIndex, TotalDuration>
-        let mut duration_accumulators: HashMap<(usize, u16), HashMap<usize, u32>> = HashMap::new();
-
-        for constraint in &self.problem.global_constraints {
-            if let GlobalConstraint::CumulativeTime {
-                category_id,
-                period_slots,
-                ..
-            } = constraint
-            {
-                if let Some(cat_id) = category_id {
-                    let periods = category_tracking.entry(*cat_id).or_default();
-                    if !periods.contains(period_slots) {
-                        periods.push(*period_slots);
-                        duration_accumulators.insert((*cat_id, *period_slots), HashMap::new());
-                    }
+        let forbidden_zones: Vec<(u16, u16)> = self
+            .problem
+            .global_constraints
+            .iter()
+            .filter_map(|constraint| {
+                if let GlobalConstraint::ForbiddenZone { start, end } = constraint {
+                    Some((*start, *end))
+                } else {
+                    None
                 }
-            }
-        }
+            })
+            .collect();
 
         // --- 1. PRE-PROCESSING TOTALS (O(N)) ---
         // We calculate Total Counts first to handle Output bindings (Future = Total - Seen).
@@ -199,32 +226,14 @@ impl Fitness for DiemFitness {
                 prev_week = curr.week;
             }
 
-            // --- A. ACCUMULATE DURATION FOR CUMULATIVE CONSTRAINTS ---
-            if let Some(periods) = category_tracking.get(&activity.category_id) {
-                for &p in periods {
-                    // Generic bucket calculation
-                    let bucket = if p >= self.problem.total_slots {
-                        0
-                    } else {
-                        (curr.start / p) as usize
-                    };
-
-                    if let Some(map) = duration_accumulators.get_mut(&(activity.category_id, p)) {
-                        *map.entry(bucket).or_insert(0) += activity.duration_slots as u32;
-                    }
+            // --- A. Global Constraints (Forbidden Zones) ---
+            for (start, end) in &forbidden_zones {
+                if curr.start < *end && curr.end > *start {
+                    penalties += Self::PENALTY_FORBIDDEN;
                 }
             }
 
-            // --- B. Global Constraints (Forbidden Zones) ---
-            for constraint in &self.problem.global_constraints {
-                if let GlobalConstraint::ForbiddenZone { start, end } = constraint {
-                    if curr.start < *end && curr.end > *start {
-                        penalties += Self::PENALTY_FORBIDDEN;
-                    }
-                }
-            }
-
-            // --- C. Overlaps & Markov ---
+            // --- B. Overlaps & Markov ---
             if i > 0 {
                 let prev = &schedule_items[i - 1];
                 if curr.start < prev.end {
@@ -239,7 +248,7 @@ impl Fitness for DiemFitness {
                 }
             }
 
-            // --- D. INPUT BINDINGS (Strictly Before) ---
+            // --- C. INPUT BINDINGS (Strictly Before) ---
             for binding in &activity.input_bindings {
                 if (binding.valid_weekdays & (1 << curr.weekday)) == 0 {
                     continue;
@@ -262,7 +271,7 @@ impl Fitness for DiemFitness {
                 }
             }
 
-            // --- E. OUTPUT BINDINGS ---
+            // --- D. OUTPUT BINDINGS ---
             for binding in &activity.output_bindings {
                 if (binding.valid_weekdays & (1 << curr.weekday)) == 0 {
                     continue;
@@ -316,7 +325,165 @@ impl Fitness for DiemFitness {
             running_month_counts[activity.id] += 1;
         }
 
-        // --- 4. SOFT FREQUENCY TARGETS (Reward + Overshoot Penalty) ---
+        // --- 4. BUILD DEADLINE/PERIOD INDICES ---
+        // Prefix-style indices over event end-times for fast deadline queries.
+        let mut activity_month_end_slots = vec![Vec::<TimeSlot>::new(); num_activities];
+        let mut activity_day_end_slots = HashMap::<(usize, usize), Vec<TimeSlot>>::new();
+        let mut activity_week_end_slots = HashMap::<(usize, usize), Vec<TimeSlot>>::new();
+
+        let mut activity_duration_events = vec![Vec::<(TimeSlot, u16)>::new(); num_activities];
+        let mut category_duration_events = HashMap::<usize, Vec<(TimeSlot, u16)>>::new();
+        let mut global_duration_events =
+            Vec::<(TimeSlot, u16)>::with_capacity(schedule_items.len());
+
+        for item in &schedule_items {
+            let activity = &self.problem.activities[item.act_idx];
+            let activity_id = activity.id;
+            let end_slot = item.end.min(self.problem.total_slots);
+            let duration_slots = activity.duration_slots;
+
+            activity_month_end_slots[activity_id].push(end_slot);
+            activity_day_end_slots
+                .entry((activity_id, item.day))
+                .or_default()
+                .push(end_slot);
+            activity_week_end_slots
+                .entry((activity_id, item.week))
+                .or_default()
+                .push(end_slot);
+
+            activity_duration_events[activity_id].push((end_slot, duration_slots));
+            category_duration_events
+                .entry(activity.category_id)
+                .or_default()
+                .push((end_slot, duration_slots));
+            global_duration_events.push((end_slot, duration_slots));
+        }
+
+        for ends in &mut activity_month_end_slots {
+            ends.sort_unstable();
+        }
+        for ends in activity_day_end_slots.values_mut() {
+            ends.sort_unstable();
+        }
+        for ends in activity_week_end_slots.values_mut() {
+            ends.sort_unstable();
+        }
+
+        let activity_duration_prefix = activity_duration_events
+            .into_iter()
+            .map(DurationPrefixIndex::from_events)
+            .collect::<Vec<_>>();
+        let mut category_duration_prefix = HashMap::<usize, DurationPrefixIndex>::new();
+        for (category_id, events) in category_duration_events {
+            category_duration_prefix.insert(category_id, DurationPrefixIndex::from_events(events));
+        }
+        let global_duration_prefix = DurationPrefixIndex::from_events(global_duration_events);
+
+        // Precompute bucket totals for periodic (non-deadline) cumulative constraints.
+        let mut activity_periods = HashMap::<usize, Vec<u16>>::new();
+        let mut category_periods = HashMap::<usize, Vec<u16>>::new();
+        let mut global_periods = Vec::<u16>::new();
+
+        for constraint in &self.problem.global_constraints {
+            if let GlobalConstraint::CumulativeTime {
+                activity_id,
+                category_id,
+                period_slots,
+                deadline_end,
+                ..
+            } = constraint
+            {
+                if deadline_end.is_some() {
+                    continue;
+                }
+                match (activity_id, category_id) {
+                    (Some(aid), _) => {
+                        let periods = activity_periods.entry(*aid).or_default();
+                        if !periods.contains(period_slots) {
+                            periods.push(*period_slots);
+                        }
+                    }
+                    (None, Some(cid)) => {
+                        let periods = category_periods.entry(*cid).or_default();
+                        if !periods.contains(period_slots) {
+                            periods.push(*period_slots);
+                        }
+                    }
+                    (None, None) => {
+                        if !global_periods.contains(period_slots) {
+                            global_periods.push(*period_slots);
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut activity_period_totals = HashMap::<(usize, u16), HashMap<usize, u32>>::new();
+        for (activity_id, periods) in &activity_periods {
+            for period_slots in periods {
+                activity_period_totals.insert((*activity_id, *period_slots), HashMap::new());
+            }
+        }
+        let mut category_period_totals = HashMap::<(usize, u16), HashMap<usize, u32>>::new();
+        for (category_id, periods) in &category_periods {
+            for period_slots in periods {
+                category_period_totals.insert((*category_id, *period_slots), HashMap::new());
+            }
+        }
+        let mut global_period_totals = HashMap::<u16, HashMap<usize, u32>>::new();
+        for period_slots in &global_periods {
+            global_period_totals.insert(*period_slots, HashMap::new());
+        }
+
+        for item in &schedule_items {
+            let activity = &self.problem.activities[item.act_idx];
+            let duration = activity.duration_slots as u32;
+            let start = item.start;
+
+            if let Some(periods) = activity_periods.get(&activity.id) {
+                for period_slots in periods {
+                    let bucket = if *period_slots >= self.problem.total_slots {
+                        0
+                    } else {
+                        (start / *period_slots) as usize
+                    };
+                    if let Some(bucket_totals) =
+                        activity_period_totals.get_mut(&(activity.id, *period_slots))
+                    {
+                        *bucket_totals.entry(bucket).or_insert(0) += duration;
+                    }
+                }
+            }
+
+            if let Some(periods) = category_periods.get(&activity.category_id) {
+                for period_slots in periods {
+                    let bucket = if *period_slots >= self.problem.total_slots {
+                        0
+                    } else {
+                        (start / *period_slots) as usize
+                    };
+                    if let Some(bucket_totals) =
+                        category_period_totals.get_mut(&(activity.category_id, *period_slots))
+                    {
+                        *bucket_totals.entry(bucket).or_insert(0) += duration;
+                    }
+                }
+            }
+
+            for period_slots in &global_periods {
+                let bucket = if *period_slots >= self.problem.total_slots {
+                    0
+                } else {
+                    (start / *period_slots) as usize
+                };
+                if let Some(bucket_totals) = global_period_totals.get_mut(period_slots) {
+                    *bucket_totals.entry(bucket).or_insert(0) += duration;
+                }
+            }
+        }
+
+        // --- 5. SOFT FREQUENCY TARGETS (Reward + Overshoot Penalty) ---
         let horizon_days = (self.problem.total_slots as f32 / 96.0).max(1.0);
         for activity in &self.problem.activities {
             for target in &activity.frequency_targets {
@@ -367,20 +534,32 @@ impl Fitness for DiemFitness {
             }
         }
 
-        // --- 5. USER FREQUENCY CONSTRAINTS (RELATIVELY HARD PENALTY) ---
+        // --- 6. USER FREQUENCY CONSTRAINTS (RELATIVELY HARD PENALTY) ---
         for activity in &self.problem.activities {
             for constraint in &activity.user_frequency_constraints {
                 match constraint.scope {
                     TimeScope::SameDay => {
                         for d in 0..num_days {
-                            let actual = total_day_counts[d][activity.id];
+                            let bucket_start = (d as u16) * 96;
+                            let actual = if let Some(deadline_end) = constraint.deadline_end {
+                                if bucket_start > deadline_end {
+                                    continue;
+                                }
+                                activity_day_end_slots
+                                    .get(&(activity.id, d))
+                                    .map_or(0, |ends| count_ends_leq(ends, deadline_end))
+                            } else {
+                                total_day_counts[d][activity.id] as u32
+                            };
                             if let Some(min_count) = constraint.min_count {
+                                let min_count = min_count as u32;
                                 if actual < min_count {
                                     penalties +=
                                         (min_count - actual) as f32 * constraint.penalty_weight;
                                 }
                             }
                             if let Some(max_count) = constraint.max_count {
+                                let max_count = max_count as u32;
                                 if actual > max_count {
                                     penalties +=
                                         (actual - max_count) as f32 * constraint.penalty_weight;
@@ -390,14 +569,26 @@ impl Fitness for DiemFitness {
                     }
                     TimeScope::SameWeek => {
                         for w in 0..num_weeks {
-                            let actual = total_week_counts[w][activity.id];
+                            let bucket_start = (w as u16) * 672;
+                            let actual = if let Some(deadline_end) = constraint.deadline_end {
+                                if bucket_start > deadline_end {
+                                    continue;
+                                }
+                                activity_week_end_slots
+                                    .get(&(activity.id, w))
+                                    .map_or(0, |ends| count_ends_leq(ends, deadline_end))
+                            } else {
+                                total_week_counts[w][activity.id] as u32
+                            };
                             if let Some(min_count) = constraint.min_count {
+                                let min_count = min_count as u32;
                                 if actual < min_count {
                                     penalties +=
                                         (min_count - actual) as f32 * constraint.penalty_weight;
                                 }
                             }
                             if let Some(max_count) = constraint.max_count {
+                                let max_count = max_count as u32;
                                 if actual > max_count {
                                     penalties +=
                                         (actual - max_count) as f32 * constraint.penalty_weight;
@@ -406,14 +597,20 @@ impl Fitness for DiemFitness {
                         }
                     }
                     TimeScope::SameMonth => {
-                        let actual = total_month_counts[activity.id];
+                        let actual = if let Some(deadline_end) = constraint.deadline_end {
+                            count_ends_leq(&activity_month_end_slots[activity.id], deadline_end)
+                        } else {
+                            total_month_counts[activity.id] as u32
+                        };
                         if let Some(min_count) = constraint.min_count {
+                            let min_count = min_count as u32;
                             if actual < min_count {
                                 penalties +=
                                     (min_count - actual) as f32 * constraint.penalty_weight;
                             }
                         }
                         if let Some(max_count) = constraint.max_count {
+                            let max_count = max_count as u32;
                             if actual > max_count {
                                 penalties +=
                                     (actual - max_count) as f32 * constraint.penalty_weight;
@@ -424,27 +621,81 @@ impl Fitness for DiemFitness {
             }
         }
 
-        // --- 6. CHECK CUMULATIVE TIME CONSTRAINTS ---
-        // O(C * B_active) where B_active is number of buckets with data
+        // --- 7. CHECK CUMULATIVE TIME CONSTRAINTS ---
+        // Deadline mode uses end-time prefix sums; periodic mode uses prebuilt bucket totals.
         for constraint in &self.problem.global_constraints {
             if let GlobalConstraint::CumulativeTime {
+                activity_id,
                 category_id,
                 period_slots,
                 min_duration,
                 max_duration,
+                deadline_end,
             } = constraint
             {
-                if let Some(cat_id) = category_id {
-                    if let Some(totals) = duration_accumulators.get(&(*cat_id, *period_slots)) {
-                        for &total in totals.values() {
-                            if total < (*min_duration as u32) {
-                                penalties += Self::PENALTY_CUMULATIVE
-                                    * ((*min_duration as u32 - total) as f32);
+                if let Some(deadline) = deadline_end {
+                    let total_before_deadline: u32 = match (activity_id, category_id) {
+                        (Some(aid), Some(cid)) => {
+                            let activity_category_matches = self
+                                .problem
+                                .activities
+                                .get(*aid)
+                                .is_some_and(|activity| activity.category_id == *cid);
+                            if activity_category_matches {
+                                activity_duration_prefix
+                                    .get(*aid)
+                                    .map_or(0, |index| index.sum_leq(*deadline))
+                            } else {
+                                0
                             }
-                            if total > (*max_duration as u32) {
-                                penalties += Self::PENALTY_CUMULATIVE
-                                    * ((total - *max_duration as u32) as f32);
-                            }
+                        }
+                        (Some(aid), None) => activity_duration_prefix
+                            .get(*aid)
+                            .map_or(0, |index| index.sum_leq(*deadline)),
+                        (None, Some(cid)) => category_duration_prefix
+                            .get(cid)
+                            .map_or(0, |index| index.sum_leq(*deadline)),
+                        (None, None) => global_duration_prefix.sum_leq(*deadline),
+                    };
+
+                    if total_before_deadline < (*min_duration as u32) {
+                        penalties += Self::PENALTY_CUMULATIVE
+                            * ((*min_duration as u32 - total_before_deadline) as f32);
+                    }
+                    if total_before_deadline > (*max_duration as u32) {
+                        penalties += Self::PENALTY_CUMULATIVE
+                            * ((total_before_deadline - *max_duration as u32) as f32);
+                    }
+                    continue;
+                }
+
+                let bucket_totals = match (activity_id, category_id) {
+                    (Some(aid), Some(cid)) => {
+                        let activity_category_matches = self
+                            .problem
+                            .activities
+                            .get(*aid)
+                            .is_some_and(|activity| activity.category_id == *cid);
+                        if activity_category_matches {
+                            activity_period_totals.get(&(*aid, *period_slots))
+                        } else {
+                            None
+                        }
+                    }
+                    (Some(aid), None) => activity_period_totals.get(&(*aid, *period_slots)),
+                    (None, Some(cid)) => category_period_totals.get(&(*cid, *period_slots)),
+                    (None, None) => global_period_totals.get(period_slots),
+                };
+
+                if let Some(bucket_totals) = bucket_totals {
+                    for total in bucket_totals.values() {
+                        if *total < (*min_duration as u32) {
+                            penalties +=
+                                Self::PENALTY_CUMULATIVE * ((*min_duration as u32 - *total) as f32);
+                        }
+                        if *total > (*max_duration as u32) {
+                            penalties +=
+                                Self::PENALTY_CUMULATIVE * ((*total - *max_duration as u32) as f32);
                         }
                     }
                 }
@@ -461,7 +712,7 @@ mod tests {
     use super::*;
     use crate::solver::candidate_slots::build_candidate_start_slots;
     use crate::solver::types::{
-        Activity, ActivityType, Binding, FrequencyTarget, Problem, TimeScope,
+        Activity, ActivityType, Binding, FrequencyTarget, GlobalConstraint, Problem, TimeScope,
         UserFrequencyConstraint,
     };
     use genetic_algorithm::chromosome::Chromosome;
@@ -658,6 +909,7 @@ mod tests {
             scope: TimeScope::SameDay,
             min_count: Some(1),
             max_count: None,
+            deadline_end: None,
             penalty_weight: 500.0,
         });
 
@@ -703,6 +955,7 @@ mod tests {
             scope: TimeScope::SameDay,
             min_count: None,
             max_count: Some(0),
+            deadline_end: None,
             penalty_weight: 500.0,
         });
 
@@ -779,6 +1032,94 @@ mod tests {
         assert!(
             at_target_score > overshoot_score,
             "soft frequency targets should penalize overshoot beyond target"
+        );
+    }
+
+    #[test]
+    fn frequency_deadline_counts_only_occurrences_ending_before_deadline() {
+        let mut a = base_activity(0);
+        a.priority = 0.0;
+        a.duration_slots = 2;
+        a.user_frequency_constraints.push(UserFrequencyConstraint {
+            scope: TimeScope::SameMonth,
+            min_count: Some(1),
+            max_count: None,
+            deadline_end: Some(10),
+            penalty_weight: 500.0,
+        });
+
+        let problem = Problem {
+            activities: vec![a],
+            floating_indices: vec![0],
+            fixed_indices: vec![],
+            global_constraints: vec![],
+            heatmap: vec![],
+            markov_matrix: vec![],
+            total_slots: 96,
+        };
+
+        let candidate_slots = build_candidate_start_slots(&problem);
+        let genotype = genotype_for(&problem, &candidate_slots);
+        let by_deadline = chromosome_from_assignments(&problem, &candidate_slots, &[(8, 0)]); // ends at 10
+        let after_deadline = chromosome_from_assignments(&problem, &candidate_slots, &[(20, 0)]); // ends at 22
+
+        let mut fitness = DiemFitness::new(problem.clone(), candidate_slots.clone());
+        let by_deadline_score = fitness
+            .calculate_for_chromosome(&by_deadline, &genotype)
+            .expect("fitness should be computed");
+
+        let mut fitness = DiemFitness::new(problem, candidate_slots);
+        let after_deadline_score = fitness
+            .calculate_for_chromosome(&after_deadline, &genotype)
+            .expect("fitness should be computed");
+
+        assert!(
+            by_deadline_score > after_deadline_score,
+            "frequency deadline mode should only count occurrences finishing by deadline_end"
+        );
+    }
+
+    #[test]
+    fn cumulative_deadline_enforces_min_duration_before_deadline() {
+        let mut a = base_activity(0);
+        a.priority = 0.0;
+        a.duration_slots = 4;
+
+        let problem = Problem {
+            activities: vec![a],
+            floating_indices: vec![0],
+            fixed_indices: vec![],
+            global_constraints: vec![GlobalConstraint::CumulativeTime {
+                activity_id: Some(0),
+                category_id: None,
+                period_slots: 96,
+                min_duration: 4,
+                max_duration: 32,
+                deadline_end: Some(20),
+            }],
+            heatmap: vec![],
+            markov_matrix: vec![],
+            total_slots: 96,
+        };
+
+        let candidate_slots = build_candidate_start_slots(&problem);
+        let genotype = genotype_for(&problem, &candidate_slots);
+        let meets_deadline = chromosome_from_assignments(&problem, &candidate_slots, &[(8, 0)]); // ends at 12
+        let misses_deadline = chromosome_from_assignments(&problem, &candidate_slots, &[(24, 0)]); // ends at 28
+
+        let mut fitness = DiemFitness::new(problem.clone(), candidate_slots.clone());
+        let meets_score = fitness
+            .calculate_for_chromosome(&meets_deadline, &genotype)
+            .expect("fitness should be computed");
+
+        let mut fitness = DiemFitness::new(problem, candidate_slots);
+        let misses_score = fitness
+            .calculate_for_chromosome(&misses_deadline, &genotype)
+            .expect("fitness should be computed");
+
+        assert!(
+            meets_score > misses_score,
+            "cumulative deadline mode should enforce minimum duration before deadline_end"
         );
     }
 
