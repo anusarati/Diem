@@ -64,6 +64,7 @@ export interface CumulativeTimeValue {
 	periodSlots: number;
 	minDuration: number;
 	maxDuration: number;
+	deadlineEndSlot?: number;
 }
 
 export interface UserSequenceValue {
@@ -77,6 +78,7 @@ export interface FrequencyGoalValue {
 	scope: TimeScope;
 	minCount?: number;
 	maxCount?: number;
+	deadlineEndSlot?: number;
 }
 
 // --- Learning & Mining Types ---

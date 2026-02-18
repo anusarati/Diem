@@ -23,6 +23,7 @@ const cumulativeTimeValueType = arkType({
 	periodSlots: "number",
 	minDuration: "number",
 	maxDuration: "number",
+	"deadlineEndSlot?": "number",
 });
 
 const userSequenceBaseType = arkType({
@@ -34,6 +35,7 @@ const frequencyGoalValueType = arkType({
 	scope: `"${TimeScope.SAME_DAY}" | "${TimeScope.SAME_WEEK}" | "${TimeScope.SAME_MONTH}"`,
 	"minCount?": "number",
 	"maxCount?": "number",
+	"deadlineEndSlot?": "number",
 });
 
 export interface ConstraintMapperInput {
@@ -71,10 +73,15 @@ const asCumulative = (value: unknown): CumulativeTimeValue | null => {
 		return null;
 	}
 	const typed = value as CumulativeTimeValue;
+	const deadlineEndSlot =
+		typeof typed.deadlineEndSlot === "number"
+			? Math.max(0, Math.floor(typed.deadlineEndSlot))
+			: undefined;
 	return {
 		periodSlots: Math.max(1, Math.floor(typed.periodSlots)),
 		minDuration: Math.max(0, Math.floor(typed.minDuration)),
 		maxDuration: Math.max(0, Math.floor(typed.maxDuration)),
+		deadlineEndSlot,
 	};
 };
 
@@ -110,6 +117,10 @@ const asFrequency = (value: unknown): FrequencyGoalValue | null => {
 		typeof typed.maxCount === "number"
 			? Math.max(0, Math.floor(typed.maxCount))
 			: undefined;
+	const deadlineEndSlot =
+		typeof typed.deadlineEndSlot === "number"
+			? Math.max(0, Math.floor(typed.deadlineEndSlot))
+			: undefined;
 	if (minCount === undefined && maxCount === undefined) {
 		return null;
 	}
@@ -120,6 +131,7 @@ const asFrequency = (value: unknown): FrequencyGoalValue | null => {
 		scope: typed.scope,
 		minCount,
 		maxCount,
+		deadlineEndSlot,
 	};
 };
 
@@ -159,15 +171,32 @@ export class ConstraintMapper {
 						break;
 					}
 
+					const activityId = constraint.activityId
+						? (input.activityIdToNumeric.get(constraint.activityId) ?? null)
+						: null;
 					const categoryId = constraint.categoryId
 						? (input.categoryIdToNumeric.get(constraint.categoryId) ?? null)
 						: null;
+					if (constraint.activityId && activityId === null) {
+						warnings.push(
+							`Skipping cumulative-time constraint with unknown activity: ${constraint.id}`,
+						);
+						break;
+					}
+					if (constraint.categoryId && categoryId === null) {
+						warnings.push(
+							`Skipping cumulative-time constraint with unknown category: ${constraint.id}`,
+						);
+						break;
+					}
 					globalConstraints.push({
 						CumulativeTime: {
+							activity_id: activityId,
 							category_id: categoryId,
 							period_slots: value.periodSlots,
 							min_duration: value.minDuration,
 							max_duration: value.maxDuration,
+							deadline_end: value.deadlineEndSlot ?? null,
 						},
 					});
 					break;
@@ -260,6 +289,7 @@ export class ConstraintMapper {
 						scope: value.scope,
 						min_count: value.minCount ?? null,
 						max_count: value.maxCount ?? null,
+						deadline_end: value.deadlineEndSlot ?? null,
 						penalty_weight: USER_FREQUENCY_PENALTY_WEIGHT,
 					});
 					break;

@@ -34,6 +34,8 @@ pub struct UserFrequencyConstraint {
     pub scope: TimeScope,
     pub min_count: Option<u16>,
     pub max_count: Option<u16>,
+    #[serde(default)]
+    pub deadline_end: Option<TimeSlot>,
     pub penalty_weight: f32,
 }
 
@@ -76,10 +78,15 @@ pub enum GlobalConstraint {
         end: TimeSlot,
     },
     CumulativeTime {
+        #[serde(default)]
+        activity_id: Option<ActivityId>,
+        #[serde(default)]
         category_id: Option<CategoryId>,
         period_slots: u16,
         min_duration: u16,
         max_duration: u16,
+        #[serde(default)]
+        deadline_end: Option<TimeSlot>,
     },
 }
 
