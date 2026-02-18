@@ -7,6 +7,8 @@ use std::collections::HashMap;
 #[derive(Clone, Debug)]
 pub struct DiemFitness {
     pub problem: Problem,
+    pub candidate_start_slots: Vec<TimeSlot>,
+    pub no_activity_allele: u16,
     pub heatmap_lookup: HashMap<(ActivityId, TimeSlot), f32>,
     pub markov_lookup: HashMap<(ActivityId, ActivityId), f32>,
 }
@@ -21,13 +23,19 @@ impl DiemFitness {
     const WEIGHT_PRIORITY: f32 = 10.0;
     const WEIGHT_HEATMAP: f32 = 5.0;
     const WEIGHT_MARKOV: f32 = 5.0;
+    const FREQUENCY_OVERSHOOT_MULTIPLIER: f32 = 6.0;
+    const REWARD_NO_ACTIVITY: f32 = 0.01;
+    const PRIORITY_REPEAT_DECAY: f32 = 0.65;
 
     const MARKOV_GAP_TOLERANCE: u16 = 2; // 30 minutes
 
-    pub fn new(problem: Problem) -> Self {
+    pub fn new(problem: Problem, candidate_start_slots: Vec<TimeSlot>) -> Self {
+        let no_activity_allele = u16::try_from(problem.floating_indices.len()).unwrap_or(u16::MAX);
         let (heatmap_lookup, markov_lookup) = problem.build_lookup_maps();
         Self {
             problem,
+            candidate_start_slots,
+            no_activity_allele,
             heatmap_lookup,
             markov_lookup,
         }
@@ -50,6 +58,7 @@ impl Fitness for DiemFitness {
         let num_activities = self.problem.activities.len();
         let num_days = (self.problem.total_slots / 96) as usize + 1;
         let num_weeks = (self.problem.total_slots / 672) as usize + 1;
+        let floating_count = self.problem.floating_indices.len();
 
         // --- 0. SETUP CUMULATIVE TRACKING ---
         // Identify which (Category, Period) pairs need tracking to avoid O(C*N) lookups later.
@@ -80,6 +89,7 @@ impl Fitness for DiemFitness {
         let mut total_day_counts = vec![vec![0u16; num_activities]; num_days];
         let mut total_week_counts = vec![vec![0u16; num_activities]; num_weeks];
         let mut total_month_counts = vec![0u16; num_activities];
+        let mut priority_occurrence_counts = vec![0u16; num_activities];
 
         #[derive(Debug)]
         struct ScheduledItem {
@@ -94,6 +104,7 @@ impl Fitness for DiemFitness {
         let total_items_cap =
             self.problem.floating_indices.len() + self.problem.fixed_indices.len();
         let mut schedule_items: Vec<ScheduledItem> = Vec::with_capacity(total_items_cap);
+        let mut no_activity_count: u32 = 0;
 
         let mut register_item = |act_idx: usize, start_time: u16| {
             let activity = &self.problem.activities[act_idx];
@@ -116,8 +127,12 @@ impl Fitness for DiemFitness {
             }
             total_month_counts[activity.id] += 1;
 
-            // Score: Priority & Heatmap
-            score += activity.priority * Self::WEIGHT_PRIORITY;
+            // Score: Priority (with diminishing returns) & Heatmap.
+            let occurrence_index = priority_occurrence_counts[activity.id] as i32;
+            let repeat_multiplier = Self::PRIORITY_REPEAT_DECAY.powi(occurrence_index);
+            score += activity.priority * Self::WEIGHT_PRIORITY * repeat_multiplier;
+            priority_occurrence_counts[activity.id] =
+                priority_occurrence_counts[activity.id].saturating_add(1);
             if let Some(prob) = self.heatmap_lookup.get(&(activity.id, start_time)) {
                 score += prob * Self::WEIGHT_HEATMAP;
             }
@@ -132,12 +147,22 @@ impl Fitness for DiemFitness {
             });
         };
 
-        // Process Genes
-        for (gene_idx, &start_time) in genes.iter().enumerate() {
-            if gene_idx >= self.problem.floating_indices.len() {
+        // Process Genes (slot-indexed; activity choice encoded as allele).
+        for (gene_idx, &activity_choice) in genes.iter().enumerate() {
+            if gene_idx >= self.candidate_start_slots.len() {
                 break;
             }
-            register_item(self.problem.floating_indices[gene_idx], start_time);
+            if activity_choice == self.no_activity_allele {
+                no_activity_count = no_activity_count.saturating_add(1);
+                continue;
+            }
+            let floating_choice = activity_choice as usize;
+            if floating_choice >= floating_count {
+                continue;
+            }
+            let start_time = self.candidate_start_slots[gene_idx];
+            let act_idx = self.problem.floating_indices[floating_choice];
+            register_item(act_idx, start_time);
         }
 
         // Process Fixed
@@ -146,6 +171,8 @@ impl Fitness for DiemFitness {
                 register_item(act_idx, start);
             }
         }
+        drop(register_item);
+        score += (no_activity_count as f32) * Self::REWARD_NO_ACTIVITY;
 
         // --- 2. SORT (O(N log N)) ---
         schedule_items.sort_unstable_by_key(|k| k.start);
@@ -289,31 +316,51 @@ impl Fitness for DiemFitness {
             running_month_counts[activity.id] += 1;
         }
 
-        // --- 4. SOFT FREQUENCY TARGETS (Reward) ---
+        // --- 4. SOFT FREQUENCY TARGETS (Reward + Overshoot Penalty) ---
+        let horizon_days = (self.problem.total_slots as f32 / 96.0).max(1.0);
         for activity in &self.problem.activities {
             for target in &activity.frequency_targets {
+                let reward_for_count = |actual: u16| -> f32 {
+                    if target.target_count == 0 {
+                        return 0.0;
+                    }
+                    let covered = actual.min(target.target_count) as f32;
+                    let target_count = target.target_count as f32;
+                    target.weight * (covered / target_count)
+                };
+
                 match target.scope {
                     TimeScope::SameDay => {
                         for d in 0..num_days {
                             let actual = total_day_counts[d][activity.id];
-                            if actual <= target.target_count {
-                                score += (actual as f32) * target.weight;
+                            score += reward_for_count(actual);
+                            if actual > target.target_count {
+                                let excess = (actual - target.target_count) as f32;
+                                penalties +=
+                                    target.weight * Self::FREQUENCY_OVERSHOOT_MULTIPLIER * excess;
                             }
-                            // No reward if higher
                         }
                     }
                     TimeScope::SameWeek => {
                         for w in 0..num_weeks {
                             let actual = total_week_counts[w][activity.id];
-                            if actual <= target.target_count {
-                                score += (actual as f32) * target.weight;
+                            score += reward_for_count(actual);
+                            if actual > target.target_count {
+                                let excess = (actual - target.target_count) as f32;
+                                penalties += target.weight
+                                    * Self::FREQUENCY_OVERSHOOT_MULTIPLIER
+                                    * (excess / 7.0);
                             }
                         }
                     }
                     TimeScope::SameMonth => {
                         let actual = total_month_counts[activity.id];
-                        if actual <= target.target_count {
-                            score += (actual as f32) * target.weight;
+                        score += reward_for_count(actual);
+                        if actual > target.target_count {
+                            let excess = (actual - target.target_count) as f32;
+                            penalties += target.weight
+                                * Self::FREQUENCY_OVERSHOOT_MULTIPLIER
+                                * (excess / horizon_days);
                         }
                     }
                 }
@@ -412,12 +459,14 @@ impl Fitness for DiemFitness {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::solver::candidate_slots::build_candidate_start_slots;
     use crate::solver::types::{
         Activity, ActivityType, Binding, FrequencyTarget, Problem, TimeScope,
         UserFrequencyConstraint,
     };
     use genetic_algorithm::chromosome::Chromosome;
     use genetic_algorithm::genotype::{Genotype, RangeGenotype};
+    use std::collections::HashMap;
 
     fn base_activity(id: usize) -> Activity {
         Activity {
@@ -434,12 +483,37 @@ mod tests {
         }
     }
 
-    fn genotype_for(genes_size: usize, total_slots: u16) -> RangeGenotype<u16> {
+    fn no_activity_allele(problem: &Problem) -> u16 {
+        u16::try_from(problem.floating_indices.len())
+            .expect("floating activity count must fit in u16 for tests")
+    }
+
+    fn genotype_for(problem: &Problem, candidate_slots: &[u16]) -> RangeGenotype<u16> {
         RangeGenotype::builder()
-            .with_genes_size(genes_size)
-            .with_allele_range(0..=total_slots)
+            .with_genes_size(candidate_slots.len())
+            .with_allele_range(0..=no_activity_allele(problem))
             .build()
             .expect("genotype should build for tests")
+    }
+
+    fn chromosome_from_assignments(
+        problem: &Problem,
+        candidate_slots: &[u16],
+        assignments: &[(u16, u16)],
+    ) -> Chromosome<u16> {
+        let sentinel = no_activity_allele(problem);
+        let mut genes = vec![sentinel; candidate_slots.len()];
+        let mut slot_to_index = HashMap::<u16, usize>::new();
+        for (idx, slot) in candidate_slots.iter().enumerate() {
+            slot_to_index.insert(*slot, idx);
+        }
+        for (slot, floating_choice) in assignments {
+            let idx = *slot_to_index
+                .get(slot)
+                .unwrap_or_else(|| panic!("slot {} is not in candidate slot set", slot));
+            genes[idx] = *floating_choice;
+        }
+        Chromosome::new(genes)
     }
 
     #[test]
@@ -466,16 +540,18 @@ mod tests {
             total_slots: 96,
         };
 
-        let genotype = genotype_for(2, problem.total_slots);
-        let mut fitness = DiemFitness::new(problem.clone());
-        let valid = Chromosome::new(vec![5, 20]);
-        let invalid = Chromosome::new(vec![20, 5]);
+        let candidate_slots = build_candidate_start_slots(&problem);
+        let genotype = genotype_for(&problem, &candidate_slots);
+        let valid = chromosome_from_assignments(&problem, &candidate_slots, &[(5, 0), (20, 1)]);
+        let invalid = chromosome_from_assignments(&problem, &candidate_slots, &[(20, 0), (5, 1)]);
+
+        let mut fitness = DiemFitness::new(problem.clone(), candidate_slots.clone());
 
         let valid_score = fitness
             .calculate_for_chromosome(&valid, &genotype)
             .expect("fitness should be computed");
 
-        let mut fitness = DiemFitness::new(problem);
+        let mut fitness = DiemFitness::new(problem, candidate_slots);
         let invalid_score = fitness
             .calculate_for_chromosome(&invalid, &genotype)
             .expect("fitness should be computed");
@@ -511,10 +587,12 @@ mod tests {
         };
 
         // Day 1 (Tuesday in solver's weekday mapping), so Monday-only binding is ignored.
-        let genotype = genotype_for(2, problem.total_slots);
-        let chromosome = Chromosome::new(vec![96 + 20, 96 + 5]);
+        let candidate_slots = build_candidate_start_slots(&problem);
+        let genotype = genotype_for(&problem, &candidate_slots);
+        let chromosome =
+            chromosome_from_assignments(&problem, &candidate_slots, &[(96 + 20, 0), (96 + 5, 1)]);
 
-        let mut with_mask = DiemFitness::new(problem.clone());
+        let mut with_mask = DiemFitness::new(problem.clone(), candidate_slots.clone());
         let masked_score = with_mask
             .calculate_for_chromosome(&chromosome, &genotype)
             .expect("fitness should be computed");
@@ -522,7 +600,7 @@ mod tests {
         // Same binding but applicable every weekday should apply penalty.
         let mut no_mask_problem = problem;
         no_mask_problem.activities[1].input_bindings[0].valid_weekdays = 0b1111111;
-        let mut without_mask = DiemFitness::new(no_mask_problem);
+        let mut without_mask = DiemFitness::new(no_mask_problem, candidate_slots);
         let unmasked_score = without_mask
             .calculate_for_chromosome(&chromosome, &genotype)
             .expect("fitness should be computed");
@@ -550,16 +628,18 @@ mod tests {
             total_slots: 96,
         };
 
-        let genotype = genotype_for(2, problem.total_slots);
-        let within_gap = Chromosome::new(vec![0, 4]); // gap = 2 slots after A ends
-        let outside_gap = Chromosome::new(vec![0, 5]); // gap = 3 slots
+        let candidate_slots = build_candidate_start_slots(&problem);
+        let genotype = genotype_for(&problem, &candidate_slots);
+        let within_gap = chromosome_from_assignments(&problem, &candidate_slots, &[(0, 0), (4, 1)]);
+        let outside_gap =
+            chromosome_from_assignments(&problem, &candidate_slots, &[(0, 0), (5, 1)]);
 
-        let mut fitness = DiemFitness::new(problem.clone());
+        let mut fitness = DiemFitness::new(problem.clone(), candidate_slots.clone());
         let within_score = fitness
             .calculate_for_chromosome(&within_gap, &genotype)
             .expect("fitness should be computed");
 
-        let mut fitness = DiemFitness::new(problem);
+        let mut fitness = DiemFitness::new(problem, candidate_slots);
         let outside_score = fitness
             .calculate_for_chromosome(&outside_gap, &genotype)
             .expect("fitness should be computed");
@@ -588,13 +668,14 @@ mod tests {
             global_constraints: vec![],
             heatmap: vec![],
             markov_matrix: vec![],
-            total_slots: 96 * 2,
+            total_slots: 96,
         };
 
-        let genotype = genotype_for(1, problem.total_slots);
-        let chromosome = Chromosome::new(vec![2]);
+        let candidate_slots = build_candidate_start_slots(&problem);
+        let genotype = genotype_for(&problem, &candidate_slots);
+        let chromosome = chromosome_from_assignments(&problem, &candidate_slots, &[(2, 0)]);
 
-        let mut fitness = DiemFitness::new(problem.clone());
+        let mut fitness = DiemFitness::new(problem.clone(), candidate_slots.clone());
         let constrained_score = fitness
             .calculate_for_chromosome(&chromosome, &genotype)
             .expect("fitness should be computed");
@@ -603,7 +684,7 @@ mod tests {
         unconstrained.activities[0]
             .user_frequency_constraints
             .clear();
-        let mut fitness = DiemFitness::new(unconstrained);
+        let mut fitness = DiemFitness::new(unconstrained, candidate_slots);
         let unconstrained_score = fitness
             .calculate_for_chromosome(&chromosome, &genotype)
             .expect("fitness should be computed");
@@ -635,10 +716,11 @@ mod tests {
             total_slots: 96,
         };
 
-        let genotype = genotype_for(1, problem.total_slots);
-        let chromosome = Chromosome::new(vec![0]);
+        let candidate_slots = build_candidate_start_slots(&problem);
+        let genotype = genotype_for(&problem, &candidate_slots);
+        let chromosome = chromosome_from_assignments(&problem, &candidate_slots, &[(0, 0)]);
 
-        let mut fitness = DiemFitness::new(problem.clone());
+        let mut fitness = DiemFitness::new(problem.clone(), candidate_slots.clone());
         let constrained_score = fitness
             .calculate_for_chromosome(&chromosome, &genotype)
             .expect("fitness should be computed");
@@ -647,7 +729,7 @@ mod tests {
         unconstrained.activities[0]
             .user_frequency_constraints
             .clear();
-        let mut fitness = DiemFitness::new(unconstrained);
+        let mut fitness = DiemFitness::new(unconstrained, candidate_slots);
         let unconstrained_score = fitness
             .calculate_for_chromosome(&chromosome, &genotype)
             .expect("fitness should be computed");
@@ -655,6 +737,129 @@ mod tests {
         assert!(
             constrained_score < unconstrained_score,
             "maximum frequency constraint should penalize overshoot"
+        );
+    }
+
+    #[test]
+    fn soft_frequency_target_penalizes_overshoot() {
+        let mut a = base_activity(0);
+        a.priority = 0.0;
+        a.frequency_targets.push(FrequencyTarget {
+            scope: TimeScope::SameDay,
+            target_count: 1,
+            weight: 10.0,
+        });
+
+        let problem = Problem {
+            activities: vec![a],
+            floating_indices: vec![0],
+            fixed_indices: vec![],
+            global_constraints: vec![],
+            heatmap: vec![],
+            markov_matrix: vec![],
+            total_slots: 96,
+        };
+
+        let candidate_slots = build_candidate_start_slots(&problem);
+        let genotype = genotype_for(&problem, &candidate_slots);
+        let at_target = chromosome_from_assignments(&problem, &candidate_slots, &[(0, 0)]);
+        let overshoot =
+            chromosome_from_assignments(&problem, &candidate_slots, &[(0, 0), (4, 0), (8, 0)]);
+
+        let mut fitness = DiemFitness::new(problem.clone(), candidate_slots.clone());
+        let at_target_score = fitness
+            .calculate_for_chromosome(&at_target, &genotype)
+            .expect("fitness should be computed");
+
+        let mut fitness = DiemFitness::new(problem, candidate_slots);
+        let overshoot_score = fitness
+            .calculate_for_chromosome(&overshoot, &genotype)
+            .expect("fitness should be computed");
+
+        assert!(
+            at_target_score > overshoot_score,
+            "soft frequency targets should penalize overshoot beyond target"
+        );
+    }
+
+    #[test]
+    fn priority_decay_reduces_repeat_incentive() {
+        let mut a = base_activity(0);
+        a.priority = 1.0;
+
+        let problem = Problem {
+            activities: vec![a],
+            floating_indices: vec![0],
+            fixed_indices: vec![],
+            global_constraints: vec![],
+            heatmap: vec![],
+            markov_matrix: vec![],
+            total_slots: 96,
+        };
+
+        let candidate_slots = build_candidate_start_slots(&problem);
+        let genotype = genotype_for(&problem, &candidate_slots);
+        let one_occurrence = chromosome_from_assignments(&problem, &candidate_slots, &[(0, 0)]);
+        let two_occurrences =
+            chromosome_from_assignments(&problem, &candidate_slots, &[(0, 0), (10, 0)]);
+
+        let mut fitness = DiemFitness::new(problem.clone(), candidate_slots.clone());
+        let one_score = fitness
+            .calculate_for_chromosome(&one_occurrence, &genotype)
+            .expect("fitness should be computed");
+
+        let mut fitness = DiemFitness::new(problem, candidate_slots);
+        let two_score = fitness
+            .calculate_for_chromosome(&two_occurrences, &genotype)
+            .expect("fitness should be computed");
+
+        assert!(
+            two_score > one_score,
+            "second occurrence should still add reward"
+        );
+        assert!(
+            two_score - one_score < one_score,
+            "marginal reward for repeat should be smaller than first reward"
+        );
+    }
+
+    #[test]
+    fn no_activity_sentinel_adds_small_reward() {
+        let mut a = base_activity(0);
+        a.priority = 1.0;
+        let problem = Problem {
+            activities: vec![a],
+            floating_indices: vec![0],
+            fixed_indices: vec![],
+            global_constraints: vec![],
+            heatmap: vec![],
+            markov_matrix: vec![],
+            total_slots: 200,
+        };
+
+        let candidate_slots = build_candidate_start_slots(&problem);
+        let genotype = genotype_for(&problem, &candidate_slots);
+        let sentinel = no_activity_allele(&problem);
+        let all_sentinel = Chromosome::new(vec![sentinel; candidate_slots.len()]);
+        let one_event = chromosome_from_assignments(&problem, &candidate_slots, &[(0, 0)]);
+
+        let mut fitness = DiemFitness::new(problem.clone(), candidate_slots.clone());
+        let sentinel_score = fitness
+            .calculate_for_chromosome(&all_sentinel, &genotype)
+            .expect("fitness should be computed");
+
+        let mut fitness = DiemFitness::new(problem, candidate_slots);
+        let event_score = fitness
+            .calculate_for_chromosome(&one_event, &genotype)
+            .expect("fitness should be computed");
+
+        assert!(
+            sentinel_score > 0,
+            "no-activity chromosome should receive miniscule stability reward"
+        );
+        assert!(
+            event_score >= sentinel_score,
+            "no-activity reward must stay tiny and should not dominate actual scheduling"
         );
     }
 }

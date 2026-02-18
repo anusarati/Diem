@@ -28,6 +28,7 @@ Scenario activities are intentionally realistic:
 3. `Inbox & Admin` (floating)
 4. `Team Workshop (Fixed)` (fixed)
 5. `Spin Class (Fixed)` (fixed)
+6. `Client Onsite (Fixed)` (fixed, Day 2)
 
 The scenario also prints hard/soft rules in plain English, including:
 
@@ -35,19 +36,22 @@ The scenario also prints hard/soft rules in plain English, including:
 2. Fixed events as locked placements.
 3. Whether the hard user frequency rule is enabled for that scenario.
 4. Soft Markov and heatmap preferences.
+5. Learned soft frequency targets per floating activity (for example: workout around 1/day).
 
 Expected behavior:
 
 1. Hard daily frequency for `Workout Session` is satisfied in Scenario A.
-2. In most runs, `Workout Session` placement differs between Scenario A and B, showing hard constraints dominate when enabled.
+2. Day 2 has a narrow evening window due fixed + forbidden constraints; this creates a real hard-vs-soft tradeoff.
+3. In Scenario A, hard mode forces a Day-2 workout.
+4. In Scenario B, soft mode typically skips Day-2 workout and uses the slot for another activity.
+5. Learned frequency targets keep repeated floating activity counts in a realistic range (instead of runaway repeats).
+6. The output includes a floating occurrence summary so repeated template scheduling is directly visible.
+7. The output prints `solve attempts`; hard mode may retry a few times to reduce GA stochastic misses while preserving the same scenario constraints.
 
-The CLI prints workout counts in three channels so the output is unambiguous:
+The CLI prints per-day counts for:
 
-1. `fixed + flexible`
-2. `flexible only`
-3. `fixed only`
-
-In this scenario, `Spin Class (Fixed)` and `Workout Session (Flexible)` share the workout activity id, so both contribute to the hard daily count.
+1. `Workout Session (Flexible)`
+2. `Spin Class (Fixed)`
 
 ## PASS/FAIL Notes
 
