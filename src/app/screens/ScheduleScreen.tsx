@@ -7,7 +7,6 @@ import { AddActivitySheet } from "../components/AddActivitySheet";
 import { SegmentedControl } from "../components/SegmentedControl";
 import type { TimeBlockProps } from "../components/TimeBlock";
 import { WeeklyView } from "../components/WeeklyView";
-import { ROUTES } from "../constants/routes";
 import { colors, spacing } from "../theme";
 import type { AppRoute } from "../types";
 
@@ -161,7 +160,7 @@ const getMonday = (d: Date) => {
 	return new Date(d.setDate(diff));
 };
 
-export function ScheduleScreen({ onNavigate }: Props) {
+export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	const [activities, setActivities] =
 		useState<TimeBlockProps[]>(INITIAL_ACTIVITIES);
 	const [isAddSheetVisible, setIsAddSheetVisible] = useState(false);
@@ -393,28 +392,6 @@ export function ScheduleScreen({ onNavigate }: Props) {
 					</Pressable>
 				</View>
 
-				{/* Bottom Nav */}
-				<View style={styles.nav}>
-					<Pressable
-						onPress={() => onNavigate(ROUTES.HOME)}
-						style={styles.navBtn}
-					>
-						<Text style={styles.navIcon}>🏠</Text>
-					</Pressable>
-					<Pressable onPress={() => {}} style={styles.navBtn}>
-						<Text style={[styles.navIcon, styles.navIconActive]}>📅</Text>
-					</Pressable>
-					<Pressable
-						onPress={() => onNavigate(ROUTES.ANALYSIS)}
-						style={styles.navBtn}
-					>
-						<Text style={styles.navIcon}>📊</Text>
-					</Pressable>
-					<Pressable onPress={() => {}} style={styles.navBtn}>
-						<Text style={styles.navIcon}>👤</Text>
-					</Pressable>
-				</View>
-
 				{/* Add/Edit Modal */}
 				<AddActivitySheet
 					visible={isAddSheetVisible}
@@ -466,7 +443,7 @@ const styles = StyleSheet.create({
 	},
 	fabWrap: {
 		position: "absolute",
-		bottom: 96,
+		bottom: spacing.xxl,
 		right: spacing.xl,
 		alignSelf: "flex-end",
 	},
@@ -485,21 +462,4 @@ const styles = StyleSheet.create({
 	},
 	fabPressed: { opacity: 0.9, transform: [{ scale: 0.95 }] },
 	fabIcon: { fontSize: 28, color: colors.white, fontWeight: "300" },
-	nav: {
-		position: "absolute",
-		bottom: 0,
-		left: 0,
-		right: 0,
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		paddingHorizontal: spacing.xxl,
-		paddingVertical: spacing.xl,
-		backgroundColor: "rgba(255,255,255,0.9)",
-		borderTopWidth: 1,
-		borderTopColor: colors.slate100,
-	},
-	navBtn: { padding: spacing.sm },
-	navIcon: { fontSize: 24, color: colors.slate300 },
-	navIconActive: { color: colors.primary },
 });
