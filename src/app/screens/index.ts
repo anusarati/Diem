@@ -3,3 +3,5 @@ export { HomeScreen } from "./HomeScreen";
 export { LoginScreen } from "./LoginScreen";
 export { ProfileScreen } from "./ProfileScreen";
 export { RegisterScreen } from "./RegisterScreen";
+export { ScheduleScreen } from "./ScheduleScreen";
+export { SettingsScreen } from "./SettingsScreen";

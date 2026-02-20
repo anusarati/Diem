@@ -2,13 +2,21 @@
 	"expo": {
 		"name": "Diem",
 		"slug": "diem",
+		"newArchEnabled": true,
 		"version": "1.0.0",
 		"orientation": "portrait",
 		"userInterfaceStyle": "light",
-		"splash": { "backgroundColor": "#F9FBFB" },
-		"ios": { "supportsTablet": true, "bundleIdentifier": "com.diem.app" },
+		"splash": {
+			"backgroundColor": "#F9FBFB"
+		},
+		"ios": {
+			"supportsTablet": true,
+			"bundleIdentifier": "com.arshiyasalehi.diemapp"
+		},
 		"android": {
-			"adaptiveIcon": { "backgroundColor": "#F9FBFB" },
+			"adaptiveIcon": {
+				"backgroundColor": "#F9FBFB"
+			},
 			"package": "com.diem.app"
 		}
 	}
