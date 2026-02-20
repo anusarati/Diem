@@ -9,6 +9,7 @@ import {
 	Text,
 	View,
 } from "react-native";
+import { NowIndicator } from "../../features/timeline/components/NowIndicator";
 import { colors, spacing } from "../theme";
 import type { TimeBlockProps } from "./TimeBlock";
 
@@ -332,6 +333,30 @@ export function WeeklyView({
 									/>
 								);
 							})}
+
+						{/* Now Indicator */}
+						{(() => {
+							const now = new Date();
+							// Find if 'now' is within the week range [weekStartDate, weekStartDate + 7]
+							const start = new Date(weekStartDate);
+							start.setHours(0, 0, 0, 0);
+							const end = new Date(start);
+							end.setDate(start.getDate() + 7);
+
+							if (now >= start && now < end) {
+								const dayIndex = (now.getDay() + 6) % 7; // 0=Mon, 6=Sun
+								const left = dayIndex * columnWidth;
+								return (
+									<NowIndicator
+										hourHeight={HOUR_HEIGHT}
+										startHour={startHour}
+										width={columnWidth}
+										left={left}
+									/>
+								);
+							}
+							return null;
+						})()}
 					</View>
 				</View>
 			</View>

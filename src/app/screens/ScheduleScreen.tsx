@@ -364,6 +364,9 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 						activities={currentDayActivities as any[]}
 						onActivityPress={handleActivityPress}
 						onUpdateActivity={handleUpdateTime}
+						showNowIndicator={
+							selectedDay === DAYS[(new Date().getDay() + 6) % 7]
+						}
 					/>
 				) : (
 					<WeeklyView

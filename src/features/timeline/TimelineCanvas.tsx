@@ -13,12 +13,14 @@ type Props = {
 	activities: Activity[];
 	onUpdateActivity?: (id: string, newStartTime: string) => void;
 	onActivityPress?: (id: string) => void;
+	showNowIndicator?: boolean;
 };
 
 export function TimelineCanvas({
 	activities,
 	onUpdateActivity,
 	onActivityPress,
+	showNowIndicator = true,
 }: Props) {
 	const hours = Array.from(
 		{ length: END_HOUR - START_HOUR },
@@ -66,7 +68,9 @@ export function TimelineCanvas({
 				))}
 
 				{/* Now Indicator */}
-				<NowIndicator hourHeight={HOUR_HEIGHT} startHour={START_HOUR} />
+				{showNowIndicator && (
+					<NowIndicator hourHeight={HOUR_HEIGHT} startHour={START_HOUR} />
+				)}
 
 				{/* Activities Layer */}
 				{activities.map((activity) => (

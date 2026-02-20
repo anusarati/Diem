@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, type ViewStyle } from "react-native";
 import Animated, {
 	useAnimatedStyle,
 	useSharedValue,
@@ -10,9 +10,11 @@ import { colors } from "../../../app/theme";
 type Props = {
 	hourHeight: number;
 	startHour: number;
+	width?: ViewStyle["width"];
+	left?: number;
 };
 
-export function NowIndicator({ hourHeight, startHour }: Props) {
+export function NowIndicator({ hourHeight, startHour, width, left }: Props) {
 	const top = useSharedValue(0);
 
 	useEffect(() => {
@@ -32,6 +34,8 @@ export function NowIndicator({ hourHeight, startHour }: Props) {
 	const animatedStyle = useAnimatedStyle(() => ({
 		top: top.value,
 		opacity: top.value < 0 ? 0 : 1,
+		left: left ?? 0,
+		width: width ?? "100%",
 	}));
 
 	return (
