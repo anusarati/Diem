@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { BottomNav } from "../components/BottomNav";
 import { ROUTES } from "../constants/routes";
 import { AnalysisScreen } from "../screens/AnalysisScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
-import { colors } from "../theme";
+import { ScheduleScreen } from "../screens/ScheduleScreen";
 import type { AppRoute } from "../types";
 
 type Props = {
@@ -29,13 +29,7 @@ export function AppNavigator({ onLogout }: Props) {
 			)}
 			{currentRoute === ROUTES.PROFILE && <ProfileScreen onLogout={onLogout} />}
 			{currentRoute === ROUTES.CALENDAR && (
-				<View
-					style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-				>
-					<Text style={{ fontSize: 16, color: colors.slate500 }}>
-						Coming soon
-					</Text>
-				</View>
+				<ScheduleScreen onNavigate={handleNavigate} />
 			)}
 			{showBottomNav && (
 				<BottomNav currentRoute={currentRoute} onNavigate={handleNavigate} />
