@@ -6,69 +6,82 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
-import type { ActivityFormData } from "../hooks/useActivityValidation";
+import {
+	type ActivityFormData,
+	useActivityValidation,
+} from "../hooks/useActivityValidation";
+import { CategoryManager } from "./CategoryManager";
 import { ConstraintToggle } from "./ConstraintToggle";
 import { PrioritySelector } from "./PrioritySelector";
-import { RecurrenceEditor, type RecurrencePattern } from "./RecurrenceEditor";
+import { RecurrenceEditor } from "./RecurrenceEditor";
 
 type Props = {
 	onSubmit: (data: ActivityFormData) => void;
 	initialData?: Partial<ActivityFormData>;
 };
 
-export function ActivityForm({ onSubmit }: Props) {
-	const [title, setTitle] = useState("");
-	const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
-	const [replaceabilityStatus, setReplaceabilityStatus] = useState<
-		"HARD" | "SOFT"
-	>("SOFT");
+export function ActivityForm({ onSubmit, initialData }: Props) {
+	const { setValue, handleSubmit, watch, errors } = useActivityValidation({
+		onSubmit,
+		defaultValues: initialData,
+	});
 
-	const [isRecurring, setIsRecurring] = useState(false);
-	const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>(
-		{
-			frequency: "WEEKLY",
-			interval: 1,
-			daysOfWeek: [],
-		},
-	);
-
-	const handleSubmit = () => {
-		if (title.trim()) {
-			onSubmit({
-				title,
-				priority,
-				replaceabilityStatus,
-				isRecurring,
-				...(isRecurring && { recurrencePattern }),
-			});
-		}
+	const title = watch("title");
+	const priority = watch("priority");
+	const replaceabilityStatus = watch("replaceabilityStatus");
+	const isRecurring = watch("isRecurring");
+	const recurrencePattern = (watch(
+		"recurrencePattern",
+	) as ActivityFormData["recurrencePattern"]) || {
+		frequency: "WEEKLY" as const,
+		interval: 1,
+		daysOfWeek: [] as number[],
 	};
+
+	const [categories, setCategories] = useState([
+		{ name: "Work", color: "#3B82F6" },
+		{ name: "Personal", color: "#10B981" },
+	]);
 
 	return (
 		<View style={styles.wrap}>
 			<View style={styles.inputGroup}>
 				<Text style={styles.label}>Activity Title</Text>
 				<TextInput
-					style={styles.input}
+					style={[styles.input, errors.title && styles.inputError]}
 					placeholder="Enter activity name"
 					placeholderTextColor="#94A3B8"
 					value={title}
-					onChangeText={setTitle}
+					onChangeText={(v) => setValue("title", v)}
 				/>
+				{errors.title && (
+					<Text style={styles.errorText}>{errors.title.message}</Text>
+				)}
 			</View>
 
-			<PrioritySelector priority={priority} setPriority={setPriority} />
+			<PrioritySelector
+				priority={priority}
+				setPriority={(v) => setValue("priority", v)}
+			/>
 
 			<ConstraintToggle
 				status={replaceabilityStatus}
-				onChange={setReplaceabilityStatus}
+				onChange={(v) => setValue("replaceabilityStatus", v)}
+			/>
+
+			<CategoryManager
+				categories={categories}
+				onAddCategory={(cat) => {
+					setCategories([...categories, cat]);
+					setValue("category", cat.name);
+				}}
 			/>
 
 			<View style={styles.toggleGroup}>
 				<Text style={styles.label}>Make this a recurring activity?</Text>
 				<TouchableOpacity
 					style={[styles.toggleButton, isRecurring && styles.activeToggle]}
-					onPress={() => setIsRecurring(!isRecurring)}
+					onPress={() => setValue("isRecurring", !isRecurring)}
 				>
 					<Text
 						style={[styles.toggleText, isRecurring && styles.activeToggleText]}
@@ -81,7 +94,7 @@ export function ActivityForm({ onSubmit }: Props) {
 			{isRecurring && (
 				<RecurrenceEditor
 					pattern={recurrencePattern}
-					setPattern={setRecurrencePattern}
+					setPattern={(v) => setValue("recurrencePattern", v)}
 				/>
 			)}
 
@@ -107,6 +120,8 @@ const styles = StyleSheet.create({
 		fontWeight: "600",
 		color: "#0F172A",
 	},
+	inputError: { borderColor: "#EF4444" },
+	errorText: { color: "#EF4444", fontSize: 12, marginTop: 4 },
 	toggleGroup: {
 		marginBottom: 16,
 		flexDirection: "row",

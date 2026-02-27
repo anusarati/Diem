@@ -12,9 +12,11 @@ import { AddScheduledActivityModal } from "../components/AddScheduledActivityMod
 import { EditTaskModal } from "../components/EditTaskModal";
 import { LogTimeModal } from "../components/LogTimeModal";
 import { ProgressCircle } from "../components/ProgressCircle";
+import { QuickAddSheet } from "../components/QuickAddSheet";
 import { ScheduledActivityRow } from "../components/ScheduledActivityRow";
 import { getCurrentUser } from "../data/auth";
 import {
+	addScheduledActivity,
 	getScheduledActivitiesForDate,
 	getTasksForDate,
 	toggleTaskCompleted,
@@ -32,6 +34,15 @@ type Props = {
 
 const today = () => new Date();
 
+type QuickAddData = {
+	title: string;
+	startTime?: string;
+	duration?: number;
+	priority: string; // usually "low" | "medium" | "high" from forms
+	replaceabilityStatus: "SOFT" | "HARD";
+	category?: string;
+};
+
 export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 	const [userName, setUserName] = useState<string | null>(null);
 	const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -46,10 +57,29 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 		useState<ActivityItem | null>(null);
 	const [completingScheduled, setCompletingScheduled] =
 		useState<ScheduledActivity | null>(null);
+	const [quickAddOpen, setQuickAddOpen] = useState(false);
 
 	useEffect(() => {
 		getCurrentUser().then((u) => setUserName(u?.name ?? null));
 	}, []);
+
+	const handleQuickAdd = async (data: QuickAddData) => {
+		const mapped: Omit<ScheduledActivity, "id"> = {
+			title: data.title,
+			date: todayKey(),
+			startTime: data.startTime || "10:00",
+			durationMinutes: data.duration || 60,
+			priority: (data.priority.charAt(0).toUpperCase() +
+				data.priority.slice(1)) as ScheduledActivity["priority"],
+			flexible: data.replaceabilityStatus === "SOFT",
+			category: (data.category || "Other") as ScheduledActivity["category"],
+			deadline: todayKey(),
+			completed: false,
+		};
+
+		await addScheduledActivity(mapped);
+		load();
+	};
 
 	const load = useCallback(() => {
 		setLoading(true);
@@ -58,7 +88,6 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 			getScheduledActivitiesForDate(today()),
 		]).then(([list, scheduledList]) => {
 			setActivities(list);
-			// Sort by deadline (nearer first), then by start time
 			setScheduled(
 				[...scheduledList].sort((a, b) => {
 					const d = a.deadline.localeCompare(b.deadline);
@@ -233,6 +262,15 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 					style={styles.scroll}
 					contentContainerStyle={styles.scrollContent}
 				>
+					<View style={styles.quickAddRow}>
+						<Pressable
+							style={styles.quickAddBtn}
+							onPress={() => setQuickAddOpen(true)}
+						>
+							<Text style={styles.quickAddBtnText}>Quick Add Activity</Text>
+						</Pressable>
+					</View>
+
 					<View style={styles.activitiesSection}>
 						<Text style={styles.sectionLabel}>Your tasks</Text>
 						{loading ? (
@@ -278,6 +316,12 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 					</Pressable>
 				</ScrollView>
 			</View>
+
+			<QuickAddSheet
+				isOpen={quickAddOpen}
+				onClose={() => setQuickAddOpen(false)}
+				onSave={handleQuickAdd}
+			/>
 
 			<AddScheduledActivityModal
 				visible={addModalVisible}
@@ -351,6 +395,17 @@ const styles = StyleSheet.create({
 		paddingVertical: spacing.lg,
 		paddingBottom: 48,
 	},
+	quickAddRow: { marginBottom: spacing.lg },
+	quickAddBtn: {
+		backgroundColor: colors.slate100,
+		paddingVertical: spacing.md,
+		borderRadius: 12,
+		alignItems: "center",
+		borderWidth: 1,
+		borderColor: colors.slate200,
+		borderStyle: "dashed",
+	},
+	quickAddBtnText: { color: colors.slate600, fontWeight: "600", fontSize: 14 },
 	activitiesSection: { marginBottom: spacing.lg },
 	sectionLabel: {
 		fontSize: 13,

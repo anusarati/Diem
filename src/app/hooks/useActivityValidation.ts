@@ -14,6 +14,7 @@ const activitySchema = z.object({
 	duration: z.number().optional(),
 	priority: z.enum(["low", "medium", "high"]),
 	replaceabilityStatus: z.enum(["HARD", "SOFT"]),
+	category: z.string().optional(),
 	isRecurring: z.boolean(),
 	recurrencePattern: RecurrencePatternSchema.optional(),
 });
@@ -44,7 +45,9 @@ export const useActivityValidation = ({
 			startTime: "",
 			duration: 60,
 			priority: "medium",
-			isFlexible: false,
+			replaceabilityStatus: "SOFT",
+			category: "Other",
+			isRecurring: false,
 			...defaultValues,
 		} as ActivityFormInput,
 		mode: "onChange",

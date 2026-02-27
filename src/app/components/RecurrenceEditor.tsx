@@ -11,7 +11,7 @@ type Frequency = "DAILY" | "WEEKLY" | "MONTHLY";
 export type RecurrencePattern = {
 	frequency: Frequency;
 	interval: number;
-	daysOfWeek: number[];
+	daysOfWeek?: number[];
 };
 
 type Props = {
@@ -74,7 +74,7 @@ export function RecurrenceEditor({ pattern, setPattern }: Props) {
 			{pattern.frequency === "WEEKLY" && (
 				<View style={styles.daysRow}>
 					{daysOfWeekLabels.map((day, index) => {
-						const isSelected = pattern.daysOfWeek.includes(index);
+						const isSelected = (pattern.daysOfWeek ?? []).includes(index);
 						return (
 							<TouchableOpacity
 								key={day}
