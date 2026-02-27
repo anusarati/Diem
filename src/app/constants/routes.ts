@@ -5,4 +5,5 @@ export const ROUTES = {
 	PROFILE: "Profile",
 	SETTINGS: "Settings",
 	ADD_TASK: "AddTask",
+	MANAGE_TASKS: "ManageTasks",
 } as const;

@@ -9,7 +9,8 @@ export type AppRoute =
 	| "Calendar"
 	| "Profile"
 	| "Settings"
-	| "AddTask";
+	| "AddTask"
+	| "ManageTasks";
 
 /** User preferences persisted to storage/DB. */
 export type UserSettings = {

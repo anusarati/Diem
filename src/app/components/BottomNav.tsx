@@ -9,6 +9,7 @@ const ITEMS: NavItem[] = [
 	{ route: ROUTES.HOME, label: "Home" },
 	{ route: ROUTES.ANALYSIS, label: "Analytics" },
 	{ route: ROUTES.CALENDAR, label: "Calendar" },
+	{ route: ROUTES.MANAGE_TASKS, label: "Manage" },
 	{ route: ROUTES.PROFILE, label: "Profile" },
 ];
 
