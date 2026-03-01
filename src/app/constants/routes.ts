@@ -4,5 +4,5 @@ export const ROUTES = {
 	CALENDAR: "Calendar",
 	PROFILE: "Profile",
 	SETTINGS: "Settings",
-	ADD_TASK: "AddTask",
+	ADD_ACTIVITY: "AddActivity",
 } as const;

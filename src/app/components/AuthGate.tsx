@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import type { CurrentUser } from "../data/auth";
 import { getCurrentUser } from "../data/auth";
+import { runPersistenceCutover } from "../data/cutover";
 import { AppNavigator } from "../navigation/AppNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
 import { RegisterScreen } from "../screens/RegisterScreen";
@@ -15,10 +16,17 @@ export function AuthGate() {
 	const [authScreen, setAuthScreen] = useState<AuthScreen>("login");
 
 	const refreshUser = useCallback(() => {
-		getCurrentUser().then((u) => {
-			setUser(u);
-			setLoading(false);
-		});
+		setLoading(true);
+		runPersistenceCutover()
+			.then(() => getCurrentUser())
+			.then((u) => {
+				setUser(u);
+				setLoading(false);
+			})
+			.catch(() => {
+				setUser(null);
+				setLoading(false);
+			});
 	}, []);
 
 	useEffect(() => {

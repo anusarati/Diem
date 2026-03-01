@@ -8,8 +8,10 @@ import {
 	Text,
 	View,
 } from "react-native";
-import { getCurrentUser } from "../data/auth";
-import { getUserSettings, saveUserSettings } from "../data/storage";
+import {
+	observeCurrentUserProfileData,
+	saveUserSettings,
+} from "../data/services";
 import { colors, spacing } from "../theme";
 import type { UserSettings } from "../types";
 
@@ -23,13 +25,33 @@ export function ProfileScreen({ onLogout }: Props) {
 	const [saved, setSaved] = useState(false);
 
 	useEffect(() => {
-		getCurrentUser().then((u) => {
-			if (u) setName(u.name);
-		});
-	}, []);
+		let disposed = false;
+		let stopObserving: (() => void) | null = null;
 
-	useEffect(() => {
-		getUserSettings().then(setSettings);
+		observeCurrentUserProfileData((profile) => {
+			if (disposed) {
+				return;
+			}
+			setName(profile.name);
+			setSettings(profile.settings);
+		})
+			.then((stop) => {
+				if (disposed) {
+					stop();
+					return;
+				}
+				stopObserving = stop;
+			})
+			.catch(() => {
+				if (!disposed) {
+					setSettings({ notificationsEnabled: true });
+				}
+			});
+
+		return () => {
+			disposed = true;
+			stopObserving?.();
+		};
 	}, []);
 
 	const update = useCallback((patch: Partial<UserSettings>) => {
