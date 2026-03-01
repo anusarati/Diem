@@ -100,5 +100,26 @@ export default schemaMigrations({
 				}),
 			],
 		},
+		{
+			toVersion: 4,
+			steps: [
+				addColumns({
+					table: "users",
+					columns: [
+						{
+							name: "username",
+							type: "string",
+							isOptional: true,
+							isIndexed: true,
+						},
+						{
+							name: "password_hash",
+							type: "string",
+							isOptional: true,
+						},
+					],
+				}),
+			],
+		},
 	],
 });

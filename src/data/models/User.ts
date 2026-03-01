@@ -7,6 +7,8 @@ const sanitizeJson = (raw: unknown) =>
 export default class User extends Model {
 	static table = "users";
 
+	@text("username") username!: string | null;
+	@text("password_hash") passwordHash!: string | null;
 	@text("email") email!: string;
 	@text("name") name!: string;
 	@text("timezone") timezone!: string;
