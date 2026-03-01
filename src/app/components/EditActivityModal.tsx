@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Modal,
 	Pressable,
@@ -8,31 +8,39 @@ import {
 	View,
 } from "react-native";
 import { colors, spacing } from "../theme";
+import type { ActivityItem } from "../types";
 
 type Props = {
 	visible: boolean;
+	activity: ActivityItem | null;
 	onClose: () => void;
-	onSave: (title: string, subtitle: string) => void;
+	onSave: (activityId: string, name: string) => void;
 };
 
-export function AddTaskModal({ visible, onClose, onSave }: Props) {
-	const [title, setTitle] = useState("");
-	const [subtitle, setSubtitle] = useState("");
+export function EditActivityModal({
+	visible,
+	activity,
+	onClose,
+	onSave,
+}: Props) {
+	const [name, setName] = useState("");
+
+	useEffect(() => {
+		if (activity) {
+			setName(activity.name);
+		}
+	}, [activity]);
 
 	const handleSave = () => {
-		const t = title.trim();
-		if (!t) return;
-		onSave(t, subtitle.trim());
-		setTitle("");
-		setSubtitle("");
+		const t = name.trim();
+		if (!t || !activity) return;
+		onSave(activity.id, t);
 		onClose();
 	};
 
-	const handleClose = () => {
-		setTitle("");
-		setSubtitle("");
-		onClose();
-	};
+	const handleClose = () => onClose();
+
+	if (!activity) return null;
 
 	return (
 		<Modal
@@ -44,30 +52,22 @@ export function AddTaskModal({ visible, onClose, onSave }: Props) {
 			<Pressable style={styles.overlay} onPress={handleClose}>
 				<Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
 					<View style={styles.header}>
-						<Text style={styles.title}>Add Task</Text>
+						<Text style={styles.title}>Edit activity</Text>
 						<Pressable onPress={handleClose} hitSlop={12}>
 							<Text style={styles.cancel}>Cancel</Text>
 						</Pressable>
 					</View>
 					<TextInput
 						style={styles.input}
-						placeholder="Task title"
+						placeholder="Activity name"
 						placeholderTextColor={colors.slate400}
-						value={title}
-						onChangeText={setTitle}
-						autoFocus
-					/>
-					<TextInput
-						style={[styles.input, styles.inputSub]}
-						placeholder="Optional note or time"
-						placeholderTextColor={colors.slate400}
-						value={subtitle}
-						onChangeText={setSubtitle}
+						value={name}
+						onChangeText={setName}
 					/>
 					<Pressable
 						onPress={handleSave}
-						style={[styles.saveBtn, !title.trim() && styles.saveBtnDisabled]}
-						disabled={!title.trim()}
+						style={[styles.saveBtn, !name.trim() && styles.saveBtnDisabled]}
+						disabled={!name.trim()}
 					>
 						<Text style={styles.saveLabel}>Save</Text>
 					</Pressable>
@@ -108,7 +108,6 @@ const styles = StyleSheet.create({
 		color: colors.slate800,
 		marginBottom: spacing.md,
 	},
-	inputSub: { marginBottom: spacing.lg },
 	saveBtn: {
 		backgroundColor: colors.primary,
 		borderRadius: 12,

@@ -8,13 +8,9 @@ import {
 	Text,
 	View,
 } from "react-native";
+import { ActivitySource, EventStatus, Replaceability } from "types/domain";
 import { AddScheduledActivityModal } from "../components/AddScheduledActivityModal";
 import { ScheduledActivityRow } from "../components/ScheduledActivityRow";
-import {
-	addScheduledActivity,
-	getAllScheduledActivities,
-	removeScheduledActivity,
-} from "../data/storage";
 import { colors, spacing } from "../theme";
 import type { AppRoute, ScheduledActivity } from "../types";
 
@@ -29,100 +25,102 @@ export function ManageTasksScreen({ onNavigate: _onNavigate }: Props) {
 	const [selectedActivity, setSelectedActivity] =
 		useState<ScheduledActivity | null>(null);
 
-	const loadActivities = useCallback(async () => {
+	const loadActivities = useCallback(() => {
 		setLoading(true);
-		const all = await getAllScheduledActivities();
-		const sorted = [...all].sort((a, b) => {
-			const d = a.date.localeCompare(b.date);
-			return d !== 0 ? d : a.startTime.localeCompare(b.startTime);
+		setActivities((prev) => {
+			const sorted = [...prev].sort((a, b) => {
+				const d = a.date.localeCompare(b.date);
+				return d !== 0 ? d : a.startTime.localeCompare(b.startTime);
+			});
+			return sorted;
 		});
-		setActivities(sorted);
 		setLoading(false);
 	}, []);
 
-	const seedTasks = useCallback(async () => {
-		const dummyTasks: Omit<ScheduledActivity, "id">[] = [
+	const handleAddOrUpdate = useCallback(() => {
+		loadActivities();
+		setEditModalVisible(false);
+		setSelectedActivity(null);
+	}, [loadActivities]);
+
+	const seedTasks = useCallback(() => {
+		const dummyTasks: ScheduledActivity[] = [
 			{
+				id: Math.random().toString(36).substr(2, 9),
 				title: "Morning Yoga",
 				startTime: "08:00",
 				durationMinutes: 30,
 				category: "Fitness",
-				priority: "Medium",
+				priority: 1,
 				flexible: true,
 				date: "2026-02-27",
 				deadline: "2026-02-27",
 				completed: false,
+				activityId: "",
+				categoryId: "",
+				endTime: "",
+				duration: 0,
+				status: EventStatus.PREDICTED,
+				replaceabilityStatus: Replaceability.HARD,
+				isRecurring: false,
+				source: ActivitySource.USER_CREATED,
+				isLocked: false,
+				createdAt: "",
+				updatedAt: "",
 			},
 			{
+				id: Math.random().toString(36).substr(2, 9),
 				title: "Team Sync",
 				startTime: "10:00",
 				durationMinutes: 45,
 				category: "Work",
-				priority: "High",
+				priority: 2, // Changed from "High" to 2
 				flexible: false,
 				date: "2026-02-27",
 				deadline: "2026-02-27",
 				completed: false,
-			},
-			{
-				title: "Study React Native",
-				startTime: "14:00",
-				durationMinutes: 120,
-				category: "Study",
-				priority: "Medium",
-				flexible: true,
-				date: "2026-02-27",
-				deadline: "2026-02-27",
-				completed: false,
-			},
-			{
-				title: "Grocery Shopping",
-				startTime: "17:30",
-				durationMinutes: 40,
-				category: "Personal",
-				priority: "Low",
-				flexible: true,
-				date: "2026-02-27",
-				deadline: "2026-02-27",
-				completed: false,
+				activityId: "",
+				categoryId: "",
+				endTime: "",
+				duration: 0,
+				status: EventStatus.PREDICTED,
+				replaceabilityStatus: Replaceability.HARD,
+				isRecurring: false,
+				source: ActivitySource.USER_CREATED,
+				isLocked: false,
+				createdAt: "",
+				updatedAt: "",
 			},
 		];
 
-		for (const task of dummyTasks) {
-			await addScheduledActivity(task);
-		}
-		loadActivities();
-	}, [loadActivities]);
-
+		setActivities(dummyTasks);
+	}, []);
 	useEffect(() => {
-		loadActivities();
-	}, [loadActivities]);
+		const timer = setTimeout(() => setLoading(false), 500);
+		return () => clearTimeout(timer);
+	}, []);
 
 	const handleEdit = useCallback((activity: ScheduledActivity) => {
 		setSelectedActivity(activity);
 		setEditModalVisible(true);
 	}, []);
 
-	const handleDelete = useCallback(
-		(id: string) => {
-			Alert.alert(
-				"Delete Activity",
-				"Are you sure you want to delete this activity?",
-				[
-					{ text: "Cancel", style: "cancel" },
-					{
-						text: "Delete",
-						style: "destructive",
-						onPress: async () => {
-							await removeScheduledActivity(id);
-							loadActivities();
-						},
+	const handleDelete = useCallback((id: string) => {
+		Alert.alert(
+			"Delete Activity",
+			"Are you sure you want to delete this activity?",
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Delete",
+					style: "destructive",
+					onPress: () => {
+						setActivities((prev) => prev.filter((a) => a.id !== id));
 					},
-				],
-			);
-		},
-		[loadActivities],
-	);
+				},
+			],
+		);
+	}, []);
 
 	const renderItem = ({
 		item,
@@ -134,7 +132,7 @@ export function ManageTasksScreen({ onNavigate: _onNavigate }: Props) {
 		<View style={styles.activityContainer}>
 			<ScheduledActivityRow
 				activity={item}
-				onToggle={() => {}} // Manage screen doesn't need toggle completion logic from list
+				onToggle={() => {}}
 				onPress={() => handleEdit(item)}
 				last={index === activities.length - 1}
 			/>
@@ -178,7 +176,9 @@ export function ManageTasksScreen({ onNavigate: _onNavigate }: Props) {
 				}}
 				initialDate={new Date()}
 				activityToEdit={selectedActivity}
-				onAdded={loadActivities}
+				onAdded={() => {
+					handleAddOrUpdate();
+				}}
 			/>
 		</SafeAreaView>
 	);

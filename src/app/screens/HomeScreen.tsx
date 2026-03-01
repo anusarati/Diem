@@ -7,26 +7,24 @@ import {
 	Text,
 	View,
 } from "react-native";
+import { EventStatus } from "../../types/domain";
 import { ActivityRow } from "../components/ActivityRow";
+import { AddActivityModal } from "../components/AddActivityModal";
 import { AddScheduledActivityModal } from "../components/AddScheduledActivityModal";
-import { EditTaskModal } from "../components/EditTaskModal";
+import { EditActivityModal } from "../components/EditActivityModal";
 import { LogTimeModal } from "../components/LogTimeModal";
 import { ProgressCircle } from "../components/ProgressCircle";
-import { QuickAddSheet } from "../components/QuickAddSheet";
 import { ScheduledActivityRow } from "../components/ScheduledActivityRow";
-import { getCurrentUser } from "../data/auth";
 import {
-	addScheduledActivity,
-	getScheduledActivitiesForDate,
-	getTasksForDate,
-	toggleTaskCompleted,
-	updateScheduledActivity,
-	updateTask,
-} from "../data/storage";
+	createActivity,
+	observeCurrentUserProfileData,
+	observeHomeData,
+	renameActivity,
+	toggleActivityCompletion,
+	toggleScheduledCompletion,
+} from "../data/services";
 import { colors, spacing } from "../theme";
 import type { ActivityItem, AppRoute, ScheduledActivity } from "../types";
-
-const todayKey = () => new Date().toISOString().slice(0, 10);
 
 type Props = {
 	onNavigate: (route: AppRoute) => void;
@@ -34,193 +32,185 @@ type Props = {
 
 const today = () => new Date();
 
-type QuickAddData = {
-	title: string;
-	startTime?: string;
-	duration?: number;
-	priority: string; // usually "low" | "medium" | "high" from forms
-	replaceabilityStatus: "SOFT" | "HARD";
-	category?: string;
-};
-
 export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 	const [userName, setUserName] = useState<string | null>(null);
 	const [activities, setActivities] = useState<ActivityItem[]>([]);
 	const [scheduled, setScheduled] = useState<ScheduledActivity[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [addModalVisible, setAddModalVisible] = useState(false);
-	const [editChecklistTask, setEditChecklistTask] =
-		useState<ActivityItem | null>(null);
+	const [addActivityModalVisible, setAddActivityModalVisible] = useState(false);
+	const [addScheduledModalVisible, setAddScheduledModalVisible] =
+		useState(false);
+	const [editActivity, setEditActivity] = useState<ActivityItem | null>(null);
 	const [editScheduledActivity, setEditScheduledActivity] =
 		useState<ScheduledActivity | null>(null);
-	const [completingChecklist, setCompletingChecklist] =
+	const [completingActivity, setCompletingActivity] =
 		useState<ActivityItem | null>(null);
-	const [completingScheduled, setCompletingScheduled] =
-		useState<ScheduledActivity | null>(null);
-	const [quickAddOpen, setQuickAddOpen] = useState(false);
 
 	useEffect(() => {
-		getCurrentUser().then((u) => setUserName(u?.name ?? null));
-	}, []);
+		let disposed = false;
+		let stopObserving: (() => void) | null = null;
 
-	const handleQuickAdd = async (data: QuickAddData) => {
-		const mapped: Omit<ScheduledActivity, "id"> = {
-			title: data.title,
-			date: todayKey(),
-			startTime: data.startTime || "10:00",
-			durationMinutes: data.duration || 60,
-			priority: (data.priority.charAt(0).toUpperCase() +
-				data.priority.slice(1)) as ScheduledActivity["priority"],
-			flexible: data.replaceabilityStatus === "SOFT",
-			category: (data.category || "Other") as ScheduledActivity["category"],
-			deadline: todayKey(),
-			completed: false,
+		observeCurrentUserProfileData((profile) => {
+			if (disposed) {
+				return;
+			}
+			setUserName(profile.name || null);
+		})
+			.then((stop) => {
+				if (disposed) {
+					stop();
+					return;
+				}
+				stopObserving = stop;
+			})
+			.catch(() => {
+				if (!disposed) {
+					setUserName(null);
+				}
+			});
+
+		return () => {
+			disposed = true;
+			stopObserving?.();
 		};
-
-		await addScheduledActivity(mapped);
-		load();
-	};
-
-	const load = useCallback(() => {
-		setLoading(true);
-		Promise.all([
-			getTasksForDate(today()),
-			getScheduledActivitiesForDate(today()),
-		]).then(([list, scheduledList]) => {
-			setActivities(list);
-			setScheduled(
-				[...scheduledList].sort((a, b) => {
-					const d = a.deadline.localeCompare(b.deadline);
-					return d !== 0 ? d : a.startTime.localeCompare(b.startTime);
-				}),
-			);
-			setLoading(false);
-		});
 	}, []);
 
 	useEffect(() => {
-		load();
-	}, [load]);
+		let disposed = false;
+		let stopObserving: (() => void) | null = null;
 
-	const handleToggleTask = useCallback(
+		setLoading(true);
+		observeHomeData(today(), ({ activities: list, scheduled: events }) => {
+			if (disposed) {
+				return;
+			}
+			setActivities(list);
+			setScheduled(events);
+			setLoading(false);
+		})
+			.then((stop) => {
+				if (disposed) {
+					stop();
+					return;
+				}
+				stopObserving = stop;
+			})
+			.catch(() => {
+				if (!disposed) {
+					setLoading(false);
+				}
+			});
+
+		return () => {
+			disposed = true;
+			stopObserving?.();
+		};
+	}, []);
+
+	const handleToggleActivity = useCallback(
 		(id: string) => {
 			const item = activities.find((a) => a.id === id);
 			if (!item) return;
 			if (item.completed) {
-				toggleTaskCompleted(today(), id).then(setActivities);
+				void toggleActivityCompletion(today(), id);
 			} else {
-				setCompletingChecklist(item);
+				setCompletingActivity(item);
 			}
 		},
 		[activities],
 	);
 
-	const handleLogTimeChecklist = useCallback(
+	const handleLogTimeActivity = useCallback(
 		(minutes: number | null) => {
-			if (!completingChecklist) return;
-			toggleTaskCompleted(
+			if (!completingActivity) return;
+			void toggleActivityCompletion(
 				today(),
-				completingChecklist.id,
-				minutes != null ? { completedMinutes: minutes } : undefined,
-			).then(setActivities);
-			setCompletingChecklist(null);
+				completingActivity.id,
+				minutes != null ? { completedDuration: minutes } : undefined,
+			);
+			setCompletingActivity(null);
 		},
-		[completingChecklist],
+		[completingActivity],
 	);
 
 	const handleToggleScheduled = useCallback(
 		(id: string) => {
 			const item = scheduled.find((a) => a.id === id);
 			if (!item) return;
-			if (item.completed) {
-				updateScheduledActivity(id, { completed: false }).then(load);
-			} else {
-				setCompletingScheduled(item);
-			}
+			void toggleScheduledCompletion(id, item.status);
 		},
-		[load, scheduled],
+		[scheduled],
 	);
-
-	const handleLogTimeScheduled = useCallback(
-		(minutes: number | null) => {
-			if (!completingScheduled) return;
-			updateScheduledActivity(completingScheduled.id, {
-				completed: true,
-				actualMinutesSpent: minutes ?? completingScheduled.durationMinutes,
-			}).then(load);
-			setCompletingScheduled(null);
-		},
-		[completingScheduled, load],
-	);
-
-	const logTimeModalVisible =
-		completingChecklist != null || completingScheduled != null;
-	const logTimeTitle = completingChecklist
-		? `How long did "${completingChecklist.title}" take?`
-		: completingScheduled
-			? `How long did "${completingScheduled.title}" take?`
-			: "";
-	const logTimeDefaultMinutes = completingScheduled?.durationMinutes;
+	const logTimeModalVisible = completingActivity != null;
+	const logTimeTitle = completingActivity
+		? `How long did "${completingActivity.name}" take?`
+		: "";
+	const logTimeDefaultMinutes = completingActivity?.defaultDuration;
 	const handleLogTimeSelect = useCallback(
 		(minutes: number | null) => {
-			if (completingChecklist) handleLogTimeChecklist(minutes);
-			else if (completingScheduled) handleLogTimeScheduled(minutes);
+			if (completingActivity) {
+				handleLogTimeActivity(minutes);
+			}
 		},
-		[
-			completingChecklist,
-			completingScheduled,
-			handleLogTimeChecklist,
-			handleLogTimeScheduled,
-		],
+		[completingActivity, handleLogTimeActivity],
 	);
 	const handleLogTimeClose = useCallback(() => {
-		setCompletingChecklist(null);
-		setCompletingScheduled(null);
+		setCompletingActivity(null);
 	}, []);
 
-	const openEditChecklist = useCallback((item: ActivityItem) => {
-		setEditChecklistTask(item);
+	const openEditActivity = useCallback((item: ActivityItem) => {
+		setEditActivity(item);
 	}, []);
 
 	const openEditScheduled = useCallback((item: ScheduledActivity) => {
 		setEditScheduledActivity(item);
-		setAddModalVisible(true);
+		setAddScheduledModalVisible(true);
 	}, []);
 
-	const handleCloseAddModal = useCallback(() => {
-		setAddModalVisible(false);
+	const handleCloseScheduledModal = useCallback(() => {
+		setAddScheduledModalVisible(false);
 		setEditScheduledActivity(null);
 	}, []);
 
-	const handleSaveChecklistEdit = useCallback(
-		async (taskId: string, title: string, subtitle: string) => {
-			const updated = await updateTask(today(), taskId, { title, subtitle });
-			setActivities(updated);
-			setEditChecklistTask(null);
+	const handleSaveActivityEdit = useCallback(
+		async (activityId: string, name: string) => {
+			await renameActivity(today(), activityId, name);
+			setEditActivity(null);
 		},
 		[],
 	);
 
-	// Unified todo list: sort by deadline (nearer first), then start time. Checklist = today, 00:00.
+	const handleAddActivity = useCallback(async (name: string) => {
+		await createActivity(today(), name);
+	}, []);
+
+	const handleOpenAddScheduled = useCallback(() => {
+		setEditScheduledActivity(null);
+		setAddScheduledModalVisible(true);
+	}, []);
+
+	// Unified todo list ordered by start/creation time.
 	type TodoItem =
-		| { type: "checklist"; data: ActivityItem }
+		| { type: "activity"; data: ActivityItem }
 		| { type: "scheduled"; data: ScheduledActivity };
 	const combined: TodoItem[] = [
-		...activities.map((d) => ({ type: "checklist" as const, data: d })),
+		...activities.map((d) => ({ type: "activity" as const, data: d })),
 		...scheduled.map((d) => ({ type: "scheduled" as const, data: d })),
 	].sort((x, y) => {
-		const deadlineA = x.type === "checklist" ? todayKey() : x.data.deadline;
-		const deadlineB = y.type === "checklist" ? todayKey() : y.data.deadline;
-		const d = deadlineA.localeCompare(deadlineB);
-		if (d !== 0) return d;
-		const timeA = x.type === "checklist" ? "00:00" : x.data.startTime;
-		const timeB = y.type === "checklist" ? "00:00" : y.data.startTime;
-		return timeA.localeCompare(timeB);
+		const atA =
+			x.type === "activity"
+				? new Date(x.data.createdAt).getTime()
+				: new Date(x.data.startTime).getTime();
+		const atB =
+			y.type === "activity"
+				? new Date(y.data.createdAt).getTime()
+				: new Date(y.data.startTime).getTime();
+		return atA - atB;
 	});
 
 	const completedCount =
 		activities.filter((a) => a.completed).length +
-		scheduled.filter((a) => a.completed).length;
+		scheduled.filter((a) => a.status === EventStatus.COMPLETED).length;
 	const totalCount = activities.length + scheduled.length;
 	const focusPercent = totalCount
 		? Math.round((completedCount / totalCount) * 100)
@@ -262,31 +252,22 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 					style={styles.scroll}
 					contentContainerStyle={styles.scrollContent}
 				>
-					<View style={styles.quickAddRow}>
-						<Pressable
-							style={styles.quickAddBtn}
-							onPress={() => setQuickAddOpen(true)}
-						>
-							<Text style={styles.quickAddBtnText}>Quick Add Activity</Text>
-						</Pressable>
-					</View>
-
 					<View style={styles.activitiesSection}>
-						<Text style={styles.sectionLabel}>Your tasks</Text>
+						<Text style={styles.sectionLabel}>Your activities</Text>
 						{loading ? (
 							<Text style={styles.muted}>Loading…</Text>
 						) : combined.length === 0 ? (
 							<Text style={styles.muted}>
-								No tasks yet. Tap Add task to add one.
+								No activities yet. Add one to get started.
 							</Text>
 						) : (
 							combined.map((item, i) =>
-								item.type === "checklist" ? (
+								item.type === "activity" ? (
 									<ActivityRow
-										key={`task-${item.data.id}`}
+										key={`activity-${item.data.id}`}
 										activity={item.data}
-										onToggle={() => handleToggleTask(item.data.id)}
-										onPress={() => openEditChecklist(item.data)}
+										onToggle={() => handleToggleActivity(item.data.id)}
+										onPress={() => openEditActivity(item.data)}
 										last={i === combined.length - 1}
 									/>
 								) : (
@@ -302,41 +283,50 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 						)}
 					</View>
 
-					<Pressable
-						style={({ pressed }) => [
-							styles.addBtn,
-							pressed && styles.addBtnPressed,
-						]}
-						onPress={() => {
-							setEditScheduledActivity(null);
-							setAddModalVisible(true);
-						}}
-					>
-						<Text style={styles.addBtnLabel}>Add task</Text>
-					</Pressable>
+					<View style={styles.addActionsRow}>
+						<Pressable
+							style={({ pressed }) => [
+								styles.addBtn,
+								styles.addBtnPrimary,
+								pressed && styles.addBtnPressed,
+							]}
+							onPress={() => setAddActivityModalVisible(true)}
+						>
+							<Text style={styles.addBtnLabel}>Add activity</Text>
+						</Pressable>
+						<Pressable
+							style={({ pressed }) => [
+								styles.addBtn,
+								styles.addBtnSecondary,
+								pressed && styles.addBtnPressed,
+							]}
+							onPress={handleOpenAddScheduled}
+						>
+							<Text style={styles.addBtnLabel}>Add schedule</Text>
+						</Pressable>
+					</View>
 				</ScrollView>
 			</View>
 
-			<QuickAddSheet
-				isOpen={quickAddOpen}
-				onClose={() => setQuickAddOpen(false)}
-				onSave={handleQuickAdd}
+			<AddActivityModal
+				visible={addActivityModalVisible}
+				onClose={() => setAddActivityModalVisible(false)}
+				onSave={handleAddActivity}
 			/>
 
 			<AddScheduledActivityModal
-				visible={addModalVisible}
-				onClose={handleCloseAddModal}
+				visible={addScheduledModalVisible}
+				onClose={handleCloseScheduledModal}
 				initialDate={today()}
 				activityToEdit={editScheduledActivity}
-				onAdded={load}
 			/>
 
-			{editChecklistTask && (
-				<EditTaskModal
+			{editActivity && (
+				<EditActivityModal
 					visible
-					task={editChecklistTask}
-					onClose={() => setEditChecklistTask(null)}
-					onSave={handleSaveChecklistEdit}
+					activity={editActivity}
+					onClose={() => setEditActivity(null)}
+					onSave={handleSaveActivityEdit}
 				/>
 			)}
 
@@ -395,17 +385,6 @@ const styles = StyleSheet.create({
 		paddingVertical: spacing.lg,
 		paddingBottom: 48,
 	},
-	quickAddRow: { marginBottom: spacing.lg },
-	quickAddBtn: {
-		backgroundColor: colors.slate100,
-		paddingVertical: spacing.md,
-		borderRadius: 12,
-		alignItems: "center",
-		borderWidth: 1,
-		borderColor: colors.slate200,
-		borderStyle: "dashed",
-	},
-	quickAddBtnText: { color: colors.slate600, fontWeight: "600", fontSize: 14 },
 	activitiesSection: { marginBottom: spacing.lg },
 	sectionLabel: {
 		fontSize: 13,
@@ -416,14 +395,24 @@ const styles = StyleSheet.create({
 		marginBottom: spacing.md,
 	},
 	muted: { fontSize: 14, color: colors.slate400, marginTop: spacing.sm },
-	addBtn: {
+	addActionsRow: {
 		marginTop: spacing.lg,
+		flexDirection: "row",
+		gap: spacing.md,
+	},
+	addBtn: {
 		paddingVertical: spacing.md,
 		paddingHorizontal: spacing.xl,
-		backgroundColor: colors.primary,
 		borderRadius: 12,
 		alignItems: "center",
 		justifyContent: "center",
+		flex: 1,
+	},
+	addBtnPrimary: { backgroundColor: colors.primary },
+	addBtnSecondary: {
+		backgroundColor: colors.white,
+		borderWidth: 1,
+		borderColor: colors.slate200,
 	},
 	addBtnPressed: { opacity: 0.9 },
 	addBtnLabel: { fontSize: 16, fontWeight: "600", color: colors.slate800 },

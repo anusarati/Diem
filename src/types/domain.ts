@@ -23,6 +23,60 @@ export enum ActivitySource {
 	EXTERNAL_IMPORT = "EXTERNAL_IMPORT",
 }
 
+export interface ActivityEntity {
+	id: string;
+	categoryId: string;
+	name: string;
+	priority: number;
+	defaultDuration: number;
+	isReplaceable: boolean;
+	color: string;
+	createdAt: string;
+}
+
+export interface ScheduledEventEntity {
+	id: string;
+	activityId: string;
+	categoryId: string;
+	title: string;
+	startTime: string;
+	endTime: string;
+	duration: number;
+	status: EventStatus;
+	replaceabilityStatus: Replaceability;
+	priority: number;
+	isRecurring: boolean;
+	recurringTemplateId?: string;
+	source: ActivitySource;
+	isLocked: boolean;
+	createdAt: string;
+	updatedAt: string;
+	date: string;
+	completed?: boolean;
+	flexible?: boolean;
+	category?: string;
+	durationMinutes?: number;
+	deadline?: string;
+}
+
+export interface ActivityHistoryEntity {
+	id: string;
+	activityId: string;
+	predictedStartTime: string;
+	predictedDuration: number;
+	localDayBucket?: string;
+	localWeekBucket?: string;
+	localMonthBucket?: string;
+	bucketTimezone?: string;
+	actualStartTime?: string;
+	actualDuration?: number;
+	wasCompleted: boolean;
+	wasSkipped: boolean;
+	wasReplaced: boolean;
+	notes?: string;
+	createdAt: string;
+}
+
 export enum GoalPeriod {
 	DAILY = "daily",
 	WEEKLY = "weekly",
@@ -81,6 +135,22 @@ export interface FrequencyGoalValue {
 	deadlineEndSlot?: number;
 }
 
+export type ConstraintValue =
+	| ForbiddenZoneValue
+	| CumulativeTimeValue
+	| UserSequenceValue
+	| FrequencyGoalValue;
+
+export interface ConstraintEntity {
+	id: string;
+	type: ConstraintType;
+	activityId?: string;
+	categoryId?: string;
+	value: ConstraintValue;
+	isActive: boolean;
+	createdAt: string;
+}
+
 // --- Learning & Mining Types ---
 
 export enum FrequencyEmaScope {
@@ -113,6 +183,73 @@ export enum BehaviorPeriod {
 	SAT = "SAT",
 	SUN = "SUN",
 }
+
+export interface UserBehaviorEntity {
+	id: string;
+	activityId?: string;
+	categoryId: string;
+	metric: UserBehaviorMetric;
+	keyParam: string;
+	value: number;
+	sampleSize: number;
+	lastUpdated: string;
+}
+
+export interface UserEntity {
+	id: string;
+	username?: string;
+	email: string;
+	name: string;
+	timezone: string;
+	createdAt: string;
+	notificationSettings: Record<string, unknown>;
+}
+
+// --- Canonical create/update DTOs ---
+
+export type CreateActivityInput = Omit<ActivityEntity, "id" | "createdAt"> & {
+	id?: string;
+	createdAt?: string;
+};
+
+export type UpdateActivityInput = Partial<
+	Omit<ActivityEntity, "id" | "createdAt">
+>;
+
+export type CreateScheduledEventInput = Omit<
+	ScheduledEventEntity,
+	"id" | "createdAt" | "updatedAt"
+> & {
+	id?: string;
+	createdAt?: string;
+	updatedAt?: string;
+};
+
+export type UpdateScheduledEventInput = Partial<
+	Omit<ScheduledEventEntity, "id" | "createdAt">
+> & {
+	createdAt?: string;
+};
+
+export type CreateActivityHistoryInput = Omit<ActivityHistoryEntity, "id"> & {
+	id?: string;
+};
+
+export type UpdateActivityHistoryInput = Partial<
+	Omit<ActivityHistoryEntity, "id" | "activityId">
+>;
+
+export type CreateConstraintInput = Omit<
+	ConstraintEntity,
+	"id" | "createdAt"
+> & {
+	id?: string;
+	createdAt?: string;
+};
+
+export type UpdateConstraintInput = Partial<
+	Omit<ConstraintEntity, "id" | "createdAt">
+>;
 
 // --- Heuristics-Net Storage Types ---
 

@@ -1,8 +1,6 @@
-import type { Database } from "@nozbe/watermelondb";
-import { Q } from "@nozbe/watermelondb";
-import type ActivityHistory from "../../data/models/ActivityHistory";
 import type {
 	FrequencyEmaStateRepository,
+	HistoryRepository,
 	UserBehaviorRepository,
 } from "../../data/repositories";
 import { BehaviorPeriod, FrequencyEmaScope } from "../../types/domain";
@@ -31,12 +29,6 @@ interface EmaAccumulatorState {
 	lastClosedBucketKey?: string;
 }
 
-interface RawBucketCountRow {
-	activity_id: string;
-	bucket_key: string;
-	bucket_count: number | string;
-}
-
 export interface FrequencyEmaMinerOptions {
 	dailyAlpha?: number;
 	weeklyAlpha?: number;
@@ -45,9 +37,14 @@ export interface FrequencyEmaMinerOptions {
 	nowProvider?: () => Date;
 }
 
-export interface FrequencyEmaRepositories {
+export interface FrequencyEmaIngestRepositories {
 	emaStateRepository: FrequencyEmaStateRepository;
 	userBehaviorRepository: UserBehaviorRepository;
+}
+
+export interface FrequencyEmaReconcileRepositories
+	extends FrequencyEmaIngestRepositories {
+	historyRepository: HistoryRepository;
 }
 
 export interface FrequencyEmaIngestResult {
@@ -57,8 +54,7 @@ export interface FrequencyEmaIngestResult {
 }
 
 export interface FrequencyEmaReconcileInput {
-	database: Database;
-	repositories: FrequencyEmaRepositories;
+	repositories: FrequencyEmaReconcileRepositories;
 	timeZone: string;
 	staleActivities?: string[];
 }
@@ -130,7 +126,7 @@ export class FrequencyEmaMiner {
 
 	async ingestCompletion(
 		event: CompletedActivityEvent,
-		repositories: FrequencyEmaRepositories,
+		repositories: FrequencyEmaIngestRepositories,
 		timeZone: string,
 	): Promise<FrequencyEmaIngestResult> {
 		const now = this.nowProvider();
@@ -295,10 +291,10 @@ export class FrequencyEmaMiner {
 			activityIds.add(row.activityId);
 		}
 		if (!input.staleActivities || input.staleActivities.length === 0) {
-			const bootstrapIds = await this.listDistinctCompletedActivityIds(
-				input.database,
-				input.timeZone,
-			);
+			const bootstrapIds =
+				await input.repositories.historyRepository.listDistinctCompletedActivityIdsByTimezone(
+					input.timeZone,
+				);
 			for (const activityId of bootstrapIds) {
 				activityIds.add(activityId);
 			}
@@ -319,7 +315,7 @@ export class FrequencyEmaMiner {
 
 		for (const scope of EMA_SCOPES) {
 			const rows = await this.fetchBucketCounts(
-				input.database,
+				input.repositories.historyRepository,
 				scope,
 				input.timeZone,
 				activityIdList,
@@ -329,12 +325,12 @@ export class FrequencyEmaMiner {
 				{ bucketKey: string; count: number }[]
 			>();
 			for (const row of rows) {
-				const bucketRows = rowsByActivity.get(row.activity_id) ?? [];
+				const bucketRows = rowsByActivity.get(row.activityId) ?? [];
 				bucketRows.push({
-					bucketKey: row.bucket_key,
-					count: Number.parseInt(String(row.bucket_count), 10),
+					bucketKey: row.bucketKey,
+					count: row.bucketCount,
 				});
-				rowsByActivity.set(row.activity_id, bucketRows);
+				rowsByActivity.set(row.activityId, bucketRows);
 			}
 
 			const currentOpenBucket = bucketKeyForScope(nowBucketKeys, scope);
@@ -418,73 +414,16 @@ export class FrequencyEmaMiner {
 		};
 	}
 
-	private async listDistinctCompletedActivityIds(
-		database: Database,
-		timeZone: string,
-	): Promise<string[]> {
-		const rows = (await database
-			.get<ActivityHistory>("activity_history")
-			.query(
-				Q.unsafeSqlQuery(
-					`
-						SELECT DISTINCT activity_id
-						FROM activity_history
-						WHERE was_completed = 1
-							AND actual_start_time IS NOT NULL
-							AND bucket_timezone = ?
-					`,
-					[timeZone],
-				),
-			)
-			.unsafeFetchRaw()) as { activity_id: string }[];
-
-		return rows
-			.map((row) => row.activity_id)
-			.filter((activityId): activityId is string => Boolean(activityId));
-	}
-
 	private async fetchBucketCounts(
-		database: Database,
+		historyRepository: HistoryRepository,
 		scope: FrequencyEmaScope,
 		timeZone: string,
 		activityIds: string[],
-	): Promise<RawBucketCountRow[]> {
-		const bucketColumn =
-			scope === FrequencyEmaScope.DAILY
-				? "local_day_bucket"
-				: scope === FrequencyEmaScope.WEEKLY
-					? "local_week_bucket"
-					: "local_month_bucket";
-
-		const sqlParts: string[] = [
-			`
-				SELECT
-					activity_id,
-					${bucketColumn} AS bucket_key,
-					COUNT(*) AS bucket_count
-				FROM activity_history
-				WHERE was_completed = 1
-					AND actual_start_time IS NOT NULL
-					AND ${bucketColumn} IS NOT NULL
-					AND bucket_timezone = ?
-			`,
-		];
-		const args: (string | number)[] = [timeZone];
-
-		if (activityIds.length > 0) {
-			const placeholders = activityIds.map(() => "?").join(", ");
-			sqlParts.push(`AND activity_id IN (${placeholders})`);
-			args.push(...activityIds);
-		}
-
-		sqlParts.push(`
-			GROUP BY activity_id, ${bucketColumn}
-			ORDER BY activity_id ASC, ${bucketColumn} ASC
-		`);
-
-		return (await database
-			.get<ActivityHistory>("activity_history")
-			.query(Q.unsafeSqlQuery(sqlParts.join("\n"), args))
-			.unsafeFetchRaw()) as RawBucketCountRow[];
+	) {
+		return historyRepository.listCompletedBucketCounts(
+			scope,
+			timeZone,
+			activityIds,
+		);
 	}
 }

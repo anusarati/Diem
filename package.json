@@ -11,13 +11,18 @@
 		"babel-preset-expo": "~54.0.0",
 		"lefthook": "^2.1.0",
 		"nitrogen": "^0.33.9",
-		"typescript": "^5.9.3"
+		"typescript": "^5.9.3",
+		"vitest": "^3.2.4"
 	},
 	"main": "expo/AppEntry.js",
 	"scripts": {
 		"dev": "expo start",
 		"start": "expo start",
-		"test": "echo \"No tests yet\"",
+		"test": "npm run test:all",
+		"test:all": "npm run test:l1 && npm run test:vitest && npx tsc --noEmit && npx @biomejs/biome lint src tests vitest.config.ts package.json --error-on-warnings",
+		"test:l1": "node --test tests/l1/*.test.mjs",
+		"test:vitest": "vitest run",
+		"test:vitest:watch": "vitest",
 		"prepare": "lefthook install",
 		"demo:solver": "cargo run --manifest-path rust/Cargo.toml --example quick_solver_demo",
 		"android": "expo run:android",

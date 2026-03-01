@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { EventStatus } from "../../types/domain";
 import { colors } from "../theme";
 import type { ScheduledActivity } from "../types";
 
@@ -15,20 +16,23 @@ export function ScheduledActivityRow({
 	onPress,
 	last,
 }: Props) {
-	const subtitle = `${activity.startTime} – ${activity.durationMinutes} min • ${activity.category}`;
+	const completed = activity.status === EventStatus.COMPLETED;
+	const startsAt = new Date(activity.startTime).toLocaleTimeString([], {
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+	const subtitle = `${startsAt} • ${activity.duration} min • ${activity.categoryId}`;
 
 	return (
 		<View style={[styles.row, !last && styles.border]}>
 			<Pressable
 				onPress={onToggle}
-				style={[styles.checkbox, activity.completed && styles.checkboxChecked]}
+				style={[styles.checkbox, completed && styles.checkboxChecked]}
 			>
-				{activity.completed && <Text style={styles.checkmark}>✓</Text>}
+				{completed && <Text style={styles.checkmark}>✓</Text>}
 			</Pressable>
 			<Pressable style={styles.content} onPress={onPress}>
-				<Text
-					style={[styles.title, activity.completed && styles.titleCompleted]}
-				>
+				<Text style={[styles.title, completed && styles.titleCompleted]}>
 					{activity.title}
 				</Text>
 				<Text style={styles.subtitle}>{subtitle}</Text>

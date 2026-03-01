@@ -1,11 +1,13 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export default appSchema({
-	version: 3,
+	version: 4,
 	tables: [
 		tableSchema({
 			name: "users",
 			columns: [
+				{ name: "username", type: "string", isOptional: true, isIndexed: true },
+				{ name: "password_hash", type: "string", isOptional: true },
 				{ name: "email", type: "string" },
 				{ name: "name", type: "string" },
 				{ name: "timezone", type: "string" },
