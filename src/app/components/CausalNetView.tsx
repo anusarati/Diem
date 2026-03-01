@@ -121,8 +121,8 @@ export function CausalNetView({ width: propWidth, height: propHeight }: Props) {
 				))}
 			</Svg>
 			<Text style={styles.caption}>
-				Example workflow: plan day → parallel tasks (deep work, meetings,
-				review) → wrap up. With more data, this will reflect your real task
+				Example workflow: plan day → parallel activities (deep work, meetings,
+				review) → wrap up. With more data, this will reflect your real activity
 				dependencies.
 			</Text>
 		</View>

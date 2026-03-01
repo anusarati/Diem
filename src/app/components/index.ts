@@ -3,7 +3,6 @@ export { ActivityBarRow } from "./ActivityBarRow";
 export { ActivityRow } from "./ActivityRow";
 export { AddActivitySheet } from "./AddActivitySheet";
 export { AddScheduledActivityModal } from "./AddScheduledActivityModal";
-export { AddTaskModal } from "./AddTaskModal";
 export { BehaviorHeatmap } from "./BehaviorHeatmap";
 export { BottomNav } from "./BottomNav";
 export { Button } from "./Button";

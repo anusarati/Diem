@@ -8,16 +8,25 @@ import {
 	TextInput,
 	View,
 } from "react-native";
-import { addScheduledActivity, updateScheduledActivity } from "../data/storage";
+import {
+	ActivitySource,
+	EventStatus,
+	Replaceability,
+} from "../../types/domain";
+import {
+	addScheduledActivity,
+	updateScheduledActivity,
+} from "../data/services";
 import { colors, spacing } from "../theme";
-import type {
-	ActivityCategory,
-	ActivityPriority,
-	ScheduledActivity,
-} from "../types";
+import type { ActivityCategory, ScheduledActivity } from "../types";
 import { Dropdown } from "./Dropdown";
 
-const PRIORITY_OPTIONS: ActivityPriority[] = ["Low", "Medium", "High"];
+const PRIORITY_OPTIONS = [
+	{ label: "Low", value: 1 },
+	{ label: "Medium", value: 3 },
+	{ label: "High", value: 5 },
+] as const;
+
 const CATEGORY_OPTIONS: ActivityCategory[] = [
 	"Work",
 	"Personal",
@@ -46,16 +55,12 @@ function formatDateLabel(date: Date): string {
 	});
 }
 
-/** Next 14 days as YYYY-MM-DD + label for dropdown */
-function deadlineOptions(from: Date): { value: string; label: string }[] {
-	return Array.from({ length: 14 }, (_, i) => {
-		const d = new Date(from);
-		d.setDate(d.getDate() + i);
-		return {
-			value: dateKey(d),
-			label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : formatDateLabel(d),
-		};
-	});
+function buildActivityId(name: string): string {
+	const normalized = name
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "");
+	return `activity-${normalized || Date.now().toString()}`;
 }
 
 type Props = {
@@ -79,95 +84,125 @@ export function AddScheduledActivityModal({
 	const [title, setTitle] = useState("");
 	const [startHour, setStartHour] = useState("10");
 	const [startMinute, setStartMinute] = useState("00");
-	const startTime = `${startHour.padStart(2, "0")}:${startMinute}`;
 	const [duration, setDuration] = useState("60");
-	const [priority, setPriority] = useState<ActivityPriority>("Medium");
-	const [flexible, setFlexible] = useState(false);
-	const [category, setCategory] = useState<ActivityCategory>("Work");
-	const [deadline, setDeadline] = useState("");
+	const [priority, setPriority] = useState<number>(3);
+	const [isReplaceable, setIsReplaceable] = useState(true);
+	const [categoryId, setCategoryId] = useState<ActivityCategory>("Work");
 	const [error, setError] = useState("");
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
 		if (visible && activityToEdit) {
+			const start = new Date(activityToEdit.startTime);
 			setTitle(activityToEdit.title);
-			setStartHour(activityToEdit.startTime.slice(0, 2));
-			setStartMinute(activityToEdit.startTime.slice(3, 5));
-			setDuration(String(activityToEdit.durationMinutes));
+			setStartHour(String(start.getHours()).padStart(2, "0"));
+			setStartMinute(String(start.getMinutes()).padStart(2, "0"));
+			setDuration(String(activityToEdit.duration));
 			setPriority(activityToEdit.priority);
-			setFlexible(activityToEdit.flexible);
-			setCategory(activityToEdit.category);
-			setDeadline(activityToEdit.deadline);
+			setIsReplaceable(
+				activityToEdit.replaceabilityStatus === Replaceability.SOFT,
+			);
+			setCategoryId(activityToEdit.categoryId);
 		} else if (visible && !activityToEdit) {
 			setTitle("");
 			setStartHour("10");
 			setStartMinute("00");
 			setDuration("60");
-			setPriority("Medium");
-			setFlexible(false);
-			setCategory("Work");
-			setDeadline("");
+			setPriority(3);
+			setIsReplaceable(true);
+			setCategoryId("Work");
 		}
 		setError("");
 	}, [visible, activityToEdit]);
 
 	const baseDate = activityToEdit
-		? new Date(`${activityToEdit.date}T12:00:00`)
+		? new Date(activityToEdit.startTime)
 		: initialDate;
-	const deadlineOpts = deadlineOptions(baseDate);
-	const effectiveDeadline = deadline || dateKey(baseDate);
 
 	const handleClose = () => {
 		setTitle("");
 		setStartHour("10");
 		setStartMinute("00");
 		setDuration("60");
-		setPriority("Medium");
-		setFlexible(false);
-		setCategory("Work");
-		setDeadline("");
+		setPriority(3);
+		setIsReplaceable(true);
+		setCategoryId("Work");
 		setError("");
 		onClose();
 	};
 
 	const handleAdd = async () => {
-		const t = title.trim();
-		if (!t) {
+		const trimmedTitle = title.trim();
+		if (!trimmedTitle) {
 			setError("Title is required");
 			return;
 		}
-		const dur = Number.parseInt(duration, 10);
-		if (Number.isNaN(dur) || dur < 1 || dur > 1440) {
+
+		const parsedDuration = Number.parseInt(duration, 10);
+		if (
+			Number.isNaN(parsedDuration) ||
+			parsedDuration < 1 ||
+			parsedDuration > 1440
+		) {
 			setError("Duration must be 1–1440 minutes");
 			return;
 		}
+
+		const start = new Date(
+			`${dateKey(baseDate)}T${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}:00`,
+		);
+		if (Number.isNaN(start.getTime())) {
+			setError("Invalid date/time");
+			return;
+		}
+
+		const nowIso = new Date().toISOString();
+		const startIso = start.toISOString();
+		const endIso = new Date(
+			start.getTime() + parsedDuration * 60_000,
+		).toISOString();
+		const replaceabilityStatus = isReplaceable
+			? Replaceability.SOFT
+			: Replaceability.HARD;
+
 		setError("");
 		setSaving(true);
 		try {
 			if (isEdit && activityToEdit) {
 				const updated = await updateScheduledActivity(activityToEdit.id, {
-					title: t,
-					date: activityToEdit.date,
-					startTime,
-					durationMinutes: dur,
+					activityId: activityToEdit.activityId,
+					categoryId,
+					title: trimmedTitle,
+					startTime: startIso,
+					endTime: endIso,
+					duration: parsedDuration,
+					status: activityToEdit.status,
+					replaceabilityStatus,
 					priority,
-					flexible,
-					category,
-					deadline: effectiveDeadline,
-					completed: activityToEdit.completed,
+					isRecurring: activityToEdit.isRecurring,
+					recurringTemplateId: activityToEdit.recurringTemplateId,
+					source: activityToEdit.source,
+					isLocked: !isReplaceable,
+					createdAt: activityToEdit.createdAt,
+					updatedAt: nowIso,
 				});
 				onAdded?.(updated ?? activityToEdit);
 			} else {
 				const activity = await addScheduledActivity({
-					title: t,
-					date: dateKey(initialDate),
-					startTime,
-					durationMinutes: dur,
+					activityId: buildActivityId(trimmedTitle),
+					categoryId,
+					title: trimmedTitle,
+					startTime: startIso,
+					endTime: endIso,
+					duration: parsedDuration,
+					status: EventStatus.CONFIRMED,
+					replaceabilityStatus,
 					priority,
-					flexible,
-					category,
-					deadline: effectiveDeadline,
-					completed: false,
+					isRecurring: false,
+					source: ActivitySource.USER_CREATED,
+					isLocked: !isReplaceable,
+					createdAt: nowIso,
+					updatedAt: nowIso,
 				});
 				onAdded?.(activity);
 			}
@@ -201,13 +236,7 @@ export function AddScheduledActivityModal({
 							</Pressable>
 						</View>
 
-						<Text style={styles.dateLabel}>
-							{formatDateLabel(
-								activityToEdit
-									? new Date(`${activityToEdit.date}T12:00:00`)
-									: initialDate,
-							)}
-						</Text>
+						<Text style={styles.dateLabel}>{formatDateLabel(baseDate)}</Text>
 
 						<Text style={styles.fieldLabel}>Title</Text>
 						<TextInput
@@ -215,8 +244,8 @@ export function AddScheduledActivityModal({
 							placeholder="e.g. Design Review"
 							placeholderTextColor={colors.slate400}
 							value={title}
-							onChangeText={(v) => {
-								setTitle(v);
+							onChangeText={(value) => {
+								setTitle(value);
 								setError("");
 							}}
 						/>
@@ -228,8 +257,8 @@ export function AddScheduledActivityModal({
 									placeholder="Hour"
 									value={startHour}
 									options={HOUR_OPTIONS}
-									onSelect={(v) => {
-										setStartHour(v);
+									onSelect={(value) => {
+										setStartHour(value);
 										setError("");
 									}}
 								/>
@@ -240,8 +269,8 @@ export function AddScheduledActivityModal({
 									placeholder="Min"
 									value={startMinute}
 									options={[...MINUTE_OPTIONS]}
-									onSelect={(v) => {
-										setStartMinute(v);
+									onSelect={(value) => {
+										setStartMinute(value);
 										setError("");
 									}}
 								/>
@@ -254,8 +283,8 @@ export function AddScheduledActivityModal({
 							placeholder="60"
 							placeholderTextColor={colors.slate400}
 							value={duration}
-							onChangeText={(v) => {
-								setDuration(v);
+							onChangeText={(value) => {
+								setDuration(value);
 								setError("");
 							}}
 							keyboardType="number-pad"
@@ -263,62 +292,58 @@ export function AddScheduledActivityModal({
 
 						<Text style={styles.fieldLabel}>Priority</Text>
 						<View style={styles.segmented}>
-							{PRIORITY_OPTIONS.map((opt) => (
+							{PRIORITY_OPTIONS.map((option) => (
 								<Pressable
-									key={opt}
-									onPress={() => setPriority(opt)}
+									key={option.label}
+									onPress={() => setPriority(option.value)}
 									style={[
 										styles.segOption,
-										priority === opt && styles.segOptionSelected,
+										priority === option.value && styles.segOptionSelected,
 									]}
 								>
 									<Text
 										style={[
 											styles.segText,
-											priority === opt && styles.segTextSelected,
+											priority === option.value && styles.segTextSelected,
 										]}
 									>
-										{opt}
+										{option.label}
 									</Text>
 								</Pressable>
 							))}
 						</View>
 
 						<View style={styles.row}>
-							<Text style={styles.fieldLabel}>Flexible?</Text>
+							<Text style={styles.fieldLabel}>Replaceable?</Text>
 							<Pressable
-								onPress={() => setFlexible(!flexible)}
-								style={[styles.checkbox, flexible && styles.checkboxChecked]}
+								onPress={() => setIsReplaceable(!isReplaceable)}
+								style={[
+									styles.checkbox,
+									isReplaceable && styles.checkboxChecked,
+								]}
 							>
-								{flexible ? <Text style={styles.checkmark}>✓</Text> : null}
+								{isReplaceable ? <Text style={styles.checkmark}>✓</Text> : null}
 							</Pressable>
 						</View>
 
-						<Dropdown
-							label="Deadline"
-							placeholder="Select deadline"
-							value={effectiveDeadline}
-							options={deadlineOpts.map((o) => o.value)}
-							onSelect={(v) => {
-								setDeadline(v);
-								setError("");
-							}}
-						/>
 						<Text style={styles.fieldLabel}>Category</Text>
 						<View style={styles.chips}>
-							{CATEGORY_OPTIONS.map((opt) => (
+							{CATEGORY_OPTIONS.map((option) => (
 								<Pressable
-									key={opt}
-									onPress={() => setCategory(opt)}
-									style={[styles.chip, category === opt && styles.chipSelected]}
+									key={option}
+									onPress={() => setCategoryId(option)}
+									style={[
+										styles.chip,
+										categoryId === option && styles.chipSelected,
+									]}
 								>
 									<Text
 										style={[
 											styles.chipText,
-											category === opt && styles.chipTextSelected,
+											categoryId === option && styles.chipTextSelected,
 										]}
 									>
-										{opt}
+										{option}
 									</Text>
 								</Pressable>
 							))}
@@ -388,12 +413,11 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		color: colors.slate800,
 		marginBottom: spacing.lg,
-		backgroundColor: colors.white,
 	},
 	timeRow: {
 		flexDirection: "row",
 		gap: spacing.md,
-		marginBottom: spacing.lg,
+		marginBottom: spacing.md,
 	},
 	timeHalf: { flex: 1 },
 	segmented: {
@@ -403,40 +427,38 @@ const styles = StyleSheet.create({
 	},
 	segOption: {
 		flex: 1,
-		paddingVertical: spacing.md,
-		alignItems: "center",
-		justifyContent: "center",
-		borderRadius: 12,
 		borderWidth: 1,
 		borderColor: colors.slate200,
-		backgroundColor: colors.white,
+		borderRadius: 10,
+		paddingVertical: spacing.sm,
+		alignItems: "center",
 	},
 	segOptionSelected: {
 		borderColor: colors.primary,
-		backgroundColor: "rgba(19, 236, 164, 0.12)",
+		backgroundColor: colors.background,
 	},
-	segText: { fontSize: 14, color: colors.slate700 },
-	segTextSelected: { color: colors.primary, fontWeight: "600" },
+	segText: { color: colors.slate600, fontWeight: "500" },
+	segTextSelected: { color: colors.slate800, fontWeight: "600" },
 	row: {
 		flexDirection: "row",
+		justifyContent: "space-between",
 		alignItems: "center",
 		marginBottom: spacing.lg,
-		gap: spacing.md,
 	},
 	checkbox: {
 		width: 24,
 		height: 24,
-		borderRadius: 6,
-		borderWidth: 2,
+		borderRadius: 12,
+		borderWidth: 1,
 		borderColor: colors.slate300,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	checkboxChecked: {
-		backgroundColor: colors.primary,
 		borderColor: colors.primary,
+		backgroundColor: "transparent",
 	},
-	checkmark: { color: colors.slate800, fontSize: 14, fontWeight: "700" },
+	checkmark: { color: colors.primary, fontSize: 14, fontWeight: "600" },
 	chips: {
 		flexDirection: "row",
 		flexWrap: "wrap",
@@ -446,21 +468,21 @@ const styles = StyleSheet.create({
 	chip: {
 		paddingVertical: spacing.sm,
 		paddingHorizontal: spacing.md,
-		borderRadius: 20,
 		borderWidth: 1,
 		borderColor: colors.slate200,
+		borderRadius: 999,
 		backgroundColor: colors.white,
 	},
 	chipSelected: {
 		borderColor: colors.primary,
-		backgroundColor: "rgba(19, 236, 164, 0.12)",
+		backgroundColor: colors.background,
 	},
-	chipText: { fontSize: 14, color: colors.slate700 },
-	chipTextSelected: { color: colors.primary, fontWeight: "600" },
+	chipText: { color: colors.slate600, fontWeight: "500" },
+	chipTextSelected: { color: colors.slate800, fontWeight: "600" },
 	error: {
-		fontSize: 14,
-		color: colors.red400,
+		color: colors.red300,
 		marginBottom: spacing.md,
+		fontSize: 13,
 	},
 	addBtn: {
 		backgroundColor: colors.primary,
@@ -468,6 +490,8 @@ const styles = StyleSheet.create({
 		paddingVertical: spacing.md,
 		alignItems: "center",
 	},
-	addBtnDisabled: { opacity: 0.7 },
+	addBtnDisabled: {
+		opacity: 0.6,
+	},
 	addBtnLabel: { fontSize: 16, fontWeight: "600", color: colors.slate800 },
 });

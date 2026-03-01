@@ -13,7 +13,7 @@ import { CausalNetView } from "../components/CausalNetView";
 import { GoalTimeRow } from "../components/GoalTimeRow";
 import { ProgressCircle } from "../components/ProgressCircle";
 import { SegmentedControl } from "../components/SegmentedControl";
-import { loadAnalyticsData } from "../data/analyticsData";
+import { loadAnalyticsView } from "../data/services";
 import { colors } from "../theme";
 import type {
 	ActivityBreakdownItem,
@@ -58,7 +58,7 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 	const load = useCallback(async () => {
 		setLoading(true);
 		try {
-			const data = await loadAnalyticsData(timeframe);
+			const data = await loadAnalyticsView(timeframe);
 			setActivityBreakdown(data.activityBreakdown);
 			setGoalTimeData(data.goalTimeData);
 			setCausalNetNodes(data.causalNetNodes);
@@ -161,7 +161,7 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 					<View style={[styles.statCard, styles.statPeach]}>
 						<Text style={styles.statValue}>{focusPercent}%</Text>
 						<Text style={styles.statLabel}>Focus</Text>
-						<Text style={styles.statHint}>Tasks you completed</Text>
+						<Text style={styles.statHint}>Activities you completed</Text>
 					</View>
 					<View style={[styles.statCard, styles.statLavender]}>
 						<Text style={styles.statValue}>{flowLabel}</Text>
@@ -199,9 +199,9 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 				<View style={styles.section}>
 					<Text style={styles.sectionTitle}>Time per goal & projected</Text>
 					<Text style={styles.goalHint}>
-						Done = time you logged when marking tasks done. Target = planned
-						time (scheduled duration). Projected = extrapolated to end of
-						period.
+						Done = time you logged when marking activities done. Target =
+						planned time (scheduled duration). Projected = extrapolated to end
+						of period.
 					</Text>
 					<View style={styles.breakdownCard}>
 						{goalTimeData.map((g, i) => (
@@ -280,7 +280,7 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 						<Text style={styles.finalTipTitle}>A little tip for you</Text>
 						<Text style={styles.finalTipBody}>
 							{focusPercent >= 80 ? (
-								<>You're completing most of your tasks. Keep it up!</>
+								<>You're completing most of your activities. Keep it up!</>
 							) : (
 								<>
 									You complete activities{" "}

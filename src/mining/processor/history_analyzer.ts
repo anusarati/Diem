@@ -1,9 +1,9 @@
-import type { Database } from "@nozbe/watermelondb";
 import type ActivityHistory from "../../data/models/ActivityHistory";
 import type {
 	FrequencyEmaStateRepository,
 	HeuristicNetArcRepository,
 	HeuristicNetPairRepository,
+	HistoryRepository,
 	MarkovTransitionRepository,
 	UserBehaviorRepository,
 } from "../../data/repositories";
@@ -105,8 +105,8 @@ export class HistoryAnalyzer {
 	}
 
 	async reconcileFrequency(
-		database: Database,
 		repositories: {
+			history: HistoryRepository;
 			frequencyEma: FrequencyEmaStateRepository;
 			userBehavior: UserBehaviorRepository;
 		},
@@ -114,8 +114,8 @@ export class HistoryAnalyzer {
 		staleActivities?: string[],
 	) {
 		return this.frequencyMiner.reconcile({
-			database,
 			repositories: {
+				historyRepository: repositories.history,
 				emaStateRepository: repositories.frequencyEma,
 				userBehaviorRepository: repositories.userBehavior,
 			},

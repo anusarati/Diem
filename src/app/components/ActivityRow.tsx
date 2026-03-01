@@ -10,6 +10,7 @@ type Props = {
 };
 
 export function ActivityRow({ activity, onToggle, last, onPress }: Props) {
+	const subtitle = `${activity.defaultDuration} min • ${activity.categoryId}`;
 	return (
 		<View style={[styles.row, !last && styles.border]}>
 			<Pressable
@@ -22,9 +23,9 @@ export function ActivityRow({ activity, onToggle, last, onPress }: Props) {
 				<Text
 					style={[styles.title, activity.completed && styles.titleCompleted]}
 				>
-					{activity.title}
+					{activity.name}
 				</Text>
-				<Text style={styles.subtitle}>{activity.subtitle}</Text>
+				<Text style={styles.subtitle}>{subtitle}</Text>
 			</Pressable>
 		</View>
 	);

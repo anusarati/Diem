@@ -1,7 +1,7 @@
 import type { Database } from "@nozbe/watermelondb";
-import type ActivityHistory from "../../data/models/ActivityHistory";
 import {
 	FrequencyEmaStateRepository,
+	HistoryRepository,
 	UserBehaviorRepository,
 } from "../../data/repositories";
 import { deriveLocalBucketKeys } from "../frequency/buckets";
@@ -12,6 +12,7 @@ import {
 import type { CompletedActivityEvent } from "../types";
 
 export interface RecordCompletionInput {
+	historyId?: string;
 	activityId: string;
 	predictedStartTime: Date;
 	predictedDuration: number;
@@ -24,19 +25,28 @@ export interface RecordCompletionInput {
 }
 
 export class HistoryWriteService {
+	private readonly historyRepository: HistoryRepository;
 	private readonly frequencyMiner: FrequencyEmaMiner;
 	private readonly frequencyStateRepository: FrequencyEmaStateRepository;
 	private readonly userBehaviorRepository: UserBehaviorRepository;
 
 	constructor(
-		private readonly database: Database,
+		database: Database,
 		options: {
 			frequencyMiner?: FrequencyEmaMiner;
+			historyRepository?: HistoryRepository;
+			frequencyStateRepository?: FrequencyEmaStateRepository;
+			userBehaviorRepository?: UserBehaviorRepository;
 		} = {},
 	) {
 		this.frequencyMiner = options.frequencyMiner ?? new FrequencyEmaMiner();
-		this.frequencyStateRepository = new FrequencyEmaStateRepository(database);
-		this.userBehaviorRepository = new UserBehaviorRepository(database);
+		this.historyRepository =
+			options.historyRepository ?? new HistoryRepository(database);
+		this.frequencyStateRepository =
+			options.frequencyStateRepository ??
+			new FrequencyEmaStateRepository(database);
+		this.userBehaviorRepository =
+			options.userBehaviorRepository ?? new UserBehaviorRepository(database);
 	}
 
 	async recordCompletion(input: RecordCompletionInput): Promise<string> {
@@ -44,26 +54,21 @@ export class HistoryWriteService {
 			input.actualStartTime,
 			input.timeZone,
 		);
-		const history = await this.database.write(async () =>
-			this.database
-				.get<ActivityHistory>("activity_history")
-				.create((record) => {
-					record.activityId = input.activityId;
-					record.predictedStartTime = input.predictedStartTime;
-					record.predictedDuration = input.predictedDuration;
-					record.actualStartTime = input.actualStartTime;
-					record.actualDuration = input.actualDuration;
-					record.localDayBucket = bucketKeys.dayBucket;
-					record.localWeekBucket = bucketKeys.weekBucket;
-					record.localMonthBucket = bucketKeys.monthBucket;
-					record.bucketTimezone = bucketKeys.timeZone;
-					record.wasCompleted = true;
-					record.wasSkipped = input.wasSkipped ?? false;
-					record.wasReplaced = input.wasReplaced ?? false;
-					record.notes = input.notes;
-					record.createdAt = new Date();
-				}),
-		);
+		const history = await this.historyRepository.upsertCompletion({
+			historyId: input.historyId,
+			activityId: input.activityId,
+			predictedStartTime: input.predictedStartTime,
+			predictedDuration: input.predictedDuration,
+			actualStartTime: input.actualStartTime,
+			actualDuration: input.actualDuration,
+			localDayBucket: bucketKeys.dayBucket,
+			localWeekBucket: bucketKeys.weekBucket,
+			localMonthBucket: bucketKeys.monthBucket,
+			bucketTimezone: bucketKeys.timeZone,
+			wasSkipped: input.wasSkipped,
+			wasReplaced: input.wasReplaced,
+			notes: input.notes,
+		});
 
 		const completionEvent: CompletedActivityEvent = {
 			activityId: input.activityId,
@@ -94,8 +99,8 @@ export class HistoryWriteService {
 		staleActivities?: string[],
 	): Promise<FrequencyEmaReconcileResult> {
 		return this.frequencyMiner.reconcile({
-			database: this.database,
 			repositories: {
+				historyRepository: this.historyRepository,
 				emaStateRepository: this.frequencyStateRepository,
 				userBehaviorRepository: this.userBehaviorRepository,
 			},
