@@ -309,11 +309,18 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 				startTime: activity.startTime,
 				duration: activity.durationMinutes,
 				type: activity.type,
-				priority: activity.priority, // Pass existing priority
+				priority: activity.priority,
 			});
 			setMenuVisible(false);
+			setInitialTime(activity.startTime);
 			setIsQuickAddOpen(true);
 		}
+	};
+
+	const handleDoublePress = (time: string) => {
+		setInitialTime(time);
+		setEditingActivity(null);
+		setIsQuickAddOpen(true);
 	};
 
 	const handleActivityPress = (id: string) => {
@@ -349,10 +356,9 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 
 	const handleSheetClose = () => {
 		setIsQuickAddOpen(false);
-		setEditingActivity(null); // Clear edit state on close
+		setEditingActivity(null);
 	};
 
-	// Filter activities for the "Day" view
 	const currentDayActivities = activities.filter(
 		(a) => (a.day || "Mon") === selectedDay,
 	);
@@ -363,7 +369,6 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	return (
 		<SafeAreaView style={styles.safe}>
 			<View style={styles.mainContainer}>
-				{/* Header */}
 				<View style={styles.header}>
 					<View style={styles.headerTop}>
 						<View>
@@ -380,13 +385,12 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					</View>
 				</View>
 
-				{/* View Switcher */}
 				{viewMode === "Day" ? (
 					<TimelineCanvas
-						// biome-ignore lint/suspicious/noExplicitAny: Type mapping between app and feature
 						activities={currentDayActivities as any[]}
 						onActivityPress={handleActivityPress}
 						onUpdateActivity={handleUpdateTime}
+						onEmptyDoublePress={handleDoublePress}
 						showNowIndicator={
 							selectedDay === DAYS[(new Date().getDay() + 6) % 7]
 						}
@@ -405,12 +409,12 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					/>
 				)}
 
-				{/* FAB */}
 				<View style={styles.fabWrap}>
 					<Pressable
 						style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
 						onPress={() => {
-							setEditingActivity(null); // Ensure clean state
+							setEditingActivity(null);
+							setInitialTime("09:00");
 							setIsQuickAddOpen(true);
 						}}
 					>
@@ -418,7 +422,6 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					</Pressable>
 				</View>
 
-				{/* Add/Edit Modal */}
 				<QuickAddSheet
 					isOpen={isQuickAddOpen}
 					onClose={handleSheetClose}
@@ -439,7 +442,6 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					}
 				/>
 
-				{/* Custom Activity Menu */}
 				<ActivityActionMenu
 					visible={menuVisible}
 					activityTitle={selectedActivityTitle}

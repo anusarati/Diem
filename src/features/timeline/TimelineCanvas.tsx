@@ -40,7 +40,7 @@ export function TimelineCanvas({
 		const timeString = `${hour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 
 		const now = Date.now();
-		if (now - lastPressTime.current < 300) {
+		if (now - lastPressTime.current < 500) {
 			onEmptyDoublePress?.(timeString);
 		} else {
 			onEmptyPress?.(timeString);
@@ -71,6 +71,7 @@ export function TimelineCanvas({
 				{hours.map((hour) => (
 					<View
 						key={hour}
+						pointerEvents="none"
 						style={[
 							styles.hourRow,
 							{ height: HOUR_HEIGHT, top: (hour - START_HOUR) * HOUR_HEIGHT },
@@ -91,7 +92,9 @@ export function TimelineCanvas({
 
 				{/* Now Indicator */}
 				{showNowIndicator && (
-					<NowIndicator hourHeight={HOUR_HEIGHT} startHour={START_HOUR} />
+					<View pointerEvents="none" style={StyleSheet.absoluteFill}>
+						<NowIndicator hourHeight={HOUR_HEIGHT} startHour={START_HOUR} />
+					</View>
 				)}
 
 				{/* Activities Layer */}
