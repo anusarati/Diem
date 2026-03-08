@@ -17,6 +17,11 @@ const activitySchema = z.object({
 	category: z.string().optional(),
 	isRecurring: z.boolean(),
 	recurrencePattern: RecurrencePatternSchema.optional(),
+	deadline: z.string().optional(),
+	minDuration: z.number().min(1).optional(),
+	maxDuration: z.number().min(1).optional(),
+	minFrequency: z.number().min(1).optional(),
+	maxFrequency: z.number().min(1).optional(),
 });
 
 export type ActivityFormData = z.infer<typeof activitySchema>;
@@ -48,6 +53,11 @@ export const useActivityValidation = ({
 			replaceabilityStatus: "SOFT",
 			category: "Other",
 			isRecurring: false,
+			deadline: "",
+			minDuration: 30,
+			maxDuration: 120,
+			minFrequency: 1,
+			maxFrequency: 7,
 			...defaultValues,
 		} as ActivityFormInput,
 		mode: "onChange",

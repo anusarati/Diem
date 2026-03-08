@@ -8,7 +8,7 @@ const LEGACY_EXACT_KEYS = [
 	"diem_users_imported_to_db_v1",
 ] as const;
 const LEGACY_PREFIXES = [
-	"diem_tasks_",
+	"diem_activities_",
 	"diem_scheduled_",
 	"diem_settings_",
 	"diem_legacy_imported_",

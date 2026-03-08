@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useCallback } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { colors, spacing } from "../../app/theme";
 import { DraggableTimeBlock } from "./components/DraggableTimeBlock";
 import { NowIndicator } from "./components/NowIndicator";
@@ -13,6 +13,8 @@ type Props = {
 	activities: Activity[];
 	onUpdateActivity?: (id: string, newStartTime: string) => void;
 	onActivityPress?: (id: string) => void;
+	onEmptyPress?: (time: string) => void;
+	onEmptyDoublePress?: (time: string) => void;
 	showNowIndicator?: boolean;
 };
 
@@ -20,12 +22,31 @@ export function TimelineCanvas({
 	activities,
 	onUpdateActivity,
 	onActivityPress,
+	onEmptyPress,
+	onEmptyDoublePress,
 	showNowIndicator = true,
 }: Props) {
 	const hours = Array.from(
 		{ length: END_HOUR - START_HOUR },
 		(_, i) => i + START_HOUR,
 	);
+
+	const lastPressTime = React.useRef(0);
+
+	const handleEmptyPress = (event: any) => {
+		const { locationY } = event.nativeEvent;
+		const hour = Math.floor(locationY / HOUR_HEIGHT);
+		const minutes = Math.floor(((locationY % HOUR_HEIGHT) / HOUR_HEIGHT) * 60);
+		const timeString = `${hour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+
+		const now = Date.now();
+		if (now - lastPressTime.current < 300) {
+			onEmptyDoublePress?.(timeString);
+		} else {
+			onEmptyPress?.(timeString);
+		}
+		lastPressTime.current = now;
+	};
 
 	const handleUpdate = useCallback(
 		(id: string, newTime: string) => {
@@ -45,6 +66,7 @@ export function TimelineCanvas({
 				scrollEventThrottle={16}
 				showsVerticalScrollIndicator={false}
 			>
+				<Pressable style={StyleSheet.absoluteFill} onPress={handleEmptyPress} />
 				{/* Background Grid */}
 				{hours.map((hour) => (
 					<View

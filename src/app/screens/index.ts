@@ -1,7 +1,7 @@
 export { AnalysisScreen } from "./AnalysisScreen";
 export { HomeScreen } from "./HomeScreen";
 export { LoginScreen } from "./LoginScreen";
-export { ManageTasksScreen } from "./ManageTasks";
+export { ManageActivitiesScreen } from "./ManageActivities";
 export { ProfileScreen } from "./ProfileScreen";
 export { RegisterScreen } from "./RegisterScreen";
 export { ScheduleScreen } from "./ScheduleScreen";

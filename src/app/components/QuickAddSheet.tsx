@@ -14,9 +14,19 @@ type Props = {
 	isOpen: boolean;
 	onClose: () => void;
 	onSave: (data: ActivityFormData) => void;
+	existingActivities?: any[];
+	initialTime?: string;
+	initialData?: Partial<ActivityFormData>;
 };
 
-export function QuickAddSheet({ isOpen, onClose, onSave }: Props) {
+export function QuickAddSheet({
+	isOpen,
+	onClose,
+	onSave,
+	existingActivities,
+	initialTime,
+	initialData,
+}: Props) {
 	return (
 		<Modal
 			visible={isOpen}
@@ -48,6 +58,11 @@ export function QuickAddSheet({ isOpen, onClose, onSave }: Props) {
 					</View>
 
 					<ActivityForm
+						existingActivities={existingActivities}
+						initialData={
+							initialData ||
+							(initialTime ? { startTime: initialTime } : undefined)
+						}
 						onSubmit={(data: ActivityFormData) => {
 							onSave(data);
 							onClose();

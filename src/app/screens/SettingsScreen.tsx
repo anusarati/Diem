@@ -20,13 +20,13 @@ import type { AppRoute } from "../types";
 // Configure notifications to show even when app is foregrounded
 /*
 Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
-    }),
+	handleNotification: async () => ({
+		shouldShowAlert: true,
+		shouldPlaySound: true,
+		shouldSetBadge: false,
+		shouldShowBanner: true,
+		shouldShowList: true,
+	}),
 });
 */
 
@@ -62,14 +62,14 @@ export function SettingsScreen({ onNavigate }: Props) {
 			"Notifications are temporarily disabled for build compatibility.",
 		);
 		/*
-        if (notificationsEnabled) {
-            setNotificationsEnabled(false);
-            Alert.alert("Info", "Please disable notifications in system settings.");
-        } else {
-            const { status } = await Notifications.requestPermissionsAsync();
-            setNotificationsEnabled(status === "granted");
-        }
-        */
+		if (notificationsEnabled) {
+			setNotificationsEnabled(false);
+			Alert.alert("Info", "Please disable notifications in system settings.");
+		} else {
+			const { status } = await Notifications.requestPermissionsAsync();
+			setNotificationsEnabled(status === "granted");
+		}
+		*/
 	};
 
 	const toggleLocation = async () => {
@@ -98,32 +98,32 @@ export function SettingsScreen({ onNavigate }: Props) {
 			"Notifications are temporarily disabled for build compatibility.",
 		);
 		/*
-        if (!notificationsEnabled) {
-            Alert.alert("Error", "Enable notifications first!");
-            return;
-        }
+		if (!notificationsEnabled) {
+			Alert.alert("Error", "Enable notifications first!");
+			return;
+		}
 
-        const location = locationEnabled
-            ? await Location.getCurrentPositionAsync({})
-            : null;
-        const locString = location
-            ? `Lat: ${location.coords.latitude.toFixed(4)}, Long: ${location.coords.longitude.toFixed(4)}`
-            : "Location disabled";
+		const location = locationEnabled
+			? await Location.getCurrentPositionAsync({})
+			: null;
+		const locString = location
+			? `Lat: ${location.coords.latitude.toFixed(4)}, Long: ${location.coords.longitude.toFixed(4)}`
+			: "Location disabled";
 
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: "Diem Intelligence Check",
-                body: `Are you doing your predicted task? \n(Context: ${locString})`,
-                data: { location: location?.coords },
-            },
-            trigger: null,
-        });
+		await Notifications.scheduleNotificationAsync({
+			content: {
+				title: "Diem Intelligence Check",
+				body: `Are you doing your predicted activity? \n(Context: ${locString})`,
+				data: { location: location?.coords },
+			},
+			trigger: null,
+		});
 
-        setDebugLog((prev) => [
-            `[${new Date().toLocaleTimeString()}] Sent notification with ${locString}`,
-            ...prev,
-        ]);
-        */
+		setDebugLog((prev) => [
+			`[${new Date().toLocaleTimeString()}] Sent notification with ${locString}`,
+			...prev,
+		]);
+		*/
 	};
 
 	const resetModel = () => {

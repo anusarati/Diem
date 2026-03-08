@@ -12,9 +12,14 @@ type Category = { name: string; color: string };
 type Props = {
 	categories: Category[];
 	onAddCategory: (category: Category) => void;
+	onDeleteCategory: (name: string) => void;
 };
 
-export function CategoryManager({ categories, onAddCategory }: Props) {
+export function CategoryManager({
+	categories,
+	onAddCategory,
+	onDeleteCategory,
+}: Props) {
 	const [name, setName] = useState("");
 	const [color] = useState("#3B82F6");
 
@@ -44,6 +49,12 @@ export function CategoryManager({ categories, onAddCategory }: Props) {
 					<View key={cat.name} style={styles.categoryBadge}>
 						<View style={[styles.dot, { backgroundColor: cat.color }]} />
 						<Text style={styles.categoryName}>{cat.name}</Text>
+						<TouchableOpacity
+							onPress={() => onDeleteCategory(cat.name)}
+							style={styles.deleteCircle}
+						>
+							<Text style={styles.deleteText}>×</Text>
+						</TouchableOpacity>
 					</View>
 				))}
 			</View>
@@ -83,4 +94,14 @@ const styles = StyleSheet.create({
 	},
 	dot: { width: 8, height: 8, borderRadius: 4 },
 	categoryName: { fontSize: 12, fontWeight: "600", color: "#475569" },
+	deleteCircle: {
+		width: 16,
+		height: 16,
+		borderRadius: 8,
+		backgroundColor: "#E2E8F0",
+		alignItems: "center",
+		justifyContent: "center",
+		marginLeft: 4,
+	},
+	deleteText: { fontSize: 12, color: "#64748B", fontWeight: "700", top: -1 },
 });

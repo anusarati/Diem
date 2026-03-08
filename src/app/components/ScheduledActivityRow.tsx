@@ -8,6 +8,7 @@ type Props = {
 	onToggle: () => void;
 	onPress?: () => void;
 	last?: boolean;
+	style?: any;
 };
 
 export function ScheduledActivityRow({
@@ -15,6 +16,7 @@ export function ScheduledActivityRow({
 	onToggle,
 	onPress,
 	last,
+	style,
 }: Props) {
 	const completed = activity.status === EventStatus.COMPLETED;
 	const startsAt = new Date(activity.startTime).toLocaleTimeString([], {
@@ -24,13 +26,7 @@ export function ScheduledActivityRow({
 	const subtitle = `${startsAt} • ${activity.duration} min • ${activity.categoryId}`;
 
 	return (
-		<View style={[styles.row, !last && styles.border]}>
-			<Pressable
-				onPress={onToggle}
-				style={[styles.checkbox, completed && styles.checkboxChecked]}
-			>
-				{completed && <Text style={styles.checkmark}>✓</Text>}
-			</Pressable>
+		<View style={[styles.row, !last && styles.border, style]}>
 			<Pressable style={styles.content} onPress={onPress}>
 				<Text style={[styles.title, completed && styles.titleCompleted]}>
 					{activity.title}
@@ -43,6 +39,7 @@ export function ScheduledActivityRow({
 
 const styles = StyleSheet.create({
 	row: {
+		flex: 1,
 		flexDirection: "row",
 		alignItems: "center",
 		paddingVertical: 16,
@@ -61,18 +58,4 @@ const styles = StyleSheet.create({
 		color: colors.slate400,
 		marginTop: 2,
 	},
-	checkbox: {
-		width: 24,
-		height: 24,
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: colors.slate300,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	checkboxChecked: {
-		borderColor: colors.primary,
-		backgroundColor: "transparent",
-	},
-	checkmark: { color: colors.primary, fontSize: 14, fontWeight: "600" },
 });
