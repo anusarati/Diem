@@ -36,7 +36,6 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 
 	const loadActivities = useCallback(() => {
 		setLoading(true);
-		// Logic to load from persistence or dummy data
 		setLoading(false);
 	}, []);
 
