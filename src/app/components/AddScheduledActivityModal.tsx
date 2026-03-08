@@ -161,30 +161,35 @@ export function AddScheduledActivityModal({
 		const endIso = new Date(
 			start.getTime() + parsedDuration * 60_000,
 		).toISOString();
+
+		// Logical mappings for your new types
 		const replaceabilityStatus = isReplaceable
 			? Replaceability.SOFT
 			: Replaceability.HARD;
+
+		// Map UI state to the mandatory fields in ScheduledEventEntity
+		const dateString = dateKey(baseDate);
+		const isCompleted =
+			isEdit && activityToEdit ? activityToEdit.completed : false;
 
 		setError("");
 		setSaving(true);
 		try {
 			if (isEdit && activityToEdit) {
 				const updated = await updateScheduledActivity(activityToEdit.id, {
-					activityId: activityToEdit.activityId,
+					...activityToEdit,
 					categoryId,
 					title: trimmedTitle,
 					startTime: startIso,
 					endTime: endIso,
 					duration: parsedDuration,
-					status: activityToEdit.status,
+					durationMinutes: parsedDuration,
 					replaceabilityStatus,
 					priority,
-					isRecurring: activityToEdit.isRecurring,
-					recurringTemplateId: activityToEdit.recurringTemplateId,
-					source: activityToEdit.source,
 					isLocked: !isReplaceable,
-					createdAt: activityToEdit.createdAt,
+					flexible: isReplaceable,
 					updatedAt: nowIso,
+					date: dateString,
 				});
 				onAdded?.(updated ?? activityToEdit);
 			} else {
@@ -203,6 +208,13 @@ export function AddScheduledActivityModal({
 					isLocked: !isReplaceable,
 					createdAt: nowIso,
 					updatedAt: nowIso,
+
+					date: dateString,
+					completed: isCompleted,
+					flexible: isReplaceable,
+					category: categoryId,
+					durationMinutes: parsedDuration,
+					deadline: endIso,
 				});
 				onAdded?.(activity);
 			}

@@ -51,6 +51,12 @@ export interface ScheduledEventEntity {
 	isLocked: boolean;
 	createdAt: string;
 	updatedAt: string;
+	date: string;
+	completed?: boolean;
+	flexible?: boolean;
+	category?: string;
+	durationMinutes?: number;
+	deadline?: string;
 }
 
 export interface ActivityHistoryEntity {

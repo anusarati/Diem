@@ -10,7 +10,8 @@ export type AppRoute =
 	| "Calendar"
 	| "Profile"
 	| "Settings"
-	| "AddActivity";
+	| "AddActivity"
+	| "ManageActivities";
 
 /** User preferences persisted to storage/DB. */
 export type UserSettings = {

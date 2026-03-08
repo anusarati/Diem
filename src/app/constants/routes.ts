@@ -5,4 +5,5 @@ export const ROUTES = {
 	PROFILE: "Profile",
 	SETTINGS: "Settings",
 	ADD_ACTIVITY: "AddActivity",
+	MANAGE_ACTIVITIES: "ManageActivities",
 } as const;

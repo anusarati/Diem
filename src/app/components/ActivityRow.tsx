@@ -3,8 +3,12 @@ import { colors } from "../theme";
 import type { ActivityItem } from "../types";
 
 type Props = {
-	activity: ActivityItem;
-	onToggle: () => void;
+	activity: Partial<ActivityItem> & {
+		name: string;
+		defaultDuration: number;
+		categoryId: string;
+	};
+	onToggle?: () => void;
 	last?: boolean;
 	onPress?: () => void;
 };
@@ -13,12 +17,17 @@ export function ActivityRow({ activity, onToggle, last, onPress }: Props) {
 	const subtitle = `${activity.defaultDuration} min • ${activity.categoryId}`;
 	return (
 		<View style={[styles.row, !last && styles.border]}>
-			<Pressable
-				onPress={onToggle}
-				style={[styles.checkbox, activity.completed && styles.checkboxChecked]}
-			>
-				{activity.completed && <Text style={styles.checkmark}>✓</Text>}
-			</Pressable>
+			{onToggle && (
+				<Pressable
+					onPress={onToggle}
+					style={[
+						styles.checkbox,
+						activity.completed && styles.checkboxChecked,
+					]}
+				>
+					{activity.completed && <Text style={styles.checkmark}>✓</Text>}
+				</Pressable>
+			)}
 			<Pressable style={styles.content} onPress={onPress}>
 				<Text
 					style={[styles.title, activity.completed && styles.titleCompleted]}

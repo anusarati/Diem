@@ -3,10 +3,11 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TimelineCanvas } from "../../features/timeline/TimelineCanvas";
 import { ActivityActionMenu } from "../components/ActivityActionMenu";
-import { AddActivitySheet } from "../components/AddActivitySheet";
+import { QuickAddSheet } from "../components/QuickAddSheet";
 import { SegmentedControl } from "../components/SegmentedControl";
 import type { TimeBlockProps } from "../components/TimeBlock";
 import { WeeklyView } from "../components/WeeklyView";
+import type { ActivityFormData } from "../hooks/useActivityValidation";
 import { colors, spacing } from "../theme";
 import type { AppRoute } from "../types";
 
@@ -14,9 +15,7 @@ type Props = {
 	onNavigate: (route: AppRoute) => void;
 };
 
-// Initial Mock Data with 'day' property
 const INITIAL_ACTIVITIES: TimeBlockProps[] = [
-	// MONDAY
 	{
 		id: "1",
 		title: "Morning Routine",
@@ -150,6 +149,33 @@ const INITIAL_ACTIVITIES: TimeBlockProps[] = [
 	},
 ];
 
+const EXISTING_ACTIVITIES: any[] = [
+	{
+		id: "a1",
+		name: "Gym",
+		priority: 3,
+		defaultDuration: 60,
+		isReplaceable: false,
+		categoryId: "Fitness",
+	},
+	{
+		id: "a2",
+		name: "Study",
+		priority: 2,
+		defaultDuration: 120,
+		isReplaceable: true,
+		categoryId: "Education",
+	},
+	{
+		id: "a3",
+		name: "Coding",
+		priority: 3,
+		defaultDuration: 90,
+		isReplaceable: false,
+		categoryId: "Work",
+	},
+];
+
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 // Helper to get the actual date of the current week's Monday
@@ -163,8 +189,9 @@ const getMonday = (d: Date) => {
 export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	const [activities, setActivities] =
 		useState<TimeBlockProps[]>(INITIAL_ACTIVITIES);
-	const [isAddSheetVisible, setIsAddSheetVisible] = useState(false);
+	const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 	const [viewMode, setViewMode] = useState("Day"); // 'Day' | 'Week'
+	const [initialTime, setInitialTime] = useState("");
 
 	// Dynamic Date State
 	const [currentDate] = useState(new Date()); // Today
@@ -221,16 +248,13 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		}
 	};
 
-	const handleAddOrEditActivity = (activityData: {
-		title: string;
-		startTime: string;
-		duration: number;
-		type: "fixed" | "flexible" | "predicted";
-		priority?: "high" | "medium" | "low";
-	}) => {
+	const handleAddOrEditActivity = (activityData: ActivityFormData) => {
 		const categoryColor = activityData.priority
 			? getColorForPriority(activityData.priority)
 			: colors.primary;
+
+		const type =
+			activityData.replaceabilityStatus === "SOFT" ? "flexible" : "fixed";
 
 		if (editingActivity) {
 			// UPDATE existing
@@ -240,12 +264,11 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 						return {
 							...a,
 							title: activityData.title,
-							startTime: activityData.startTime,
-							durationMinutes: activityData.duration, // Map correctly
-							type: activityData.type,
+							startTime: activityData.startTime || a.startTime,
+							durationMinutes: activityData.duration || a.durationMinutes,
+							type: type,
 							priority: activityData.priority,
-							categoryColor: categoryColor, // Update color
-							// Ensure day persists
+							categoryColor: categoryColor,
 							day: a.day,
 						};
 					}
@@ -258,12 +281,12 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 			const activity: TimeBlockProps = {
 				id: Date.now().toString(),
 				title: activityData.title,
-				startTime: activityData.startTime,
-				durationMinutes: activityData.duration,
-				type: activityData.type,
+				startTime: activityData.startTime || initialTime || "09:00",
+				durationMinutes: activityData.duration || 60,
+				type: type,
 				day: selectedDay,
 				priority: activityData.priority,
-				categoryColor: categoryColor, // Set color
+				categoryColor: categoryColor,
 			};
 			setActivities([...activities, activity]);
 		}
@@ -286,11 +309,18 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 				startTime: activity.startTime,
 				duration: activity.durationMinutes,
 				type: activity.type,
-				priority: activity.priority, // Pass existing priority
+				priority: activity.priority,
 			});
 			setMenuVisible(false);
-			setIsAddSheetVisible(true);
+			setInitialTime(activity.startTime);
+			setIsQuickAddOpen(true);
 		}
+	};
+
+	const handleDoublePress = (time: string) => {
+		setInitialTime(time);
+		setEditingActivity(null);
+		setIsQuickAddOpen(true);
 	};
 
 	const handleActivityPress = (id: string) => {
@@ -325,11 +355,10 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	};
 
 	const handleSheetClose = () => {
-		setIsAddSheetVisible(false);
-		setEditingActivity(null); // Clear edit state on close
+		setIsQuickAddOpen(false);
+		setEditingActivity(null);
 	};
 
-	// Filter activities for the "Day" view
 	const currentDayActivities = activities.filter(
 		(a) => (a.day || "Mon") === selectedDay,
 	);
@@ -340,7 +369,6 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	return (
 		<SafeAreaView style={styles.safe}>
 			<View style={styles.mainContainer}>
-				{/* Header */}
 				<View style={styles.header}>
 					<View style={styles.headerTop}>
 						<View>
@@ -357,13 +385,12 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					</View>
 				</View>
 
-				{/* View Switcher */}
 				{viewMode === "Day" ? (
 					<TimelineCanvas
-						// biome-ignore lint/suspicious/noExplicitAny: Type mapping between app and feature
 						activities={currentDayActivities as any[]}
 						onActivityPress={handleActivityPress}
 						onUpdateActivity={handleUpdateTime}
+						onEmptyDoublePress={handleDoublePress}
 						showNowIndicator={
 							selectedDay === DAYS[(new Date().getDay() + 6) % 7]
 						}
@@ -382,29 +409,39 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					/>
 				)}
 
-				{/* FAB */}
 				<View style={styles.fabWrap}>
 					<Pressable
 						style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
 						onPress={() => {
-							setEditingActivity(null); // Ensure clean state
-							setIsAddSheetVisible(true);
+							setEditingActivity(null);
+							setInitialTime("09:00");
+							setIsQuickAddOpen(true);
 						}}
 					>
 						<Text style={styles.fabIcon}>+</Text>
 					</Pressable>
 				</View>
 
-				{/* Add/Edit Modal */}
-				<AddActivitySheet
-					visible={isAddSheetVisible}
+				<QuickAddSheet
+					isOpen={isQuickAddOpen}
 					onClose={handleSheetClose}
-					onAdd={handleAddOrEditActivity}
-					// biome-ignore lint/suspicious/noExplicitAny: Type mapping between app and component
-					initialActivity={editingActivity as any}
+					onSave={handleAddOrEditActivity}
+					existingActivities={EXISTING_ACTIVITIES}
+					initialTime={initialTime}
+					initialData={
+						editingActivity
+							? {
+									title: editingActivity.title,
+									startTime: editingActivity.startTime,
+									duration: editingActivity.duration,
+									replaceabilityStatus:
+										editingActivity.type === "flexible" ? "SOFT" : "HARD",
+									priority: editingActivity.priority,
+								}
+							: undefined
+					}
 				/>
 
-				{/* Custom Activity Menu */}
 				<ActivityActionMenu
 					visible={menuVisible}
 					activityTitle={selectedActivityTitle}

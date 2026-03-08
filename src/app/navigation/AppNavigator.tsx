@@ -4,6 +4,7 @@ import { BottomNav } from "../components/BottomNav";
 import { ROUTES } from "../constants/routes";
 import { AnalysisScreen } from "../screens/AnalysisScreen";
 import { HomeScreen } from "../screens/HomeScreen";
+import { ManageActivitiesScreen } from "../screens/ManageActivities";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { ScheduleScreen } from "../screens/ScheduleScreen";
 import type { AppRoute } from "../types";
@@ -26,6 +27,9 @@ export function AppNavigator({ onLogout }: Props) {
 			)}
 			{currentRoute === ROUTES.HOME && (
 				<HomeScreen onNavigate={handleNavigate} />
+			)}
+			{currentRoute === ROUTES.MANAGE_ACTIVITIES && (
+				<ManageActivitiesScreen onNavigate={handleNavigate} />
 			)}
 			{currentRoute === ROUTES.PROFILE && <ProfileScreen onLogout={onLogout} />}
 			{currentRoute === ROUTES.CALENDAR && (

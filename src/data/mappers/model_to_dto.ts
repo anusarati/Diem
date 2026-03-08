@@ -66,6 +66,12 @@ export function toScheduledEventEntity(
 		isLocked: model.isLocked,
 		createdAt: toIso(model.createdAt),
 		updatedAt: toIso(model.updatedAt),
+		date: model.startTime.toISOString().split("T")[0],
+		completed: model.status === "COMPLETED",
+		flexible: model.replaceabilityStatus === "SOFT",
+		category: model.categoryId,
+		durationMinutes: model.duration,
+		deadline: toIso(model.endTime),
 	};
 }
 
