@@ -1,7 +1,7 @@
 import * as Calendar from "expo-calendar";
 import * as Location from "expo-location";
 // import * as Notifications from "expo-notifications";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Alert,
 	Platform,
@@ -34,11 +34,23 @@ type Props = {
 	onNavigate: (route: AppRoute) => void;
 };
 
+type DebugLogEntry = {
+	id: string;
+	message: string;
+};
+
 export function SettingsScreen({ onNavigate }: Props) {
 	const [notificationsEnabled, _setNotificationsEnabled] = useState(false);
 	const [locationEnabled, setLocationEnabled] = useState(false);
 	const [calendarAccess, setCalendarAccess] = useState(false);
-	const [debugLog, setDebugLog] = useState<string[]>([]);
+	const [debugLog, setDebugLog] = useState<DebugLogEntry[]>([]);
+	const debugLogCounterRef = useRef(0);
+
+	const addDebugLog = useCallback((message: string) => {
+		const id = `log-${debugLogCounterRef.current}`;
+		debugLogCounterRef.current += 1;
+		setDebugLog((prev) => [{ id, message }, ...prev]);
+	}, []);
 
 	const checkPermissions = useCallback(async () => {
 		// const { status: notifStatus } = await Notifications.getPermissionsAsync();
@@ -135,7 +147,7 @@ export function SettingsScreen({ onNavigate }: Props) {
 				{
 					text: "Reset",
 					style: "destructive",
-					onPress: () => setDebugLog((prev) => ["Model reset!", ...prev]),
+					onPress: () => addDebugLog("Model reset!"),
 				},
 			],
 		);
@@ -224,12 +236,9 @@ export function SettingsScreen({ onNavigate }: Props) {
 						{debugLog.length === 0 ? (
 							<Text style={styles.logText}>No logs yet.</Text>
 						) : (
-							debugLog.map((log, i) => (
-								<Text
-									key={`log-${i}-${log.substring(0, 10)}`}
-									style={styles.logText}
-								>
-									{log}
+							debugLog.map((log) => (
+								<Text key={log.id} style={styles.logText}>
+									{log.message}
 								</Text>
 							))
 						)}
