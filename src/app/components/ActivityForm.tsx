@@ -7,11 +7,13 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
+import type { ActivityEntity } from "types/domain";
 import {
 	type ActivityFormData,
 	useActivityValidation,
 } from "../hooks/useActivityValidation";
 import { colors, spacing } from "../theme";
+import { AdvancedConstraintsSheet } from "./AdvancedConstraintsSheet";
 import { CategoryManager } from "./CategoryManager";
 import { ConstraintToggle } from "./ConstraintToggle";
 import { PrioritySelector } from "./PrioritySelector";
@@ -21,14 +23,7 @@ type Props = {
 	onSubmit: (data: ActivityFormData) => void;
 	initialData?: Partial<ActivityFormData>;
 	showTimeFields?: boolean;
-	existingActivities?: {
-		id: string;
-		name: string;
-		priority: number;
-		defaultDuration: number;
-		isReplaceable: boolean;
-		categoryId: string;
-	}[];
+	existingActivities?: ActivityEntity[];
 };
 
 export function ActivityForm({
@@ -43,6 +38,8 @@ export function ActivityForm({
 			defaultValues: initialData,
 		});
 
+	const [showAdvanced, setShowAdvanced] = useState(false);
+
 	useEffect(() => {
 		reset(initialData);
 	}, [initialData, reset]);
@@ -53,18 +50,13 @@ export function ActivityForm({
 	const isRecurring = watch("isRecurring");
 	const startTime = watch("startTime");
 	const duration = watch("duration");
-	const deadline = watch("deadline");
-	const minDuration = watch("minDuration");
-	const maxDuration = watch("maxDuration");
-	const minFrequency = watch("minFrequency");
-	const maxFrequency = watch("maxFrequency");
-	const recurrencePattern = (watch(
-		"recurrencePattern",
-	) as ActivityFormData["recurrencePattern"]) || {
-		frequency: "WEEKLY" as const,
+	const recurrencePattern = watch("recurrencePattern") || {
+		frequency: "DAILY" as const,
 		interval: 1,
 		daysOfWeek: [] as number[],
 	};
+
+	const allValues = watch();
 
 	const [categories, setCategories] = useState<
 		{ name: string; color: string }[]
@@ -76,7 +68,7 @@ export function ActivityForm({
 		{ name: "Other", color: colors.mintDark },
 	]);
 
-	const handleSelectExisting = (activity: any) => {
+	const handleSelectExisting = (activity: ActivityEntity) => {
 		setValue("title", activity.name);
 		setValue(
 			"priority",
@@ -90,6 +82,18 @@ export function ActivityForm({
 		setValue("category", activity.categoryId);
 		setValue("replaceabilityStatus", activity.isReplaceable ? "SOFT" : "HARD");
 	};
+
+	if (showAdvanced) {
+		return (
+			<AdvancedConstraintsSheet
+				values={allValues}
+				onChange={(field, value) =>
+					setValue(field as keyof ActivityFormData, value)
+				}
+				onClose={() => setShowAdvanced(false)}
+			/>
+		);
+	}
 
 	return (
 		<View style={styles.wrap}>
@@ -148,7 +152,7 @@ export function ActivityForm({
 							placeholderTextColor={colors.slate400}
 							keyboardType="numeric"
 							value={duration?.toString()}
-							onChangeText={(v) => setValue("duration", parseInt(v) || 0)}
+							onChangeText={(v) => setValue("duration", parseInt(v, 10) || 0)}
 						/>
 					</View>
 				</View>
@@ -163,67 +167,6 @@ export function ActivityForm({
 				status={replaceabilityStatus}
 				onChange={(v) => setValue("replaceabilityStatus", v)}
 			/>
-
-			<View style={styles.sectionHeader}>
-				<Text style={styles.sectionTitle}>Advanced Constraints</Text>
-			</View>
-
-			<View style={styles.inputGroup}>
-				<Text style={styles.label}>Deadline (Optional)</Text>
-				<TextInput
-					style={styles.input}
-					placeholder="YYYY-MM-DD"
-					placeholderTextColor={colors.slate400}
-					value={deadline}
-					onChangeText={(v) => setValue("deadline", v)}
-				/>
-			</View>
-
-			<View style={styles.row}>
-				<View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-					<Text style={styles.label}>Min Dur (m)</Text>
-					<TextInput
-						style={styles.input}
-						keyboardType="numeric"
-						placeholderTextColor={colors.slate400}
-						value={minDuration?.toString()}
-						onChangeText={(v) => setValue("minDuration", parseInt(v, 10) || 0)}
-					/>
-				</View>
-				<View style={[styles.inputGroup, { flex: 1 }]}>
-					<Text style={styles.label}>Max Dur (m)</Text>
-					<TextInput
-						style={styles.input}
-						keyboardType="numeric"
-						placeholderTextColor={colors.slate400}
-						value={maxDuration?.toString()}
-						onChangeText={(v) => setValue("maxDuration", parseInt(v, 10) || 0)}
-					/>
-				</View>
-			</View>
-
-			<View style={styles.row}>
-				<View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-					<Text style={styles.label}>Min Freq (/wk)</Text>
-					<TextInput
-						style={styles.input}
-						keyboardType="numeric"
-						placeholderTextColor={colors.slate400}
-						value={minFrequency?.toString()}
-						onChangeText={(v) => setValue("minFrequency", parseInt(v, 10) || 0)}
-					/>
-				</View>
-				<View style={[styles.inputGroup, { flex: 1 }]}>
-					<Text style={styles.label}>Max Freq (/wk)</Text>
-					<TextInput
-						style={styles.input}
-						keyboardType="numeric"
-						placeholderTextColor={colors.slate400}
-						value={maxFrequency?.toString()}
-						onChangeText={(v) => setValue("maxFrequency", parseInt(v, 10) || 0)}
-					/>
-				</View>
-			</View>
 
 			<CategoryManager
 				categories={categories}
@@ -256,6 +199,16 @@ export function ActivityForm({
 					setPattern={(v) => setValue("recurrencePattern", v)}
 				/>
 			)}
+
+			<TouchableOpacity
+				style={styles.advancedBtn}
+				onPress={() => setShowAdvanced(true)}
+			>
+				<Text style={styles.advancedBtnText}>Configure Constraints</Text>
+				<Text style={styles.advancedBtnSubtitle}>
+					Frequencies, durations, and restrictions
+				</Text>
+			</TouchableOpacity>
 
 			<TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
 				<Text style={styles.submitText}>Save Activity</Text>
@@ -306,20 +259,6 @@ const styles = StyleSheet.create({
 	toggleText: { fontSize: 12, fontWeight: "600", color: colors.slate600 },
 	activeToggleText: { color: colors.white },
 	row: { flexDirection: "row", marginBottom: spacing.sm },
-	sectionHeader: {
-		marginTop: 8,
-		marginBottom: 16,
-		borderBottomWidth: 1,
-		borderBottomColor: colors.slate100,
-		paddingBottom: spacing.xs,
-	},
-	sectionTitle: {
-		fontSize: 12,
-		fontWeight: "800",
-		color: colors.slate400,
-		textTransform: "uppercase",
-		letterSpacing: 1,
-	},
 	pickerSection: { marginBottom: spacing.lg },
 	pickerScroll: { flexDirection: "row", gap: spacing.sm },
 	pickerBadge: {
@@ -332,6 +271,25 @@ const styles = StyleSheet.create({
 		borderColor: colors.slate200,
 	},
 	pickerText: { fontSize: 13, fontWeight: "600", color: colors.slate600 },
+	advancedBtn: {
+		padding: spacing.lg,
+		backgroundColor: colors.slate50,
+		borderRadius: 16,
+		borderWidth: 1,
+		borderColor: colors.slate200,
+		marginTop: 8,
+		alignItems: "center",
+	},
+	advancedBtnText: {
+		fontSize: 15,
+		fontWeight: "700",
+		color: colors.slate800,
+		marginBottom: 4,
+	},
+	advancedBtnSubtitle: {
+		fontSize: 12,
+		color: colors.slate500,
+	},
 	submitButton: {
 		backgroundColor: colors.primary,
 		borderRadius: 12,
