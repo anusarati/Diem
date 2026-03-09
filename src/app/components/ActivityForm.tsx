@@ -11,6 +11,7 @@ import {
 	type ActivityFormData,
 	useActivityValidation,
 } from "../hooks/useActivityValidation";
+import { colors, spacing } from "../theme";
 import { CategoryManager } from "./CategoryManager";
 import { ConstraintToggle } from "./ConstraintToggle";
 import { PrioritySelector } from "./PrioritySelector";
@@ -65,18 +66,23 @@ export function ActivityForm({
 		daysOfWeek: [] as number[],
 	};
 
-	const [categories, setCategories] = useState([
-		{ name: "Work", color: "#3B82F6" },
-		{ name: "Personal", color: "#10B981" },
+	const [categories, setCategories] = useState<
+		{ name: string; color: string }[]
+	>([
+		{ name: "Work", color: colors.primary },
+		{ name: "Personal", color: colors.mintDark },
+		{ name: "Fitness", color: colors.mintDark },
+		{ name: "Study", color: colors.mintDark },
+		{ name: "Other", color: colors.mintDark },
 	]);
 
 	const handleSelectExisting = (activity: any) => {
 		setValue("title", activity.name);
 		setValue(
 			"priority",
-			activity.priority === 3
+			activity.priority === 5
 				? "high"
-				: activity.priority === 2
+				: activity.priority === 3
 					? "medium"
 					: "low",
 		);
@@ -107,12 +113,13 @@ export function ActivityForm({
 					</ScrollView>
 				</View>
 			)}
+
 			<View style={styles.inputGroup}>
-				<Text style={styles.label}>Activity Title</Text>
+				<Text style={styles.label}>Title</Text>
 				<TextInput
 					style={[styles.input, errors.title && styles.inputError]}
-					placeholder="Enter activity name"
-					placeholderTextColor="#94A3B8"
+					placeholder="e.g. Design Review"
+					placeholderTextColor={colors.slate400}
 					value={title}
 					onChangeText={(v) => setValue("title", v)}
 				/>
@@ -127,7 +134,8 @@ export function ActivityForm({
 						<Text style={styles.label}>Start Time</Text>
 						<TextInput
 							style={styles.input}
-							placeholder="09:00"
+							placeholder="10:00"
+							placeholderTextColor={colors.slate400}
 							value={startTime}
 							onChangeText={(v) => setValue("startTime", v)}
 						/>
@@ -137,6 +145,7 @@ export function ActivityForm({
 						<TextInput
 							style={styles.input}
 							placeholder="60"
+							placeholderTextColor={colors.slate400}
 							keyboardType="numeric"
 							value={duration?.toString()}
 							onChangeText={(v) => setValue("duration", parseInt(v) || 0)}
@@ -164,6 +173,7 @@ export function ActivityForm({
 				<TextInput
 					style={styles.input}
 					placeholder="YYYY-MM-DD"
+					placeholderTextColor={colors.slate400}
 					value={deadline}
 					onChangeText={(v) => setValue("deadline", v)}
 				/>
@@ -175,8 +185,9 @@ export function ActivityForm({
 					<TextInput
 						style={styles.input}
 						keyboardType="numeric"
+						placeholderTextColor={colors.slate400}
 						value={minDuration?.toString()}
-						onChangeText={(v) => setValue("minDuration", parseInt(v) || 0)}
+						onChangeText={(v) => setValue("minDuration", parseInt(v, 10) || 0)}
 					/>
 				</View>
 				<View style={[styles.inputGroup, { flex: 1 }]}>
@@ -184,8 +195,9 @@ export function ActivityForm({
 					<TextInput
 						style={styles.input}
 						keyboardType="numeric"
+						placeholderTextColor={colors.slate400}
 						value={maxDuration?.toString()}
-						onChangeText={(v) => setValue("maxDuration", parseInt(v) || 0)}
+						onChangeText={(v) => setValue("maxDuration", parseInt(v, 10) || 0)}
 					/>
 				</View>
 			</View>
@@ -196,8 +208,9 @@ export function ActivityForm({
 					<TextInput
 						style={styles.input}
 						keyboardType="numeric"
+						placeholderTextColor={colors.slate400}
 						value={minFrequency?.toString()}
-						onChangeText={(v) => setValue("minFrequency", parseInt(v) || 0)}
+						onChangeText={(v) => setValue("minFrequency", parseInt(v, 10) || 0)}
 					/>
 				</View>
 				<View style={[styles.inputGroup, { flex: 1 }]}>
@@ -205,8 +218,9 @@ export function ActivityForm({
 					<TextInput
 						style={styles.input}
 						keyboardType="numeric"
+						placeholderTextColor={colors.slate400}
 						value={maxFrequency?.toString()}
-						onChangeText={(v) => setValue("maxFrequency", parseInt(v) || 0)}
+						onChangeText={(v) => setValue("maxFrequency", parseInt(v, 10) || 0)}
 					/>
 				</View>
 			</View>
@@ -251,72 +265,84 @@ export function ActivityForm({
 }
 
 const styles = StyleSheet.create({
-	wrap: { paddingBottom: 24 },
-	inputGroup: { marginBottom: 16 },
-	label: { fontSize: 14, fontWeight: "700", color: "#475569", marginBottom: 8 },
-	input: {
-		height: 48,
-		backgroundColor: "#F8FAFC",
-		borderRadius: 8,
-		paddingHorizontal: 16,
-		borderWidth: 1,
-		borderColor: "#E2E8F0",
+	wrap: { paddingBottom: spacing.xxl },
+	inputGroup: { marginBottom: spacing.lg },
+	label: {
 		fontSize: 14,
 		fontWeight: "600",
-		color: "#0F172A",
+		color: colors.slate700,
+		marginBottom: spacing.sm,
 	},
-	inputError: { borderColor: "#EF4444" },
-	errorText: { color: "#EF4444", fontSize: 12, marginTop: 4 },
+	input: {
+		height: 48,
+		backgroundColor: colors.white,
+		borderRadius: 12,
+		paddingHorizontal: spacing.lg,
+		borderWidth: 1,
+		borderColor: colors.slate200,
+		fontSize: 16,
+		color: colors.slate800,
+	},
+	inputError: { borderColor: colors.red400 },
+	errorText: { color: colors.red400, fontSize: 12, marginTop: 4 },
 	toggleGroup: {
-		marginBottom: 16,
+		marginBottom: spacing.lg,
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
 	},
 	toggleButton: {
-		paddingHorizontal: 16,
-		paddingVertical: 8,
-		backgroundColor: "#F8FAFC",
-		borderRadius: 8,
+		paddingHorizontal: spacing.lg,
+		paddingVertical: spacing.sm,
+		backgroundColor: colors.white,
+		borderRadius: 10,
 		borderWidth: 1,
-		borderColor: "#E2E8F0",
+		borderColor: colors.slate200,
 	},
-	activeToggle: { backgroundColor: "#475569", borderColor: "#475569" },
-	toggleText: { fontSize: 12, fontWeight: "700", color: "#64748B" },
-	activeToggleText: { color: "#FFFFFF" },
-	row: { flexDirection: "row", marginBottom: 16 },
+	activeToggle: {
+		backgroundColor: colors.slate600,
+		borderColor: colors.slate600,
+	},
+	toggleText: { fontSize: 12, fontWeight: "600", color: colors.slate600 },
+	activeToggleText: { color: colors.white },
+	row: { flexDirection: "row", marginBottom: spacing.sm },
 	sectionHeader: {
 		marginTop: 8,
-		marginBottom: 12,
+		marginBottom: 16,
 		borderBottomWidth: 1,
-		borderBottomColor: "#E2E8F0",
-		paddingBottom: 4,
+		borderBottomColor: colors.slate100,
+		paddingBottom: spacing.xs,
 	},
 	sectionTitle: {
 		fontSize: 12,
 		fontWeight: "800",
-		color: "#94A3B8",
+		color: colors.slate400,
 		textTransform: "uppercase",
 		letterSpacing: 1,
 	},
-	pickerSection: { marginBottom: 16 },
-	pickerScroll: { flexDirection: "row", gap: 8 },
+	pickerSection: { marginBottom: spacing.lg },
+	pickerScroll: { flexDirection: "row", gap: spacing.sm },
 	pickerBadge: {
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		backgroundColor: "#F1F5F9",
-		borderRadius: 16,
+		paddingHorizontal: 16,
+		paddingVertical: 8,
+		backgroundColor: colors.slate50,
+		borderRadius: 20,
 		marginRight: 8,
 		borderWidth: 1,
-		borderColor: "#E2E8F0",
+		borderColor: colors.slate200,
 	},
-	pickerText: { fontSize: 12, fontWeight: "600", color: "#475569" },
+	pickerText: { fontSize: 13, fontWeight: "600", color: colors.slate600 },
 	submitButton: {
-		backgroundColor: "#475569",
-		paddingVertical: 14,
-		borderRadius: 8,
+		backgroundColor: colors.primary,
+		borderRadius: 12,
+		paddingVertical: spacing.lg,
 		alignItems: "center",
-		marginTop: 12,
+		marginTop: spacing.xl,
+		shadowColor: colors.primary,
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.15,
+		shadowRadius: 10,
+		elevation: 4,
 	},
-	submitText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+	submitText: { color: colors.white, fontSize: 16, fontWeight: "700" },
 });

@@ -1,8 +1,9 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { colors, spacing } from "../theme";
 
 const PRIORITY_LEVELS: { value: "low" | "medium" | "high"; label: string }[] = [
 	{ value: "low", label: "Low" },
-	{ value: "medium", label: "Med" },
+	{ value: "medium", label: "Medium" },
 	{ value: "high", label: "High" },
 ];
 
@@ -14,23 +15,26 @@ type Props = {
 export function PrioritySelector({ priority, setPriority }: Props) {
 	return (
 		<View style={styles.wrap}>
-			<Text style={styles.label}>Priority Level</Text>
-			<View style={styles.row}>
+			<Text style={styles.label}>Priority</Text>
+			<View style={styles.segmented}>
 				{PRIORITY_LEVELS.map((level) => (
-					<TouchableOpacity
+					<Pressable
 						key={level.value}
-						style={[styles.pill, priority === level.value && styles.activePill]}
+						style={[
+							styles.segOption,
+							priority === level.value && styles.segOptionSelected,
+						]}
 						onPress={() => setPriority(level.value)}
 					>
 						<Text
 							style={[
-								styles.levelText,
-								priority === level.value && styles.activeLevelText,
+								styles.segText,
+								priority === level.value && styles.segTextSelected,
 							]}
 						>
 							{level.label}
 						</Text>
-					</TouchableOpacity>
+					</Pressable>
 				))}
 			</View>
 		</View>
@@ -38,21 +42,37 @@ export function PrioritySelector({ priority, setPriority }: Props) {
 }
 
 const styles = StyleSheet.create({
-	wrap: { marginBottom: 16 },
-	label: { fontSize: 14, fontWeight: "700", color: "#475569", marginBottom: 8 },
-	row: { flexDirection: "row", justifyContent: "space-between" },
-	pill: {
-		flex: 1,
-		marginHorizontal: 4,
-		height: 40,
-		borderRadius: 8,
-		backgroundColor: "#F8FAFC",
-		alignItems: "center",
-		justifyContent: "center",
-		borderWidth: 1,
-		borderColor: "#E2E8F0",
+	wrap: { marginBottom: spacing.lg },
+	label: {
+		fontSize: 14,
+		fontWeight: "600",
+		color: colors.slate700,
+		marginBottom: spacing.sm,
 	},
-	activePill: { backgroundColor: "#3B82F6", borderColor: "#3B82F6" },
-	levelText: { fontSize: 14, fontWeight: "600", color: "#64748B" },
-	activeLevelText: { color: "#FFFFFF" },
+	segmented: {
+		flexDirection: "row",
+		gap: spacing.sm,
+	},
+	segOption: {
+		flex: 1,
+		borderWidth: 1,
+		borderColor: colors.slate200,
+		borderRadius: 10,
+		paddingVertical: spacing.sm,
+		alignItems: "center",
+		backgroundColor: colors.white,
+	},
+	segOptionSelected: {
+		borderColor: colors.primary,
+		backgroundColor: colors.background,
+	},
+	segText: {
+		color: colors.slate600,
+		fontWeight: "500",
+		fontSize: 14,
+	},
+	segTextSelected: {
+		color: colors.slate800,
+		fontWeight: "600",
+	},
 });

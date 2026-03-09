@@ -1,17 +1,17 @@
 import { useState } from "react";
 import {
+	Pressable,
 	StyleSheet,
 	Text,
 	TextInput,
 	TouchableOpacity,
 	View,
 } from "react-native";
-
-type Category = { name: string; color: string };
+import { colors, spacing } from "../theme";
 
 type Props = {
-	categories: Category[];
-	onAddCategory: (category: Category) => void;
+	categories: { name: string; color: string }[];
+	onAddCategory: (category: { name: string; color: string }) => void;
 	onDeleteCategory: (name: string) => void;
 };
 
@@ -21,87 +21,119 @@ export function CategoryManager({
 	onDeleteCategory,
 }: Props) {
 	const [name, setName] = useState("");
-	const [color] = useState("#3B82F6");
+	const [selectedCategory, setSelectedCategory] = useState("Work");
 
 	const handleAdd = () => {
 		if (name.trim()) {
-			onAddCategory({ name, color });
+			onAddCategory({ name: name.trim(), color: colors.primary });
 			setName("");
 		}
 	};
 
 	return (
 		<View style={styles.wrap}>
-			<Text style={styles.title}>Categories</Text>
-			<View style={styles.inputRow}>
+			<Text style={styles.label}>Category</Text>
+			<View style={styles.chips}>
+				{categories.map((cat) => (
+					<Pressable
+						key={cat.name}
+						onPress={() => setSelectedCategory(cat.name)}
+						onLongPress={() => onDeleteCategory(cat.name)}
+						style={[
+							styles.chip,
+							selectedCategory === cat.name && styles.chipSelected,
+						]}
+					>
+						<Text
+							style={[
+								styles.chipText,
+								selectedCategory === cat.name && styles.chipTextSelected,
+							]}
+						>
+							{cat.name}
+						</Text>
+					</Pressable>
+				))}
+			</View>
+
+			<View style={styles.addArea}>
 				<TextInput
 					style={styles.input}
-					placeholder="Category Name"
+					placeholder="New tag..."
+					placeholderTextColor={colors.slate400}
 					value={name}
 					onChangeText={setName}
 				/>
-				<TouchableOpacity style={styles.addButton} onPress={handleAdd}>
-					<Text style={styles.addText}>Add</Text>
+				<TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
+					<Text style={styles.addBtnText}>+</Text>
 				</TouchableOpacity>
-			</View>
-			<View style={styles.list}>
-				{categories.map((cat, _idx) => (
-					<View key={cat.name} style={styles.categoryBadge}>
-						<View style={[styles.dot, { backgroundColor: cat.color }]} />
-						<Text style={styles.categoryName}>{cat.name}</Text>
-						<TouchableOpacity
-							onPress={() => onDeleteCategory(cat.name)}
-							style={styles.deleteCircle}
-						>
-							<Text style={styles.deleteText}>×</Text>
-						</TouchableOpacity>
-					</View>
-				))}
 			</View>
 		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	wrap: { marginBottom: 16 },
-	title: { fontSize: 14, fontWeight: "700", color: "#475569", marginBottom: 8 },
-	inputRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
+	wrap: { marginBottom: spacing.lg },
+	label: {
+		fontSize: 14,
+		fontWeight: "600",
+		color: colors.slate700,
+		marginBottom: spacing.sm,
+	},
+	chips: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: spacing.sm,
+		marginBottom: spacing.md,
+	},
+	chip: {
+		paddingVertical: spacing.sm,
+		paddingHorizontal: spacing.md,
+		borderWidth: 1,
+		borderColor: colors.slate200,
+		borderRadius: 999,
+		backgroundColor: colors.white,
+	},
+	chipSelected: {
+		borderColor: colors.primary,
+		backgroundColor: colors.background,
+	},
+	chipText: {
+		color: colors.slate600,
+		fontWeight: "500",
+		fontSize: 14,
+	},
+	chipTextSelected: {
+		color: colors.slate800,
+		fontWeight: "600",
+	},
+	addArea: {
+		flexDirection: "row",
+		gap: 8,
+		alignItems: "center",
+	},
 	input: {
 		flex: 1,
-		height: 40,
-		backgroundColor: "#F8FAFC",
-		borderRadius: 8,
+		height: 36,
 		paddingHorizontal: 12,
+		backgroundColor: colors.white,
+		borderRadius: 8,
 		borderWidth: 1,
-		borderColor: "#E2E8F0",
+		borderColor: colors.slate200,
+		fontSize: 13,
+		color: colors.slate800,
 	},
-	addButton: {
-		justifyContent: "center",
-		paddingHorizontal: 16,
-		backgroundColor: "#475569",
-		borderRadius: 8,
-	},
-	addText: { color: "#FFFFFF", fontWeight: "600" },
-	list: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-	categoryBadge: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-		backgroundColor: "#F1F5F9",
-		paddingHorizontal: 10,
-		paddingVertical: 6,
-		borderRadius: 16,
-	},
-	dot: { width: 8, height: 8, borderRadius: 4 },
-	categoryName: { fontSize: 12, fontWeight: "600", color: "#475569" },
-	deleteCircle: {
-		width: 16,
-		height: 16,
-		borderRadius: 8,
-		backgroundColor: "#E2E8F0",
+	addBtn: {
+		width: 36,
+		height: 36,
+		borderRadius: 18,
+		backgroundColor: colors.slate100,
 		alignItems: "center",
 		justifyContent: "center",
-		marginLeft: 4,
 	},
-	deleteText: { fontSize: 12, color: "#64748B", fontWeight: "700", top: -1 },
+	addBtnText: {
+		fontSize: 20,
+		color: colors.slate600,
+		fontWeight: "300",
+	},
 });

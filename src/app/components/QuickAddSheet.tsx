@@ -2,6 +2,7 @@ import {
 	KeyboardAvoidingView,
 	Modal,
 	Platform,
+	ScrollView,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
@@ -57,17 +58,23 @@ export function QuickAddSheet({
 						</TouchableOpacity>
 					</View>
 
-					<ActivityForm
-						existingActivities={existingActivities}
-						initialData={
-							initialData ||
-							(initialTime ? { startTime: initialTime } : undefined)
-						}
-						onSubmit={(data: ActivityFormData) => {
-							onSave(data);
-							onClose();
-						}}
-					/>
+					<ScrollView
+						showsVerticalScrollIndicator={false}
+						keyboardShouldPersistTaps="handled"
+						contentContainerStyle={styles.scrollContent}
+					>
+						<ActivityForm
+							existingActivities={existingActivities}
+							initialData={
+								initialData ||
+								(initialTime ? { startTime: initialTime } : undefined)
+							}
+							onSubmit={(data: ActivityFormData) => {
+								onSave(data);
+								onClose();
+							}}
+						/>
+					</ScrollView>
 				</KeyboardAvoidingView>
 			</View>
 		</Modal>
@@ -122,5 +129,8 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		fontWeight: "600",
 		color: "#64748B",
+	},
+	scrollContent: {
+		paddingBottom: 40,
 	},
 });

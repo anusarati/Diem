@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors } from "../theme";
+import { colors, spacing } from "../theme";
 import type { ActivityItem } from "../types";
 
 type Props = {
@@ -44,20 +44,24 @@ const styles = StyleSheet.create({
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
-		paddingVertical: 16,
-		gap: 16,
+		paddingVertical: spacing.lg,
+		gap: spacing.lg,
 	},
-	border: { borderBottomWidth: 0.5, borderBottomColor: colors.slate200 },
+	border: { borderBottomWidth: 1, borderBottomColor: colors.slate100 },
 	content: { flex: 1 },
-	title: { fontSize: 15, fontWeight: "300", color: colors.slate700 },
+	title: {
+		fontSize: 16,
+		fontWeight: "500",
+		color: colors.slate800,
+	},
 	titleCompleted: {
 		textDecorationLine: "line-through",
 		color: colors.slate400,
 	},
 	subtitle: {
-		fontSize: 11,
-		fontWeight: "300",
-		color: colors.slate400,
+		fontSize: 13,
+		fontWeight: "400",
+		color: colors.slate500,
 		marginTop: 2,
 	},
 	checkbox: {
