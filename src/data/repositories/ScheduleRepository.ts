@@ -24,6 +24,7 @@ export interface ScheduledEventCreateInput {
 	isLocked: boolean;
 	createdAt: Date;
 	updatedAt: Date;
+	externalId?: string;
 }
 
 export interface ScheduledEventUpdateInput {
@@ -103,6 +104,17 @@ export class ScheduleRepository {
 
 	async get(id: string): Promise<ScheduledEvent | null> {
 		return this.findById(id);
+	}
+
+	async findByExternalId(externalId: string): Promise<ScheduledEvent | null> {
+		const rows = await this.collection
+			.query(Q.where("external_id", externalId))
+			.fetch();
+		return rows[0] ?? null;
+	}
+
+	async listBySource(source: string): Promise<ScheduledEvent[]> {
+		return this.collection.query(Q.where("source", source)).fetch();
 	}
 
 	observeById(id: string) {
