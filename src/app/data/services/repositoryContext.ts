@@ -66,6 +66,18 @@ export function dayRange(date: Date): { start: Date; end: Date } {
 	return { start, end };
 }
 
+/** Week range: Monday 00:00:00 through next Monday 00:00:00 (exclusive). */
+export function weekRange(date: Date): { start: Date; end: Date } {
+	const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+	const day = d.getDay();
+	const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+	const start = new Date(d);
+	start.setDate(diff);
+	const end = new Date(start);
+	end.setDate(end.getDate() + 7);
+	return { start, end };
+}
+
 export function dateKey(date: Date): string {
 	return date.toISOString().slice(0, 10);
 }
