@@ -29,7 +29,8 @@ export interface GoogleCalendarEventsResponse {
 	nextPageToken?: string;
 }
 
-const CALENDAR_API = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
+const CALENDAR_API =
+	"https://www.googleapis.com/calendar/v3/calendars/primary/events";
 
 /**
  * Fetch events from primary calendar. Uses singleEvents=true so recurring events
@@ -54,7 +55,12 @@ export async function fetchGoogleCalendarEvents(
 	});
 	const data = (await res.json()) as GoogleCalendarEventsResponse;
 	const items = data.items ?? [];
-	console.log("[Google Calendar API] status", res.status, "items", items.length);
+	console.log(
+		"[Google Calendar API] status",
+		res.status,
+		"items",
+		items.length,
+	);
 	if (!res.ok) {
 		const text = JSON.stringify(data);
 		throw new Error(`Google Calendar API error: ${res.status} ${text}`);
