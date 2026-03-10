@@ -2,6 +2,7 @@
 	"expo": {
 		"name": "Diem",
 		"slug": "diem",
+		"scheme": "diem",
 		"newArchEnabled": true,
 		"version": "1.0.0",
 		"orientation": "portrait",
