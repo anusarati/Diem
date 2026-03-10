@@ -121,5 +121,21 @@ export default schemaMigrations({
 				}),
 			],
 		},
+		{
+			toVersion: 5,
+			steps: [
+				addColumns({
+					table: "scheduled_events",
+					columns: [
+						{
+							name: "external_id",
+							type: "string",
+							isOptional: true,
+							isIndexed: true,
+						},
+					],
+				}),
+			],
+		},
 	],
 });
