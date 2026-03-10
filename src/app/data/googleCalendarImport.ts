@@ -2,10 +2,17 @@
  * One-time import from Google Calendar into scheduled_events and into activities + history
  * so imported events also appear in "Your activities" with category from event name (or Other).
  */
-import { ActivitySource, EventStatus, Replaceability } from "../../types/domain";
-import type { GoogleCalendarEvent, GoogleCalendarDateTime } from "./googleCalendarApi";
-import { fetchGoogleCalendarEvents } from "./googleCalendarApi";
+import {
+	ActivitySource,
+	EventStatus,
+	Replaceability,
+} from "../../types/domain";
 import { ACTIVITY_CATEGORIES, matchCategoryFromText } from "./categories";
+import type {
+	GoogleCalendarDateTime,
+	GoogleCalendarEvent,
+} from "./googleCalendarApi";
+import { fetchGoogleCalendarEvents } from "./googleCalendarApi";
 import {
 	DEFAULT_ACTIVITY_COLOR,
 	DEFAULT_CATEGORY_ID,
@@ -72,7 +79,14 @@ export async function importGoogleCalendar(
 	}
 
 	const activityId = activity.id;
-	console.log("[Google Calendar Import] scope", scope, "range", timeMin.toISOString(), "to", timeMax.toISOString());
+	console.log(
+		"[Google Calendar Import] scope",
+		scope,
+		"range",
+		timeMin.toISOString(),
+		"to",
+		timeMax.toISOString(),
+	);
 	const events = await fetchGoogleCalendarEvents(accessToken, timeMin, timeMax);
 	console.log("[Google Calendar Import] fetched", events.length, "events");
 
@@ -92,16 +106,18 @@ export async function importGoogleCalendar(
 			continue;
 		}
 
-		const start = event.start
-			? parseGoogleDateTime(event.start)
-			: new Date();
-		const end = event.end ? parseGoogleDateTime(event.end) : new Date(start.getTime() + 60 * 60 * 1000);
+		const start = event.start ? parseGoogleDateTime(event.start) : new Date();
+		const end = event.end
+			? parseGoogleDateTime(event.end)
+			: new Date(start.getTime() + 60 * 60 * 1000);
 		const duration = Math.max(1, durationMinutes(start, end));
 		const title = event.summary?.trim() || "(無標題)";
 		const created = event.created ? new Date(event.created) : new Date();
 		const updated = event.updated ? new Date(event.updated) : created;
 		const categoryId = matchCategoryFromText(title);
-		const safeCategoryId = ACTIVITY_CATEGORIES.includes(categoryId as (typeof ACTIVITY_CATEGORIES)[number])
+		const safeCategoryId = ACTIVITY_CATEGORIES.includes(
+			categoryId as (typeof ACTIVITY_CATEGORIES)[number],
+		)
 			? categoryId
 			: DEFAULT_CATEGORY_ID;
 
@@ -152,6 +168,10 @@ export async function importGoogleCalendar(
 		imported += 1;
 	}
 
-	console.log("[Google Calendar Import] done", { imported, skipped, cancelled });
+	console.log("[Google Calendar Import] done", {
+		imported,
+		skipped,
+		cancelled,
+	});
 	return { imported, skipped, cancelled };
 }
