@@ -40,13 +40,16 @@ export async function completePendingGoogleCalendarAuth(): Promise<void> {
 	const savedState = sessionStorage.getItem(STATE_KEY);
 	const codeVerifier = sessionStorage.getItem(VERIFIER_KEY);
 	if (!savedState || state !== savedState || !codeVerifier) {
-		console.warn("[Google Calendar] OAuth callback: invalid or missing state/verifier");
+		console.warn(
+			"[Google Calendar] OAuth callback: invalid or missing state/verifier",
+		);
 		clearOAuthFromUrl();
 		return;
 	}
 
 	const clientId =
-		typeof process !== "undefined" && process.env?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+		typeof process !== "undefined" &&
+		process.env?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
 			? process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
 			: null;
 	if (!clientId) {
@@ -63,7 +66,10 @@ export async function completePendingGoogleCalendarAuth(): Promise<void> {
 
 		// Web application: set EXPO_PUBLIC_GOOGLE_CLIENT_SECRET. Desktop app: leave unset (we send empty).
 		const clientSecret =
-			(typeof process !== "undefined" && process.env?.EXPO_PUBLIC_GOOGLE_CLIENT_SECRET)?.trim() ?? "";
+			(
+				typeof process !== "undefined" &&
+				process.env?.EXPO_PUBLIC_GOOGLE_CLIENT_SECRET
+			)?.trim() ?? "";
 		const body = new URLSearchParams({
 			grant_type: "authorization_code",
 			code,
@@ -77,7 +83,11 @@ export async function completePendingGoogleCalendarAuth(): Promise<void> {
 			headers: { "Content-Type": "application/x-www-form-urlencoded" },
 			body: body.toString(),
 		});
-		const data = (await res.json()) as { access_token?: string; error?: string; error_description?: string };
+		const data = (await res.json()) as {
+			access_token?: string;
+			error?: string;
+			error_description?: string;
+		};
 		if (!res.ok) {
 			console.warn("[Google Calendar] Token exchange", res.status, data);
 			clearOAuthFromUrl();
@@ -141,7 +151,8 @@ export async function getGoogleCalendarAccessToken(): Promise<
 	string | null | typeof GOOGLE_CALENDAR_REDIRECTING
 > {
 	const clientId =
-		typeof process !== "undefined" && process.env?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+		typeof process !== "undefined" &&
+		process.env?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
 			? process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
 			: null;
 	if (!clientId?.trim()) return null;
