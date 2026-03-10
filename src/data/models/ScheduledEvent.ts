@@ -35,4 +35,5 @@ export default class ScheduledEvent extends Model {
 	@field("is_locked") isLocked!: boolean;
 	@date("created_at") createdAt!: Date;
 	@date("updated_at") updatedAt!: Date;
+	@text("external_id") externalId?: string;
 }
