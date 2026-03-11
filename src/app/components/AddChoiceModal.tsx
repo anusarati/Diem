@@ -8,13 +8,17 @@ import {
 } from "react-native";
 import { colors, spacing } from "../theme";
 
-export type AddChoice = "quick_add" | "import_google_calendar";
+export type AddChoice =
+	| "quick_add"
+	| "import_google_calendar"
+	| "import_ics_file";
 
 interface AddChoiceModalProps {
 	visible: boolean;
 	onClose: () => void;
 	onQuickAdd: () => void;
 	onImportGoogleCalendar: () => void;
+	onImportIcsFile: () => void;
 }
 
 export function AddChoiceModal({
@@ -22,6 +26,7 @@ export function AddChoiceModal({
 	onClose,
 	onQuickAdd,
 	onImportGoogleCalendar,
+	onImportIcsFile,
 }: AddChoiceModalProps) {
 	return (
 		<Modal
@@ -59,6 +64,19 @@ export function AddChoiceModal({
 						>
 							<Text style={styles.actionText}>Import from Google Calendar</Text>
 							<Text style={styles.icon}>📅</Text>
+						</TouchableOpacity>
+
+						<View style={styles.divider} />
+
+						<TouchableOpacity
+							style={styles.actionRow}
+							onPress={() => {
+								onClose();
+								onImportIcsFile();
+							}}
+						>
+							<Text style={styles.actionText}>Import from .ics file</Text>
+							<Text style={styles.icon}>📁</Text>
 						</TouchableOpacity>
 
 						<View style={styles.divider} />
