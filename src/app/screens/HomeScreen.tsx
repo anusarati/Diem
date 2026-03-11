@@ -7,7 +7,7 @@ import {
 	Text,
 	View,
 } from "react-native";
-import { EventStatus } from "../../types/domain";
+import { ActivitySource, EventStatus } from "../../types/domain";
 import { ActivityRow } from "../components/ActivityRow";
 import { AddActivityModal } from "../components/AddActivityModal";
 import { AddScheduledActivityModal } from "../components/AddScheduledActivityModal";
@@ -45,6 +45,8 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 		useState<ScheduledActivity | null>(null);
 	const [completingActivity, setCompletingActivity] =
 		useState<ActivityItem | null>(null);
+	const [completingScheduled, setCompletingScheduled] =
+		useState<ScheduledActivity | null>(null);
 
 	useEffect(() => {
 		let disposed = false;
@@ -107,24 +109,40 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 		};
 	}, []);
 
-	const handleToggleActivity = useCallback(
-		(id: string) => {
-			const item = activities.find((a) => a.id === id);
-			if (!item) return;
-			if (item.completed) {
-				void toggleActivityCompletion(today(), id);
-			} else {
-				setCompletingActivity(item);
-			}
-		},
-		[activities],
-	);
+	const handleToggleActivity = useCallback((item: ActivityItem) => {
+		const date = item.predictedStartTime
+			? new Date(item.predictedStartTime)
+			: today();
+		if (item.completed) {
+			setActivities((prev) =>
+				prev.map((a) =>
+					a.id === item.id && a.predictedStartTime === item.predictedStartTime
+						? { ...a, completed: false }
+						: a,
+				),
+			);
+			void toggleActivityCompletion(date, item.id);
+		} else {
+			setCompletingActivity(item);
+		}
+	}, []);
 
 	const handleLogTimeActivity = useCallback(
 		(minutes: number | null) => {
 			if (!completingActivity) return;
+			const date = completingActivity.predictedStartTime
+				? new Date(completingActivity.predictedStartTime)
+				: today();
+			setActivities((prev) =>
+				prev.map((a) =>
+					a.id === completingActivity.id &&
+					a.predictedStartTime === completingActivity.predictedStartTime
+						? { ...a, completed: true }
+						: a,
+				),
+			);
 			void toggleActivityCompletion(
-				today(),
+				date,
 				completingActivity.id,
 				minutes != null ? { completedDuration: minutes } : undefined,
 			);
@@ -137,25 +155,63 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 		(id: string) => {
 			const item = scheduled.find((a) => a.id === id);
 			if (!item) return;
-			void toggleScheduledCompletion(id, item.status);
+			const isCompleted = item.status === EventStatus.COMPLETED;
+			if (isCompleted) {
+				setScheduled((prev) =>
+					prev.map((s) =>
+						s.id === id ? { ...s, status: EventStatus.CONFIRMED } : s,
+					),
+				);
+				void toggleScheduledCompletion(id, item.status);
+			} else {
+				setCompletingScheduled(item);
+			}
 		},
 		[scheduled],
 	);
-	const logTimeModalVisible = completingActivity != null;
+
+	const handleLogTimeScheduled = useCallback(
+		(_minutes: number | null) => {
+			if (!completingScheduled) return;
+			const id = completingScheduled.id;
+			setScheduled((prev) =>
+				prev.map((s) =>
+					s.id === id ? { ...s, status: EventStatus.COMPLETED } : s,
+				),
+			);
+			void toggleScheduledCompletion(id, completingScheduled.status);
+			setCompletingScheduled(null);
+		},
+		[completingScheduled],
+	);
+
+	const logTimeModalVisible =
+		completingActivity != null || completingScheduled != null;
 	const logTimeTitle = completingActivity
 		? `How long did "${completingActivity.name}" take?`
-		: "";
-	const logTimeDefaultMinutes = completingActivity?.defaultDuration;
+		: completingScheduled
+			? `How long did "${completingScheduled.title}" take?`
+			: "";
+	const logTimeDefaultMinutes =
+		completingActivity?.defaultDuration ?? completingScheduled?.duration ?? 30;
 	const handleLogTimeSelect = useCallback(
 		(minutes: number | null) => {
 			if (completingActivity) {
 				handleLogTimeActivity(minutes);
+			} else if (completingScheduled) {
+				handleLogTimeScheduled(minutes);
 			}
 		},
-		[completingActivity, handleLogTimeActivity],
+		[
+			completingActivity,
+			completingScheduled,
+			handleLogTimeActivity,
+			handleLogTimeScheduled,
+		],
 	);
 	const handleLogTimeClose = useCallback(() => {
 		setCompletingActivity(null);
+		setCompletingScheduled(null);
 	}, []);
 
 	const openEditActivity = useCallback((item: ActivityItem) => {
@@ -180,9 +236,21 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 		[],
 	);
 
-	const handleAddActivity = useCallback(async (name: string) => {
-		await createActivity(today(), name);
-	}, []);
+	const handleAddActivity = useCallback(
+		async (data: {
+			name: string;
+			categoryId: string;
+			priority: number;
+			defaultDuration: number;
+		}) => {
+			await createActivity(today(), data.name, {
+				categoryId: data.categoryId,
+				priority: data.priority,
+				defaultDuration: data.defaultDuration,
+			});
+		},
+		[],
+	);
 
 	const handleOpenAddScheduled = useCallback(() => {
 		setEditScheduledActivity(null);
@@ -190,28 +258,36 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 	}, []);
 
 	// Unified todo list ordered by start/creation time.
+	// Calendar-imported events appear as activities (with category); hide from scheduled to avoid duplicates.
 	type TodoItem =
 		| { type: "activity"; data: ActivityItem }
 		| { type: "scheduled"; data: ScheduledActivity };
+	const scheduledForList = scheduled.filter(
+		(s) => s.source !== ActivitySource.EXTERNAL_IMPORT,
+	);
 	const combined: TodoItem[] = [
 		...activities.map((d) => ({ type: "activity" as const, data: d })),
-		...scheduled.map((d) => ({ type: "scheduled" as const, data: d })),
+		...scheduledForList.map((d) => ({ type: "scheduled" as const, data: d })),
 	].sort((x, y) => {
 		const atA =
 			x.type === "activity"
-				? new Date(x.data.createdAt).getTime()
+				? new Date(
+						(x.data as ActivityItem).predictedStartTime ?? x.data.createdAt,
+					).getTime()
 				: new Date(x.data.startTime).getTime();
 		const atB =
 			y.type === "activity"
-				? new Date(y.data.createdAt).getTime()
+				? new Date(
+						(y.data as ActivityItem).predictedStartTime ?? y.data.createdAt,
+					).getTime()
 				: new Date(y.data.startTime).getTime();
 		return atA - atB;
 	});
 
 	const completedCount =
 		activities.filter((a) => a.completed).length +
-		scheduled.filter((a) => a.status === EventStatus.COMPLETED).length;
-	const totalCount = activities.length + scheduled.length;
+		scheduledForList.filter((s) => s.status === EventStatus.COMPLETED).length;
+	const totalCount = activities.length + scheduledForList.length;
 	const focusPercent = totalCount
 		? Math.round((completedCount / totalCount) * 100)
 		: 0;
@@ -229,7 +305,7 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 					<View>
 						<Text style={styles.date}>{todayLabel}</Text>
 						<Text style={styles.greeting}>
-							{userName ? `Welcome, ${userName}` : "Today"}
+							{userName ? `Welcome, ${userName}` : "This week"}
 						</Text>
 					</View>
 				</View>
@@ -238,7 +314,7 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 					<View style={styles.focusCard}>
 						<ProgressCircle percentage={focusPercent} />
 						<View style={styles.focusText}>
-							<Text style={styles.focusTitle}>Today's focus</Text>
+							<Text style={styles.focusTitle}>This week's focus</Text>
 							<Text style={styles.focusSubtitle}>
 								{loading
 									? "Loading…"
@@ -253,7 +329,7 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 					contentContainerStyle={styles.scrollContent}
 				>
 					<View style={styles.activitiesSection}>
-						<Text style={styles.sectionLabel}>Your activities</Text>
+						<Text style={styles.sectionLabel}>Your activities (this week)</Text>
 						{loading ? (
 							<Text style={styles.muted}>Loading…</Text>
 						) : combined.length === 0 ? (
@@ -264,9 +340,9 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 							combined.map((item, i) =>
 								item.type === "activity" ? (
 									<ActivityRow
-										key={`activity-${item.data.id}`}
+										key={`activity-${item.data.id}-${item.data.predictedStartTime ?? i}`}
 										activity={item.data}
-										onToggle={() => handleToggleActivity(item.data.id)}
+										onToggle={() => handleToggleActivity(item.data)}
 										onPress={() => openEditActivity(item.data)}
 										last={i === combined.length - 1}
 									/>

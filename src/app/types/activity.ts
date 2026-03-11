@@ -7,4 +7,6 @@ import type { ActivityEntity } from "../../types/domain";
 export type ActivityItem = ActivityEntity & {
 	completed: boolean;
 	completedDuration?: number;
+	/** When this instance is scheduled (for display in week view). */
+	predictedStartTime?: string;
 };

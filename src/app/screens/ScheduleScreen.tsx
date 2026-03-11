@@ -1,21 +1,59 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	Alert,
+	Platform,
+	Pressable,
+	StyleSheet,
+	Text,
+	View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TimelineCanvas } from "../../features/timeline/TimelineCanvas";
+import type { ScheduledEventEntity } from "../../types/domain";
 import { ActivityActionMenu } from "../components/ActivityActionMenu";
+import type { ExistingActivityOption } from "../components/ActivityForm";
+import { AddChoiceModal } from "../components/AddChoiceModal";
 import { QuickAddSheet } from "../components/QuickAddSheet";
 import { SegmentedControl } from "../components/SegmentedControl";
 import type { TimeBlockProps } from "../components/TimeBlock";
 import { WeeklyView } from "../components/WeeklyView";
+import {
+	GOOGLE_CALENDAR_REDIRECTING,
+	getGoogleCalendarAccessToken,
+	getGoogleCalendarRedirectUri,
+} from "../data/googleCalendarAuth";
+import { importFromIcs, parseIcsContent } from "../data/icsImport";
+import {
+	clearAllCalendarEvents,
+	getScheduledActivitiesForDate,
+	getScheduledActivitiesForWeek,
+	importGoogleCalendar,
+} from "../data/services";
 import type { ActivityFormData } from "../hooks/useActivityValidation";
 import { colors, spacing } from "../theme";
 import type { AppRoute } from "../types";
+
+function entityToTimeBlock(e: ScheduledEventEntity): TimeBlockProps {
+	const start = new Date(e.startTime);
+	const dayIndex = (start.getDay() + 6) % 7;
+	const day = DAYS[dayIndex];
+	const startTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+	return {
+		id: e.id,
+		title: e.title,
+		startTime,
+		durationMinutes: e.duration ?? e.durationMinutes ?? 60,
+		type: "fixed",
+		day,
+		categoryColor: colors.primary,
+	};
+}
 
 type Props = {
 	onNavigate: (route: AppRoute) => void;
 };
 
-const INITIAL_ACTIVITIES: TimeBlockProps[] = [
+const _INITIAL_ACTIVITIES: TimeBlockProps[] = [
 	{
 		id: "1",
 		title: "Morning Routine",
@@ -149,7 +187,7 @@ const INITIAL_ACTIVITIES: TimeBlockProps[] = [
 	},
 ];
 
-const EXISTING_ACTIVITIES: any[] = [
+const EXISTING_ACTIVITIES: ExistingActivityOption[] = [
 	{
 		id: "a1",
 		name: "Gym",
@@ -187,20 +225,50 @@ const getMonday = (d: Date) => {
 };
 
 export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
-	const [activities, setActivities] =
-		useState<TimeBlockProps[]>(INITIAL_ACTIVITIES);
+	const [activities, setActivities] = useState<TimeBlockProps[]>([]);
+	const [activitiesLoading, setActivitiesLoading] = useState(true);
+	const [isAddChoiceOpen, setIsAddChoiceOpen] = useState(false);
 	const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 	const [viewMode, setViewMode] = useState("Day"); // 'Day' | 'Week'
 	const [initialTime, setInitialTime] = useState("");
 
-	// Dynamic Date State
-	const [currentDate] = useState(new Date()); // Today
-	const mondayDate = getMonday(currentDate);
+	// Dynamic Date State — mondayDate must be stable (useMemo) to avoid infinite effect loop
+	const [currentDate] = useState(new Date());
+	const mondayDate = useMemo(() => getMonday(currentDate), [currentDate]);
 	const [selectedDay, setSelectedDay] = useState(() => {
 		// Default to today's day label (e.g. 'Tue')
 		const todayIndex = (new Date().getDay() + 6) % 7; // Shift 0=Sun to 6=Sun, 1=Mon to 0=Mon
 		return DAYS[todayIndex];
 	});
+
+	const getSelectedDate = useCallback(() => {
+		const dayIndex = DAYS.indexOf(selectedDay);
+		const d = new Date(mondayDate);
+		d.setDate(mondayDate.getDate() + dayIndex);
+		return d;
+	}, [mondayDate, selectedDay]);
+
+	const loadActivitiesFromDb = useCallback(async () => {
+		setActivitiesLoading(true);
+		try {
+			if (viewMode === "Week") {
+				const list = await getScheduledActivitiesForWeek(mondayDate);
+				setActivities(list.map(entityToTimeBlock));
+			} else {
+				const selectedDate = getSelectedDate();
+				const list = await getScheduledActivitiesForDate(selectedDate);
+				setActivities(list.map(entityToTimeBlock));
+			}
+		} catch {
+			setActivities([]);
+		} finally {
+			setActivitiesLoading(false);
+		}
+	}, [viewMode, mondayDate, getSelectedDate]);
+
+	useEffect(() => {
+		loadActivitiesFromDb();
+	}, [loadActivitiesFromDb]);
 
 	// Calculate the displayed date string based on selectedDay
 	const getDisplayedDate = () => {
@@ -219,6 +287,38 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	const [selectedActivityId, setSelectedActivityId] = useState<string | null>(
 		null,
 	);
+	const [isClearingEvents, setIsClearingEvents] = useState(false);
+	const icsFileInputRef = useRef<HTMLInputElement | null>(null);
+	const runIcsImportRef = useRef<(content: string) => Promise<void>>(
+		async () => {},
+	);
+
+	// On web: create hidden file input for .ics import
+	useEffect(() => {
+		if (Platform.OS !== "web" || typeof document === "undefined") return;
+		const el = document.createElement("input");
+		el.type = "file";
+		el.accept = ".ics,text/calendar";
+		el.style.display = "none";
+		el.addEventListener("change", () => {
+			const file = el.files?.[0];
+			if (!file) return;
+			file.text().then((content: string) => {
+				runIcsImportRef.current?.(content);
+				el.value = "";
+			});
+		});
+		document.body.appendChild(el);
+		(
+			icsFileInputRef as React.MutableRefObject<HTMLInputElement | null>
+		).current = el;
+		return () => {
+			el.remove();
+			(
+				icsFileInputRef as React.MutableRefObject<HTMLInputElement | null>
+			).current = null;
+		};
+	}, []);
 
 	// State for editing
 	interface EditingActivity {
@@ -359,6 +459,85 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		setEditingActivity(null);
 	};
 
+	const handleImportGoogleCalendar = async () => {
+		setIsAddChoiceOpen(false);
+		const token = await getGoogleCalendarAccessToken();
+		if (token === GOOGLE_CALENDAR_REDIRECTING) return;
+		if (!token) {
+			const redirectUri = await getGoogleCalendarRedirectUri();
+			Alert.alert(
+				"Google Sign-In",
+				`請設定 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID，並在 Google Console 的 OAuth 用戶端加入此 Redirect URI：\n\n${redirectUri}`,
+			);
+			return;
+		}
+		const timeMin = new Date();
+		timeMin.setDate(timeMin.getDate() - 30);
+		const timeMax = new Date();
+		timeMax.setDate(timeMax.getDate() + 90);
+		try {
+			const result = await importGoogleCalendar(token, { timeMin, timeMax });
+			setViewMode("Week");
+			Alert.alert(
+				"Import complete",
+				result.imported > 0
+					? `Imported ${result.imported} events. Switched to Week view.${result.skipped ? ` Skipped ${result.skipped} (already added).` : ""}${result.cancelled ? ` ${result.cancelled} cancelled.` : ""}`
+					: `No new events in range.${result.skipped ? ` ${result.skipped} already in calendar.` : ""}${result.cancelled ? ` ${result.cancelled} cancelled.` : ""} Try Week view to see existing events.`,
+			);
+		} catch (e) {
+			Alert.alert("Import failed", e instanceof Error ? e.message : String(e));
+		}
+	};
+
+	runIcsImportRef.current = async (content: string) => {
+		try {
+			const parsed = parseIcsContent(content);
+			const result = await importFromIcs(parsed);
+			setViewMode("Week");
+			await loadActivitiesFromDb();
+			Alert.alert(
+				"Import complete",
+				result.imported > 0
+					? `Imported ${result.imported} events from .ics.${result.skipped ? ` Skipped ${result.skipped} (already added).` : ""}${result.cancelled ? ` ${result.cancelled} cancelled.` : ""}`
+					: `No new events.${result.skipped ? ` ${result.skipped} already in calendar.` : ""}${result.cancelled ? ` ${result.cancelled} cancelled.` : ""}`,
+			);
+		} catch (e) {
+			Alert.alert("Import failed", e instanceof Error ? e.message : String(e));
+		}
+	};
+
+	const handleImportIcsFile = useCallback(() => {
+		setIsAddChoiceOpen(false);
+		if (Platform.OS === "web") {
+			(
+				icsFileInputRef as React.MutableRefObject<HTMLInputElement | null>
+			).current?.click();
+			return;
+		}
+		// Native: use expo-document-picker + expo-file-system
+		(async () => {
+			try {
+				const DocumentPicker = (await import("expo-document-picker")).default;
+				const FileSystem = await import("expo-file-system/legacy");
+				const result = await DocumentPicker.getDocumentAsync({
+					type: ["text/calendar", "application/octet-stream"],
+					copyToCacheDirectory: true,
+				});
+				if (result.canceled || !result.assets?.[0]?.uri) return;
+				const content = await FileSystem.readAsStringAsync(
+					result.assets[0].uri,
+					{ encoding: FileSystem.EncodingType.UTF8 },
+				);
+				await runIcsImportRef.current?.(content);
+			} catch (e) {
+				Alert.alert(
+					"Import failed",
+					e instanceof Error ? e.message : String(e),
+				);
+			}
+		})();
+	}, []);
+
 	const currentDayActivities = activities.filter(
 		(a) => (a.day || "Mon") === selectedDay,
 	);
@@ -383,11 +562,79 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 							/>
 						</View>
 					</View>
+					<Pressable
+						style={({ pressed }) => [
+							styles.clearAllBtn,
+							isClearingEvents && styles.clearAllBtnDisabled,
+							pressed && !isClearingEvents && styles.clearAllBtnPressed,
+						]}
+						onPress={() => {
+							if (isClearingEvents) return;
+							console.log("[ClearAll] Button pressed, showing confirm");
+							const doClear = async () => {
+								console.log("[ClearAll] User confirmed, starting clear");
+								setIsClearingEvents(true);
+								try {
+									console.log("[ClearAll] Calling clearAllCalendarEvents()");
+									const count = await clearAllCalendarEvents();
+									console.log("[ClearAll] Deleted count:", count);
+									await loadActivitiesFromDb();
+									console.log("[ClearAll] Reloaded calendar");
+									Alert.alert(
+										"Done",
+										`Removed ${count} event(s). The calendar is now empty.`,
+									);
+								} catch (e) {
+									console.error("[ClearAll] Error:", e);
+									Alert.alert(
+										"Error",
+										e instanceof Error ? e.message : String(e),
+									);
+								} finally {
+									setIsClearingEvents(false);
+								}
+							};
+							if (typeof window !== "undefined" && window.confirm) {
+								const ok = window.confirm(
+									"Remove ALL events from the calendar? This cannot be undone. (For testing.)",
+								);
+								if (ok) void doClear();
+								else console.log("[ClearAll] User cancelled (confirm)");
+							} else {
+								Alert.alert(
+									"Clear all events",
+									"Remove ALL events from the calendar? This cannot be undone. (For testing.)",
+									[
+										{
+											text: "Cancel",
+											style: "cancel",
+											onPress: () =>
+												console.log("[ClearAll] User cancelled (alert)"),
+										},
+										{
+											text: "Clear all",
+											style: "destructive",
+											onPress: () => void doClear(),
+										},
+									],
+								);
+							}
+						}}
+						disabled={isClearingEvents}
+					>
+						<Text style={styles.clearAllBtnLabel}>
+							{isClearingEvents ? "Clearing…" : "Clear all events (test)"}
+						</Text>
+					</Pressable>
 				</View>
 
-				{viewMode === "Day" ? (
+				{activitiesLoading ? (
+					<View style={styles.loadingWrap}>
+						<Text style={styles.loadingText}>Loading schedule…</Text>
+					</View>
+				) : viewMode === "Day" ? (
 					<TimelineCanvas
-						activities={currentDayActivities as any[]}
+						activities={currentDayActivities}
 						onActivityPress={handleActivityPress}
 						onUpdateActivity={handleUpdateTime}
 						onEmptyDoublePress={handleDoublePress}
@@ -415,12 +662,20 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 						onPress={() => {
 							setEditingActivity(null);
 							setInitialTime("09:00");
-							setIsQuickAddOpen(true);
+							setIsAddChoiceOpen(true);
 						}}
 					>
 						<Text style={styles.fabIcon}>+</Text>
 					</Pressable>
 				</View>
+
+				<AddChoiceModal
+					visible={isAddChoiceOpen}
+					onClose={() => setIsAddChoiceOpen(false)}
+					onQuickAdd={() => setIsQuickAddOpen(true)}
+					onImportGoogleCalendar={handleImportGoogleCalendar}
+					onImportIcsFile={handleImportIcsFile}
+				/>
 
 				<QuickAddSheet
 					isOpen={isQuickAddOpen}
@@ -481,6 +736,25 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 		letterSpacing: 1,
 	},
+	clearAllBtn: {
+		marginTop: spacing.md,
+		alignSelf: "flex-start",
+		paddingVertical: spacing.md,
+		paddingHorizontal: spacing.lg,
+		minHeight: 44,
+		justifyContent: "center",
+		backgroundColor: colors.white,
+		borderWidth: 1.5,
+		borderColor: colors.slate300,
+		borderRadius: 12,
+	},
+	clearAllBtnPressed: { opacity: 0.85, backgroundColor: colors.slate100 },
+	clearAllBtnDisabled: { opacity: 0.6 },
+	clearAllBtnLabel: {
+		fontSize: 15,
+		fontWeight: "600",
+		color: colors.slate700,
+	},
 	fabWrap: {
 		position: "absolute",
 		bottom: spacing.xxl,
@@ -502,4 +776,11 @@ const styles = StyleSheet.create({
 	},
 	fabPressed: { opacity: 0.9, transform: [{ scale: 0.95 }] },
 	fabIcon: { fontSize: 28, color: colors.white, fontWeight: "300" },
+	loadingWrap: {
+		flex: 1,
+		justifyContent: "center",
+		alignItems: "center",
+		padding: spacing.xl,
+	},
+	loadingText: { fontSize: 14, color: colors.slate500 },
 });

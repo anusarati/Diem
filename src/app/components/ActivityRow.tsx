@@ -8,13 +8,34 @@ type Props = {
 		defaultDuration: number;
 		categoryId: string;
 	};
+	/** Optional date label for week view (e.g. "Mon, Jan 6"). */
+	dateLabel?: string;
 	onToggle?: () => void;
 	last?: boolean;
 	onPress?: () => void;
 };
 
-export function ActivityRow({ activity, onToggle, last, onPress }: Props) {
-	const subtitle = `${activity.defaultDuration} min • ${activity.categoryId}`;
+function formatDateLabel(isoOrUndefined: string | undefined): string {
+	if (!isoOrUndefined) return "";
+	const d = new Date(isoOrUndefined);
+	return d.toLocaleDateString(undefined, {
+		weekday: "short",
+		month: "short",
+		day: "numeric",
+	});
+}
+
+export function ActivityRow({
+	activity,
+	dateLabel,
+	onToggle,
+	last,
+	onPress,
+}: Props) {
+	const datePart = dateLabel ?? formatDateLabel(activity.predictedStartTime);
+	const subtitle = datePart
+		? `${datePart} • ${activity.defaultDuration} min • ${activity.categoryId}`
+		: `${activity.defaultDuration} min • ${activity.categoryId}`;
 	return (
 		<View style={[styles.row, !last && styles.border]}>
 			{onToggle && (

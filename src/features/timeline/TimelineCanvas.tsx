@@ -33,7 +33,7 @@ export function TimelineCanvas({
 
 	const lastPressTime = React.useRef(0);
 
-	const handleEmptyPress = (event: any) => {
+	const handleEmptyPress = (event: { nativeEvent: { locationY: number } }) => {
 		const { locationY } = event.nativeEvent;
 		const hour = Math.floor(locationY / HOUR_HEIGHT);
 		const minutes = Math.floor(((locationY % HOUR_HEIGHT) / HOUR_HEIGHT) * 60);

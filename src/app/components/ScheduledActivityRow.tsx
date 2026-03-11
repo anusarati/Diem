@@ -1,3 +1,4 @@
+import type { StyleProp, ViewStyle } from "react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { EventStatus } from "../../types/domain";
 import { colors } from "../theme";
@@ -8,7 +9,7 @@ type Props = {
 	onToggle: () => void;
 	onPress?: () => void;
 	last?: boolean;
-	style?: any;
+	style?: StyleProp<ViewStyle>;
 };
 
 export function ScheduledActivityRow({
@@ -19,14 +20,26 @@ export function ScheduledActivityRow({
 	style,
 }: Props) {
 	const completed = activity.status === EventStatus.COMPLETED;
-	const startsAt = new Date(activity.startTime).toLocaleTimeString([], {
+	const startDate = new Date(activity.startTime);
+	const dateLabel = startDate.toLocaleDateString(undefined, {
+		weekday: "short",
+		month: "short",
+		day: "numeric",
+	});
+	const timeLabel = startDate.toLocaleTimeString([], {
 		hour: "2-digit",
 		minute: "2-digit",
 	});
-	const subtitle = `${startsAt} • ${activity.duration} min • ${activity.categoryId}`;
+	const subtitle = `${dateLabel} • ${timeLabel} • ${activity.duration} min • ${activity.categoryId}`;
 
 	return (
 		<View style={[styles.row, !last && styles.border, style]}>
+			<Pressable
+				onPress={onToggle}
+				style={[styles.checkbox, completed && styles.checkboxChecked]}
+			>
+				{completed && <Text style={styles.checkmark}>✓</Text>}
+			</Pressable>
 			<Pressable style={styles.content} onPress={onPress}>
 				<Text style={[styles.title, completed && styles.titleCompleted]}>
 					{activity.title}
@@ -58,4 +71,18 @@ const styles = StyleSheet.create({
 		color: colors.slate400,
 		marginTop: 2,
 	},
+	checkbox: {
+		width: 24,
+		height: 24,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: colors.slate300,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	checkboxChecked: {
+		borderColor: colors.primary,
+		backgroundColor: "transparent",
+	},
+	checkmark: { color: colors.primary, fontSize: 14, fontWeight: "600" },
 });

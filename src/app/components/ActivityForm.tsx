@@ -19,11 +19,22 @@ import { ConstraintToggle } from "./ConstraintToggle";
 import { PrioritySelector } from "./PrioritySelector";
 import { RecurrenceEditor } from "./RecurrenceEditor";
 
+/** Subset of ActivityEntity used for "select from existing" list. */
+export type ExistingActivityOption = Pick<
+	ActivityEntity,
+	| "id"
+	| "name"
+	| "priority"
+	| "defaultDuration"
+	| "categoryId"
+	| "isReplaceable"
+>;
+
 type Props = {
 	onSubmit: (data: ActivityFormData) => void;
 	initialData?: Partial<ActivityFormData>;
 	showTimeFields?: boolean;
-	existingActivities?: ActivityEntity[];
+	existingActivities?: ExistingActivityOption[];
 };
 
 export function ActivityForm({
@@ -68,7 +79,7 @@ export function ActivityForm({
 		{ name: "Other", color: colors.mintDark },
 	]);
 
-	const handleSelectExisting = (activity: ActivityEntity) => {
+	const handleSelectExisting = (activity: ExistingActivityOption) => {
 		setValue("title", activity.name);
 		setValue(
 			"priority",

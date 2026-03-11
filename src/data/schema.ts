@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export default appSchema({
-	version: 4,
+	version: 5,
 	tables: [
 		tableSchema({
 			name: "users",
@@ -45,6 +45,12 @@ export default appSchema({
 				{ name: "is_locked", type: "boolean" }, // User explicitly pinned this instance
 				{ name: "created_at", type: "number" },
 				{ name: "updated_at", type: "number" },
+				{
+					name: "external_id",
+					type: "string",
+					isOptional: true,
+					isIndexed: true,
+				}, // Google Calendar event id
 			],
 		}),
 		tableSchema({

@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import type { CurrentUser } from "../data/auth";
 import { getCurrentUser } from "../data/auth";
 import { runPersistenceCutover } from "../data/cutover";
+import { completePendingGoogleCalendarAuth } from "../data/googleCalendarAuth";
 import { AppNavigator } from "../navigation/AppNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
 import { RegisterScreen } from "../screens/RegisterScreen";
@@ -32,6 +33,15 @@ export function AuthGate() {
 	useEffect(() => {
 		refreshUser();
 	}, [refreshUser]);
+
+	useEffect(() => {
+		if (
+			typeof window !== "undefined" &&
+			window.location?.search?.includes("code=")
+		) {
+			completePendingGoogleCalendarAuth();
+		}
+	}, []);
 
 	const handleLoginSuccess = useCallback(() => {
 		refreshUser();
