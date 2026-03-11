@@ -11,6 +11,7 @@ import type { ProblemBuilderInput } from "./problem_builder";
 export interface LoadProblemInputParams {
 	horizonStart: Date;
 	totalSlots: number;
+	scheduleOnlyInEmptyTime?: boolean;
 }
 
 export class BridgeDataSource {
@@ -59,6 +60,7 @@ export class BridgeDataSource {
 			hnetArcCounts,
 			hnetPairCounts,
 			scheduledEvents,
+			scheduleOnlyInEmptyTime: params.scheduleOnlyInEmptyTime,
 			horizonStart: params.horizonStart,
 			totalSlots: params.totalSlots,
 		};
