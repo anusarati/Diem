@@ -11,12 +11,7 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
-import {
-	type ActivityEntity,
-	ActivitySource,
-	EventStatus,
-	Replaceability,
-} from "types/domain";
+import type { ActivityEntity } from "types/domain";
 import { ActivityForm } from "../components/ActivityForm";
 import { ActivityRow } from "../components/ActivityRow";
 import type { ActivityFormData } from "../hooks/useActivityValidation";
@@ -33,17 +28,6 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 	const [editModalVisible, setEditModalVisible] = useState(false);
 	const [selectedActivity, setSelectedActivity] =
 		useState<ActivityEntity | null>(null);
-
-	const loadActivities = useCallback(() => {
-		setLoading(true);
-		setLoading(false);
-	}, []);
-
-	const handleAddOrUpdate = useCallback(() => {
-		loadActivities();
-		setEditModalVisible(false);
-		setSelectedActivity(null);
-	}, [loadActivities]);
 
 	const seedActivities = useCallback(() => {
 		const dummyActivities: ActivityEntity[] = [
@@ -82,25 +66,30 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 	}, []);
 
 	const handleDelete = useCallback((id: string) => {
-		Alert.alert(
-			"Delete Activity",
-			"Are you sure you want to delete this activity?",
-			[
-				{ text: "Cancel", style: "cancel" },
-				{
-					text: "Delete",
-					style: "destructive",
-					onPress: () => {
-						setActivities((prev) => prev.filter((a) => a.id !== id));
-					},
+		console.log("Delete triggered for ID:", id);
+		Alert.alert("Delete Activity", "Are you sure?", [
+			{ text: "Cancel", style: "cancel" },
+			{
+				text: "Delete",
+				style: "destructive",
+				onPress: () => {
+					setActivities((prev) => {
+						console.log("ID we want to delete:", id);
+						console.log(
+							"IDs currently in state:",
+							prev.map((a) => a.id),
+						);
+						const newState = prev.filter((a) => a.id !== id);
+						console.log("Items remaining:", newState.length);
+						return newState;
+					});
 				},
-			],
-		);
+			},
+		]);
 	}, []);
 
 	const handleSaveActivity = (data: ActivityFormData) => {
 		if (selectedActivity) {
-			// Update
 			setActivities((prev) =>
 				prev.map((a) =>
 					a.id === selectedActivity.id
@@ -121,7 +110,6 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 				),
 			);
 		} else {
-			// Create
 			const newActivity: ActivityEntity = {
 				id: Math.random().toString(36).substr(2, 9),
 				name: data.title,
@@ -180,6 +168,7 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 						data={activities}
 						keyExtractor={(item) => item.id}
 						renderItem={renderItem}
+						extraData={activities}
 						contentContainerStyle={styles.listContent}
 					/>
 				)}
@@ -235,7 +224,7 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 const styles = StyleSheet.create({
 	safe: {
 		flex: 1,
-		backgroundColor: colors.backgroundLight,
+		backgroundColor: colors.background,
 	},
 	header: {
 		paddingHorizontal: spacing.xl,
@@ -245,8 +234,8 @@ const styles = StyleSheet.create({
 		borderBottomColor: colors.slate100,
 	},
 	title: {
-		fontSize: 22,
-		fontWeight: "600",
+		fontSize: 24,
+		fontWeight: "700",
 		color: colors.slate800,
 	},
 	content: {
@@ -260,23 +249,27 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "stretch",
 		backgroundColor: colors.white,
-		marginBottom: spacing.sm,
+		marginBottom: spacing.md,
 		borderRadius: 12,
 		overflow: "hidden",
 		borderWidth: 1,
 		borderColor: colors.slate100,
+		shadowColor: "#000",
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.05,
+		shadowRadius: 8,
+		elevation: 2,
 	},
 	deleteBtn: {
-		paddingHorizontal: spacing.md,
-		paddingVertical: spacing.lg,
+		paddingHorizontal: spacing.lg,
+		justifyContent: "center",
 		backgroundColor: colors.slate50,
 		borderLeftWidth: 1,
 		borderLeftColor: colors.slate100,
-		justifyContent: "center",
 	},
 	deleteBtnText: {
-		color: "#ef4444",
-		fontSize: 12,
+		color: colors.red400,
+		fontSize: 13,
 		fontWeight: "600",
 	},
 	emptyState: {
@@ -293,26 +286,26 @@ const styles = StyleSheet.create({
 		borderRadius: 12,
 	},
 	seedBtnText: {
-		color: colors.slate800,
-		fontWeight: "600",
+		color: colors.white,
+		fontWeight: "700",
 	},
 	muted: {
-		fontSize: 15,
+		fontSize: 16,
 		color: colors.slate400,
 		textAlign: "center",
 		marginTop: spacing.xl,
 	},
 	modalOverlay: {
 		flex: 1,
-		backgroundColor: "rgba(0,0,0,0.5)",
+		backgroundColor: "rgba(0,0,0,0.4)",
 		justifyContent: "flex-end",
 	},
 	modalContent: {
 		backgroundColor: colors.white,
-		borderTopLeftRadius: 24,
-		borderTopRightRadius: 24,
+		borderTopLeftRadius: 28,
+		borderTopRightRadius: 28,
 		padding: spacing.xl,
-		maxHeight: "85%",
+		maxHeight: "90%",
 	},
 	modalHeader: {
 		flexDirection: "row",

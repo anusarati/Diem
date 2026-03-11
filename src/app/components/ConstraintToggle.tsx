@@ -1,4 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { colors, spacing } from "../theme";
 
 type Props = {
 	status: "HARD" | "SOFT";
@@ -6,49 +7,49 @@ type Props = {
 };
 
 export function ConstraintToggle({ status, onChange }: Props) {
+	const isSoft = status === "SOFT";
+
 	return (
-		<View style={styles.wrap}>
-			<Text style={styles.label}>Replaceability Constraint</Text>
-			<View style={styles.row}>
-				<TouchableOpacity
-					style={[styles.button, status === "HARD" && styles.activeButton]}
-					onPress={() => onChange("HARD")}
-				>
-					<Text
-						style={[styles.buttonText, status === "HARD" && styles.activeText]}
-					>
-						Hard (Fixed)
-					</Text>
-				</TouchableOpacity>
-				<TouchableOpacity
-					style={[styles.button, status === "SOFT" && styles.activeButton]}
-					onPress={() => onChange("SOFT")}
-				>
-					<Text
-						style={[styles.buttonText, status === "SOFT" && styles.activeText]}
-					>
-						Soft (Flexible)
-					</Text>
-				</TouchableOpacity>
-			</View>
+		<View style={styles.row}>
+			<Text style={styles.fieldLabel}>Replaceable?</Text>
+			<Pressable
+				onPress={() => onChange(isSoft ? "HARD" : "SOFT")}
+				style={[styles.checkbox, isSoft && styles.checkboxChecked]}
+			>
+				{isSoft ? <Text style={styles.checkmark}>✓</Text> : null}
+			</Pressable>
 		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	wrap: { marginBottom: 16 },
-	label: { fontSize: 14, fontWeight: "700", color: "#475569", marginBottom: 8 },
-	row: { flexDirection: "row", gap: 8 },
-	button: {
-		flex: 1,
-		paddingVertical: 10,
-		backgroundColor: "#F8FAFC",
-		borderRadius: 8,
+	row: {
+		flexDirection: "row",
+		justifyContent: "space-between",
 		alignItems: "center",
-		borderWidth: 1,
-		borderColor: "#E2E8F0",
+		marginBottom: spacing.lg,
 	},
-	activeButton: { backgroundColor: "#475569", borderColor: "#475569" },
-	buttonText: { fontSize: 14, fontWeight: "600", color: "#64748B" },
-	activeText: { color: "#FFFFFF" },
+	fieldLabel: {
+		fontSize: 14,
+		fontWeight: "600",
+		color: colors.slate700,
+	},
+	checkbox: {
+		width: 24,
+		height: 24,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: colors.slate300,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	checkboxChecked: {
+		borderColor: colors.primary,
+		backgroundColor: "transparent",
+	},
+	checkmark: {
+		color: colors.primary,
+		fontSize: 14,
+		fontWeight: "600",
+	},
 });
