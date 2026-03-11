@@ -6,6 +6,14 @@ const RecurrencePatternSchema = z.object({
 	frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY"]),
 	interval: z.number().min(1),
 	daysOfWeek: z.array(z.number()).optional(),
+	dayOfMonth: z.number().min(1).max(31).optional(),
+});
+
+const TimeRestrictionSchema = z.object({
+	id: z.string(),
+	startTime: z.string(), // "HH:MM"
+	endTime: z.string(), // "HH:MM"
+	type: z.enum(["ALLOW", "DENY"]),
 });
 
 const activitySchema = z.object({
@@ -22,6 +30,7 @@ const activitySchema = z.object({
 	maxDuration: z.number().min(1).optional(),
 	minFrequency: z.number().min(1).optional(),
 	maxFrequency: z.number().min(1).optional(),
+	timeRestrictions: z.array(TimeRestrictionSchema).optional(),
 });
 
 export type ActivityFormData = z.infer<typeof activitySchema>;
