@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { TimelineCanvas } from "../../features/timeline/TimelineCanvas";
 import type { ScheduledEventEntity } from "../../types/domain";
 import { ActivityActionMenu } from "../components/ActivityActionMenu";
+import type { ExistingActivityOption } from "../components/ActivityForm";
 import { AddChoiceModal } from "../components/AddChoiceModal";
 import { QuickAddSheet } from "../components/QuickAddSheet";
 import { SegmentedControl } from "../components/SegmentedControl";
@@ -186,14 +187,6 @@ const _INITIAL_ACTIVITIES: TimeBlockProps[] = [
 	},
 ];
 
-interface ExistingActivityOption {
-	id: string;
-	name: string;
-	priority: number;
-	defaultDuration: number;
-	isReplaceable: boolean;
-	categoryId: string;
-}
 const EXISTING_ACTIVITIES: ExistingActivityOption[] = [
 	{
 		id: "a1",

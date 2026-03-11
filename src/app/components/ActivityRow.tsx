@@ -18,10 +18,20 @@ type Props = {
 function formatDateLabel(isoOrUndefined: string | undefined): string {
 	if (!isoOrUndefined) return "";
 	const d = new Date(isoOrUndefined);
-	return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+	return d.toLocaleDateString(undefined, {
+		weekday: "short",
+		month: "short",
+		day: "numeric",
+	});
 }
 
-export function ActivityRow({ activity, dateLabel, onToggle, last, onPress }: Props) {
+export function ActivityRow({
+	activity,
+	dateLabel,
+	onToggle,
+	last,
+	onPress,
+}: Props) {
 	const datePart = dateLabel ?? formatDateLabel(activity.predictedStartTime);
 	const subtitle = datePart
 		? `${datePart} • ${activity.defaultDuration} min • ${activity.categoryId}`

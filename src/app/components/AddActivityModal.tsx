@@ -40,12 +40,19 @@ export function AddActivityModal({ visible, onClose, onSave }: Props) {
 	const handleSave = async () => {
 		const t = name.trim();
 		if (!t) return;
-		const duration = Math.max(1, Math.min(480, parseInt(defaultDuration, 10) || 30));
+		const duration = Math.max(
+			1,
+			Math.min(480, parseInt(defaultDuration, 10) || 30),
+		);
 		setSaving(true);
 		try {
 			await onSave({
 				name: t,
-				categoryId: ACTIVITY_CATEGORIES.includes(categoryId as (typeof ACTIVITY_CATEGORIES)[number]) ? categoryId : "Other",
+				categoryId: ACTIVITY_CATEGORIES.includes(
+					categoryId as (typeof ACTIVITY_CATEGORIES)[number],
+				)
+					? categoryId
+					: "Other",
 				priority,
 				defaultDuration: duration,
 			});
@@ -201,7 +208,12 @@ const styles = StyleSheet.create({
 		color: colors.slate600,
 		marginBottom: spacing.sm,
 	},
-	chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
+	chipRow: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: spacing.sm,
+		marginBottom: spacing.md,
+	},
 	chip: {
 		paddingVertical: spacing.sm,
 		paddingHorizontal: spacing.md,
@@ -209,7 +221,10 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: colors.slate200,
 	},
-	chipSelected: { borderColor: colors.primary, backgroundColor: `${colors.primary}14` },
+	chipSelected: {
+		borderColor: colors.primary,
+		backgroundColor: `${colors.primary}14`,
+	},
 	chipText: { fontSize: 14, color: colors.slate600 },
 	chipTextSelected: { color: colors.primary, fontWeight: "600" },
 	saveBtn: {

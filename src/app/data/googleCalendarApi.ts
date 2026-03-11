@@ -47,7 +47,7 @@ export async function fetchGoogleCalendarEvents(
 		timeMax: timeMax.toISOString(),
 	});
 	const url = `${CALENDAR_API}?${params.toString()}`;
-	console.log("[Google Calendar API] GET", url.slice(0, 120) + "...");
+	console.log("[Google Calendar API] GET", `${url.slice(0, 120)}...`);
 	const res = await fetch(url, {
 		headers: {
 			Authorization: `Bearer ${accessToken}`,

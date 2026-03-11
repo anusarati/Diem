@@ -1,3 +1,4 @@
+import type { StyleProp, ViewStyle } from "react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { EventStatus } from "../../types/domain";
 import { colors } from "../theme";
@@ -8,7 +9,7 @@ type Props = {
 	onToggle: () => void;
 	onPress?: () => void;
 	last?: boolean;
-	style?: any;
+	style?: StyleProp<ViewStyle>;
 };
 
 export function ScheduledActivityRow({

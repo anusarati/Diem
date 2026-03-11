@@ -8,10 +8,7 @@ import {
 	Replaceability,
 } from "../../types/domain";
 import { ACTIVITY_CATEGORIES, matchCategoryFromText } from "./categories";
-import type {
-	GoogleCalendarDateTime,
-	GoogleCalendarEvent,
-} from "./googleCalendarApi";
+import type { GoogleCalendarDateTime } from "./googleCalendarApi";
 import { fetchGoogleCalendarEvents } from "./googleCalendarApi";
 import {
 	DEFAULT_ACTIVITY_COLOR,

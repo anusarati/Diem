@@ -72,7 +72,7 @@ async function listActivitiesForRangeWithRepositories(
 	});
 }
 
-async function listScheduledForDateWithRepositories(
+async function _listScheduledForDateWithRepositories(
 	repositories: RepoBundle,
 	date: Date,
 ): Promise<ScheduledActivity[]> {
@@ -99,8 +99,16 @@ export async function loadHomeData(date: Date): Promise<HomeData> {
 	return withScopedRepositories(async (repositories) => {
 		const { start, end } = weekRange(date);
 		return {
-			activities: await listActivitiesForRangeWithRepositories(repositories, start, end),
-			scheduled: await listScheduledForRangeWithRepositories(repositories, start, end),
+			activities: await listActivitiesForRangeWithRepositories(
+				repositories,
+				start,
+				end,
+			),
+			scheduled: await listScheduledForRangeWithRepositories(
+				repositories,
+				start,
+				end,
+			),
 		};
 	});
 }
@@ -375,7 +383,8 @@ export async function createActivity(
 		const createdAt = new Date();
 		const categoryId = options?.categoryId ?? DEFAULT_CATEGORY_ID;
 		const priority = options?.priority ?? DEFAULT_ACTIVITY_PRIORITY;
-		const defaultDuration = options?.defaultDuration ?? DEFAULT_ACTIVITY_DURATION;
+		const defaultDuration =
+			options?.defaultDuration ?? DEFAULT_ACTIVITY_DURATION;
 
 		const activity = await repositories.activity.create({
 			categoryId,

@@ -9,13 +9,13 @@ import {
 	View,
 } from "react-native";
 import type { ActivityFormData } from "../hooks/useActivityValidation";
-import { ActivityForm } from "./ActivityForm";
+import { ActivityForm, type ExistingActivityOption } from "./ActivityForm";
 
 type Props = {
 	isOpen: boolean;
 	onClose: () => void;
 	onSave: (data: ActivityFormData) => void;
-	existingActivities?: any[];
+	existingActivities?: ExistingActivityOption[];
 	initialTime?: string;
 	initialData?: Partial<ActivityFormData>;
 };

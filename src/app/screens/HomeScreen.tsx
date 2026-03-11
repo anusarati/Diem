@@ -109,26 +109,23 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 		};
 	}, []);
 
-	const handleToggleActivity = useCallback(
-		(item: ActivityItem) => {
-			const date = item.predictedStartTime
-				? new Date(item.predictedStartTime)
-				: today();
-			if (item.completed) {
-				setActivities((prev) =>
-					prev.map((a) =>
-						a.id === item.id && a.predictedStartTime === item.predictedStartTime
-							? { ...a, completed: false }
-							: a,
-					),
-				);
-				void toggleActivityCompletion(date, item.id);
-			} else {
-				setCompletingActivity(item);
-			}
-		},
-		[activities],
-	);
+	const handleToggleActivity = useCallback((item: ActivityItem) => {
+		const date = item.predictedStartTime
+			? new Date(item.predictedStartTime)
+			: today();
+		if (item.completed) {
+			setActivities((prev) =>
+				prev.map((a) =>
+					a.id === item.id && a.predictedStartTime === item.predictedStartTime
+						? { ...a, completed: false }
+						: a,
+				),
+			);
+			void toggleActivityCompletion(date, item.id);
+		} else {
+			setCompletingActivity(item);
+		}
+	}, []);
 
 	const handleLogTimeActivity = useCallback(
 		(minutes: number | null) => {
@@ -162,9 +159,7 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 			if (isCompleted) {
 				setScheduled((prev) =>
 					prev.map((s) =>
-						s.id === id
-							? { ...s, status: EventStatus.CONFIRMED }
-							: s,
+						s.id === id ? { ...s, status: EventStatus.CONFIRMED } : s,
 					),
 				);
 				void toggleScheduledCompletion(id, item.status);
@@ -176,7 +171,7 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 	);
 
 	const handleLogTimeScheduled = useCallback(
-		(minutes: number | null) => {
+		(_minutes: number | null) => {
 			if (!completingScheduled) return;
 			const id = completingScheduled.id;
 			setScheduled((prev) =>
@@ -184,25 +179,21 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 					s.id === id ? { ...s, status: EventStatus.COMPLETED } : s,
 				),
 			);
-			void toggleScheduledCompletion(
-				id,
-				completingScheduled.status,
-			);
+			void toggleScheduledCompletion(id, completingScheduled.status);
 			setCompletingScheduled(null);
 		},
 		[completingScheduled],
 	);
 
-	const logTimeModalVisible = completingActivity != null || completingScheduled != null;
+	const logTimeModalVisible =
+		completingActivity != null || completingScheduled != null;
 	const logTimeTitle = completingActivity
 		? `How long did "${completingActivity.name}" take?`
 		: completingScheduled
 			? `How long did "${completingScheduled.title}" take?`
 			: "";
 	const logTimeDefaultMinutes =
-		completingActivity?.defaultDuration ??
-		completingScheduled?.duration ??
-		30;
+		completingActivity?.defaultDuration ?? completingScheduled?.duration ?? 30;
 	const handleLogTimeSelect = useCallback(
 		(minutes: number | null) => {
 			if (completingActivity) {
@@ -211,7 +202,12 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 				handleLogTimeScheduled(minutes);
 			}
 		},
-		[completingActivity, completingScheduled, handleLogTimeActivity, handleLogTimeScheduled],
+		[
+			completingActivity,
+			completingScheduled,
+			handleLogTimeActivity,
+			handleLogTimeScheduled,
+		],
 	);
 	const handleLogTimeClose = useCallback(() => {
 		setCompletingActivity(null);
@@ -275,11 +271,15 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 	].sort((x, y) => {
 		const atA =
 			x.type === "activity"
-				? new Date((x.data as ActivityItem).predictedStartTime ?? x.data.createdAt).getTime()
+				? new Date(
+						(x.data as ActivityItem).predictedStartTime ?? x.data.createdAt,
+					).getTime()
 				: new Date(x.data.startTime).getTime();
 		const atB =
 			y.type === "activity"
-				? new Date((y.data as ActivityItem).predictedStartTime ?? y.data.createdAt).getTime()
+				? new Date(
+						(y.data as ActivityItem).predictedStartTime ?? y.data.createdAt,
+					).getTime()
 				: new Date(y.data.startTime).getTime();
 		return atA - atB;
 	});

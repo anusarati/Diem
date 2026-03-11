@@ -45,7 +45,12 @@ export default appSchema({
 				{ name: "is_locked", type: "boolean" }, // User explicitly pinned this instance
 				{ name: "created_at", type: "number" },
 				{ name: "updated_at", type: "number" },
-				{ name: "external_id", type: "string", isOptional: true, isIndexed: true }, // Google Calendar event id
+				{
+					name: "external_id",
+					type: "string",
+					isOptional: true,
+					isIndexed: true,
+				}, // Google Calendar event id
 			],
 		}),
 		tableSchema({
