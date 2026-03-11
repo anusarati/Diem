@@ -23,6 +23,7 @@ export interface ProblemBuilderInput {
 	hnetArcCounts: HNetArcCount[];
 	hnetPairCounts: HNetPairCount[];
 	scheduledEvents?: ScheduledEvent[];
+	scheduleOnlyInEmptyTime?: boolean;
 	horizonStart: Date;
 	totalSlots: number;
 }
@@ -33,12 +34,22 @@ export interface ProblemBuilderResult extends BuiltProblem {
 
 export interface ProblemBuilderOptions {
 	heuristicOptions?: HeuristicInjectorOptions;
+	scheduleOnlyInEmptyTime?: boolean;
+}
+
+export interface BuildProblemOptions {
+	scheduleOnlyInEmptyTime?: boolean;
 }
 
 const syntheticFixedId = (eventId: string): string => `scheduled:${eventId}`;
 
-const isFixedEvent = (event: ScheduledEvent): boolean =>
-	event.isLocked || event.replaceabilityStatus === Replaceability.HARD;
+const isFixedEvent = (
+	event: ScheduledEvent,
+	scheduleOnlyInEmptyTime: boolean,
+): boolean =>
+	scheduleOnlyInEmptyTime ||
+	event.isLocked ||
+	event.replaceabilityStatus === Replaceability.HARD;
 
 const buildFloatingActivity = (
 	activity: Activity,
@@ -94,16 +105,28 @@ const buildFixedEventActivity = (
 export class ProblemBuilder {
 	private readonly constraintMapper: ConstraintMapper;
 	private readonly heuristicInjector: HeuristicInjector;
+	private readonly defaultScheduleOnlyInEmptyTime: boolean;
 
 	constructor(options: ProblemBuilderOptions = {}) {
 		this.constraintMapper = new ConstraintMapper();
 		this.heuristicInjector = new HeuristicInjector(options.heuristicOptions);
+		this.defaultScheduleOnlyInEmptyTime =
+			options.scheduleOnlyInEmptyTime ?? false;
 	}
 
-	build(input: ProblemBuilderInput): ProblemBuilderResult {
+	build(
+		input: ProblemBuilderInput,
+		options: BuildProblemOptions = {},
+	): ProblemBuilderResult {
 		const warnings: string[] = [];
 		const scheduledEvents = input.scheduledEvents ?? [];
-		const fixedEvents = scheduledEvents.filter(isFixedEvent);
+		const scheduleOnlyInEmptyTime =
+			options.scheduleOnlyInEmptyTime ??
+			input.scheduleOnlyInEmptyTime ??
+			this.defaultScheduleOnlyInEmptyTime;
+		const fixedEvents = scheduledEvents.filter((event) =>
+			isFixedEvent(event, scheduleOnlyInEmptyTime),
+		);
 
 		const fixedEventBySyntheticId = new Map<string, ScheduledEvent>();
 		for (const fixedEvent of fixedEvents) {

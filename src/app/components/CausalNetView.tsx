@@ -39,21 +39,75 @@ const activities = [
 ] as const;
 
 /** Arcs: from place/activity center to another. Draw line from (x1,y1) to (x2,y2). */
-const arcs: { x1: number; y1: number; x2: number; y2: number }[] = [
-	{ x1: places[0].x, y1: places[0].y, x2: 72 - ACT_W / 2, y2: 70 },
-	{ x1: 72 + ACT_W / 2, y1: 70, x2: places[1].x, y2: places[1].y },
-	{ x1: 72 + ACT_W / 2, y1: 70, x2: places[2].x, y2: places[2].y },
-	{ x1: 72 + ACT_W / 2, y1: 70, x2: places[3].x, y2: places[3].y },
-	{ x1: places[1].x, y1: places[1].y, x2: 168 - ACT_W / 2, y2: 40 },
-	{ x1: places[2].x, y1: places[2].y, x2: 168 - ACT_W / 2, y2: 70 },
-	{ x1: places[3].x, y1: places[3].y, x2: 168 - ACT_W / 2, y2: 100 },
-	{ x1: 168 + ACT_W / 2, y1: 40, x2: places[4].x, y2: places[4].y },
-	{ x1: 168 + ACT_W / 2, y1: 70, x2: places[5].x, y2: places[5].y },
-	{ x1: 168 + ACT_W / 2, y1: 100, x2: places[6].x, y2: places[6].y },
-	{ x1: places[4].x, y1: places[4].y, x2: 264 - ACT_W / 2, y2: 70 },
-	{ x1: places[5].x, y1: places[5].y, x2: 264 - ACT_W / 2, y2: 70 },
-	{ x1: places[6].x, y1: places[6].y, x2: 264 - ACT_W / 2, y2: 70 },
-	{ x1: 264 + ACT_W / 2, y1: 70, x2: places[7].x, y2: places[7].y },
+const arcs: { id: string; x1: number; y1: number; x2: number; y2: number }[] = [
+	{ id: "p0-a", x1: places[0].x, y1: places[0].y, x2: 72 - ACT_W / 2, y2: 70 },
+	{ id: "a-p1a", x1: 72 + ACT_W / 2, y1: 70, x2: places[1].x, y2: places[1].y },
+	{ id: "a-p1b", x1: 72 + ACT_W / 2, y1: 70, x2: places[2].x, y2: places[2].y },
+	{ id: "a-p1c", x1: 72 + ACT_W / 2, y1: 70, x2: places[3].x, y2: places[3].y },
+	{
+		id: "p1a-b",
+		x1: places[1].x,
+		y1: places[1].y,
+		x2: 168 - ACT_W / 2,
+		y2: 40,
+	},
+	{
+		id: "p1b-c",
+		x1: places[2].x,
+		y1: places[2].y,
+		x2: 168 - ACT_W / 2,
+		y2: 70,
+	},
+	{
+		id: "p1c-d",
+		x1: places[3].x,
+		y1: places[3].y,
+		x2: 168 - ACT_W / 2,
+		y2: 100,
+	},
+	{
+		id: "b-p2a",
+		x1: 168 + ACT_W / 2,
+		y1: 40,
+		x2: places[4].x,
+		y2: places[4].y,
+	},
+	{
+		id: "c-p2b",
+		x1: 168 + ACT_W / 2,
+		y1: 70,
+		x2: places[5].x,
+		y2: places[5].y,
+	},
+	{
+		id: "d-p2c",
+		x1: 168 + ACT_W / 2,
+		y1: 100,
+		x2: places[6].x,
+		y2: places[6].y,
+	},
+	{
+		id: "p2a-e",
+		x1: places[4].x,
+		y1: places[4].y,
+		x2: 264 - ACT_W / 2,
+		y2: 70,
+	},
+	{
+		id: "p2b-e",
+		x1: places[5].x,
+		y1: places[5].y,
+		x2: 264 - ACT_W / 2,
+		y2: 70,
+	},
+	{
+		id: "p2c-e",
+		x1: places[6].x,
+		y1: places[6].y,
+		x2: 264 - ACT_W / 2,
+		y2: 70,
+	},
+	{ id: "e-p3", x1: 264 + ACT_W / 2, y1: 70, x2: places[7].x, y2: places[7].y },
 ];
 
 export function CausalNetView({ width: propWidth, height: propHeight }: Props) {
@@ -71,9 +125,9 @@ export function CausalNetView({ width: propWidth, height: propHeight }: Props) {
 				preserveAspectRatio="xMidYMid meet"
 			>
 				{/* Arcs */}
-				{arcs.map((arc, i) => (
+				{arcs.map((arc) => (
 					<Line
-						key={`arc-${arc.x1}-${arc.y1}-${arc.x2}-${arc.y2}-${i}`}
+						key={arc.id}
 						x1={arc.x1}
 						y1={arc.y1}
 						x2={arc.x2}
