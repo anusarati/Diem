@@ -10,6 +10,7 @@ const RecurrencePatternSchema = z.object({
 });
 
 const TimeRestrictionSchema = z.object({
+	id: z.string(),
 	startTime: z.string(), // "HH:MM"
 	endTime: z.string(), // "HH:MM"
 	type: z.enum(["ALLOW", "DENY"]),

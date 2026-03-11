@@ -9,6 +9,7 @@ import {
 import { colors, spacing } from "../theme";
 
 type TimeRestriction = {
+	id: string;
 	startTime: string;
 	endTime: string;
 	type: "ALLOW" | "DENY";
@@ -26,6 +27,7 @@ export function TimeRestrictionPicker({ restrictions, onChange }: Props) {
 
 	const handleAdd = () => {
 		const newItem: TimeRestriction = {
+			id: Math.random().toString(36).substring(2, 9),
 			startTime: newStart,
 			endTime: newEnd,
 			type,
@@ -35,8 +37,8 @@ export function TimeRestrictionPicker({ restrictions, onChange }: Props) {
 		setNewEnd("17:00");
 	};
 
-	const removeRestriction = (index: number) => {
-		onChange(restrictions.filter((_, i) => i !== index));
+	const removeRestriction = (id: string) => {
+		onChange(restrictions.filter((res) => res.id !== id));
 	};
 
 	return (
@@ -47,11 +49,8 @@ export function TimeRestrictionPicker({ restrictions, onChange }: Props) {
 			</Text>
 
 			<View style={styles.list}>
-				{restrictions.map((res, index) => (
-					<View
-						key={`${res.startTime}-${res.endTime}-${res.type}-${index}`}
-						style={styles.item}
-					>
+				{restrictions.map((res) => (
+					<View key={res.id} style={styles.item}>
 						<View style={styles.itemInfo}>
 							<Text
 								style={[
@@ -65,7 +64,7 @@ export function TimeRestrictionPicker({ restrictions, onChange }: Props) {
 								{res.startTime} - {res.endTime}
 							</Text>
 						</View>
-						<TouchableOpacity onPress={() => removeRestriction(index)}>
+						<TouchableOpacity onPress={() => removeRestriction(res.id)}>
 							<Text style={styles.removeText}>Remove</Text>
 						</TouchableOpacity>
 					</View>
