@@ -18,6 +18,7 @@
 				"backgroundColor": "#F9FBFB"
 			},
 			"package": "com.diem.app"
-		}
+		},
+		"plugins": ["@react-native-community/datetimepicker"]
 	}
 }

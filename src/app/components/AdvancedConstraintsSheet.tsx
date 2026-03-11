@@ -1,5 +1,11 @@
+import DateTimePicker, {
+	type DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import type { ActivityFormData } from "app/hooks/useActivityValidation";
+import { useState } from "react";
 import {
+	Modal,
+	Platform,
 	ScrollView,
 	StyleSheet,
 	Text,
@@ -20,6 +26,88 @@ type Props = {
 };
 
 export function AdvancedConstraintsSheet({ values, onChange, onClose }: Props) {
+	const [showPicker, setShowPicker] = useState(false);
+	const [pickerMode, setPickerMode] = useState<"date" | "time">("date");
+
+	const getSafeDate = (dateStr?: string) => {
+		if (!dateStr) return new Date();
+		const isoStr = dateStr.includes("T") ? dateStr : dateStr.replace(" ", "T");
+		const d = new Date(isoStr);
+		return Number.isNaN(d.getTime()) ? new Date() : d;
+	};
+
+	const onDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+		if (Platform.OS === "android") {
+			setShowPicker(false);
+		}
+
+		if (selectedDate) {
+			if (pickerMode === "date" && Platform.OS === "android") {
+				setPickerMode("time");
+				setShowPicker(true);
+			}
+
+			const year = selectedDate.getFullYear();
+			const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+			const day = String(selectedDate.getDate()).padStart(2, "0");
+			const hours = String(selectedDate.getHours()).padStart(2, "0");
+			const minutes = String(selectedDate.getMinutes()).padStart(2, "0");
+
+			onChange("deadline", `${year}-${month}-${day} ${hours}:${minutes}`);
+		}
+	};
+
+	const showDatePicker = () => {
+		setPickerMode("date");
+		setShowPicker(true);
+	};
+
+	const renderPicker = () => {
+		const picker = (
+			<DateTimePicker
+				value={getSafeDate(values.deadline)}
+				mode={pickerMode}
+				is24Hour={true}
+				display={Platform.OS === "ios" ? "inline" : "calendar"}
+				onChange={onDateChange}
+			/>
+		);
+
+		if (Platform.OS === "ios") {
+			return (
+				<Modal transparent visible={showPicker} animationType="fade">
+					<View style={styles.modalOverlay}>
+						<View style={styles.modalContent}>
+							<View style={styles.modalHeader}>
+								{/* This is where the error was triggered */}
+								<Text style={styles.modalTitle}>
+									{pickerMode === "date" ? "Select Date" : "Select Time"}
+								</Text>
+								<TouchableOpacity
+									onPress={() => {
+										if (pickerMode === "date") {
+											setPickerMode("time");
+										} else {
+											setShowPicker(false);
+											setPickerMode("date");
+										}
+									}}
+								>
+									<Text style={styles.modalDoneBtn}>
+										{pickerMode === "date" ? "Next" : "Done"}
+									</Text>
+								</TouchableOpacity>
+							</View>
+							<View style={{ padding: 16 }}>{picker}</View>
+						</View>
+					</View>
+				</Modal>
+			);
+		}
+
+		return showPicker ? picker : null;
+	};
+
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
@@ -122,18 +210,36 @@ export function AdvancedConstraintsSheet({ values, onChange, onClose }: Props) {
 
 				<View style={styles.field}>
 					<Text style={styles.label}>Strict Deadline</Text>
-					<TextInput
-						style={styles.input}
-						placeholder="YYYY-MM-DD HH:MM"
-						value={values.deadline || ""}
-						onChangeText={(v) => onChange("deadline", v)}
-					/>
+					<TouchableOpacity
+						style={styles.datePickerBtn}
+						onPress={showDatePicker}
+					>
+						<Text
+							style={[
+								styles.datePickerText,
+								!values.deadline && { color: colors.slate400 },
+							]}
+						>
+							{values.deadline || "Select Date & Time"}
+						</Text>
+					</TouchableOpacity>
+					{Platform.OS === "web" && (
+						<Text
+							style={{ fontSize: 10, color: colors.slate400, marginTop: 4 }}
+						>
+							Note: Calendar picker is native to iOS/Android. Please type
+							format: YYYY-MM-DD HH:mm
+						</Text>
+					)}
 				</View>
 
+				{/* Fixed the "Done" Button and ScrollView nesting here */}
 				<TouchableOpacity style={styles.saveBtn} onPress={onClose}>
 					<Text style={styles.saveBtnText}>Done</Text>
 				</TouchableOpacity>
 			</ScrollView>
+
+			{renderPicker()}
 		</View>
 	);
 }
@@ -178,6 +284,19 @@ const styles = StyleSheet.create({
 		fontSize: 15,
 		color: colors.slate800,
 	},
+	datePickerBtn: {
+		height: 44,
+		backgroundColor: colors.slate50,
+		borderRadius: 10,
+		borderWidth: 1,
+		borderColor: colors.slate200,
+		paddingHorizontal: 12,
+		justifyContent: "center",
+	},
+	datePickerText: {
+		fontSize: 15,
+		color: colors.slate800,
+	},
 	separator: {
 		height: 1,
 		backgroundColor: colors.slate100,
@@ -192,4 +311,33 @@ const styles = StyleSheet.create({
 		marginTop: 20,
 	},
 	saveBtnText: { color: colors.white, fontSize: 16, fontWeight: "700" },
+	modalOverlay: {
+		flex: 1,
+		backgroundColor: "rgba(0,0,0,0.5)",
+		justifyContent: "flex-end",
+	},
+	modalContent: {
+		backgroundColor: colors.white,
+		paddingBottom: 40,
+		borderTopLeftRadius: 20,
+		borderTopRightRadius: 20,
+	},
+	modalHeader: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		padding: 16,
+		borderBottomWidth: 1,
+		borderBottomColor: colors.slate100,
+	},
+	modalTitle: {
+		fontSize: 16,
+		fontWeight: "700",
+		color: colors.slate800,
+	},
+	modalDoneBtn: {
+		color: colors.primary,
+		fontSize: 16,
+		fontWeight: "600",
+	},
 });
