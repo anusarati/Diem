@@ -13,6 +13,7 @@ import type { ScheduledEventEntity } from "../../types/domain";
 import { ActivityActionMenu } from "../components/ActivityActionMenu";
 import type { ExistingActivityOption } from "../components/ActivityForm";
 import { AddChoiceModal } from "../components/AddChoiceModal";
+import { MonthlyView } from "../components/MonthlyView";
 import { QuickAddSheet } from "../components/QuickAddSheet";
 import { SegmentedControl } from "../components/SegmentedControl";
 import type { TimeBlockProps } from "../components/TimeBlock";
@@ -26,6 +27,7 @@ import { importFromIcs, parseIcsContent } from "../data/icsImport";
 import {
 	clearAllCalendarEvents,
 	getScheduledActivitiesForDate,
+	getScheduledActivitiesForMonth,
 	getScheduledActivitiesForWeek,
 	importGoogleCalendar,
 } from "../data/services";
@@ -33,19 +35,40 @@ import type { ActivityFormData } from "../hooks/useActivityValidation";
 import { colors, spacing } from "../theme";
 import type { AppRoute } from "../types";
 
+const CATEGORY_COLORS: Record<string, string> = {
+	Work: colors.primary,
+	Study: colors.lavenderDark,
+	Fitness: colors.mintDark,
+	Personal: colors.peachDark,
+	Other: colors.slate400,
+};
+
+function getColorForCategory(categoryId: string): string {
+	return CATEGORY_COLORS[categoryId] || colors.primary;
+}
+
 function entityToTimeBlock(e: ScheduledEventEntity): TimeBlockProps {
 	const start = new Date(e.startTime);
 	const dayIndex = (start.getDay() + 6) % 7;
 	const day = DAYS[dayIndex];
 	const startTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+
+	let type: TimeBlockProps["type"] = "fixed";
+	if (e.status === "PREDICTED") {
+		type = "predicted";
+	} else if (e.replaceabilityStatus === "SOFT" || e.flexible) {
+		type = "flexible";
+	}
+
 	return {
 		id: e.id,
 		title: e.title,
 		startTime,
 		durationMinutes: e.duration ?? e.durationMinutes ?? 60,
-		type: "fixed",
+		type,
 		day,
-		categoryColor: colors.primary,
+		categoryColor: getColorForCategory(e.categoryId),
+		fullDate: e.startTime,
 	};
 }
 
@@ -229,11 +252,11 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	const [activitiesLoading, setActivitiesLoading] = useState(true);
 	const [isAddChoiceOpen, setIsAddChoiceOpen] = useState(false);
 	const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-	const [viewMode, setViewMode] = useState("Day"); // 'Day' | 'Week'
+	const [viewMode, setViewMode] = useState("Day"); // 'Day' | 'Week' | 'Month'
 	const [initialTime, setInitialTime] = useState("");
 
-	// Dynamic Date State — mondayDate must be stable (useMemo) to avoid infinite effect loop
-	const [currentDate] = useState(new Date());
+	// Dynamic Date State
+	const [currentDate, setCurrentDate] = useState(new Date());
 	const mondayDate = useMemo(() => getMonday(currentDate), [currentDate]);
 	const [selectedDay, setSelectedDay] = useState(() => {
 		// Default to today's day label (e.g. 'Tue')
@@ -254,17 +277,20 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 			if (viewMode === "Week") {
 				const list = await getScheduledActivitiesForWeek(mondayDate);
 				setActivities(list.map(entityToTimeBlock));
+			} else if (viewMode === "Month") {
+				const list = await getScheduledActivitiesForMonth(currentDate);
+				setActivities(list.map(entityToTimeBlock));
 			} else {
 				const selectedDate = getSelectedDate();
 				const list = await getScheduledActivitiesForDate(selectedDate);
 				setActivities(list.map(entityToTimeBlock));
 			}
-		} catch {
-			setActivities([]);
+		} catch (error) {
+			console.error("Error loading activities:", error);
 		} finally {
 			setActivitiesLoading(false);
 		}
-	}, [viewMode, mondayDate, getSelectedDate]);
+	}, [viewMode, mondayDate, getSelectedDate, currentDate]);
 
 	useEffect(() => {
 		loadActivitiesFromDb();
@@ -272,6 +298,12 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 
 	// Calculate the displayed date string based on selectedDay
 	const getDisplayedDate = () => {
+		if (viewMode === "Month") {
+			return currentDate.toLocaleDateString("en-US", {
+				month: "long",
+				year: "numeric",
+			});
+		}
 		const dayIndex = DAYS.indexOf(selectedDay);
 		const targetDate = new Date(mondayDate);
 		targetDate.setDate(mondayDate.getDate() + dayIndex);
@@ -423,6 +455,24 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		setIsQuickAddOpen(true);
 	};
 
+	const handleActivityDoublePress = (id: string) => {
+		setSelectedActivityId(id);
+		const activity = activities.find((a) => a.id === id);
+		if (activity) {
+			setEditingActivity({
+				id: activity.id,
+				title: activity.title,
+				startTime: activity.startTime,
+				duration: activity.durationMinutes,
+				type: activity.type,
+				priority: activity.priority,
+			});
+			setMenuVisible(false);
+			setInitialTime(activity.startTime);
+			setIsQuickAddOpen(true);
+		}
+	};
+
 	const handleActivityPress = (id: string) => {
 		setSelectedActivityId(id);
 		setMenuVisible(true);
@@ -554,12 +604,46 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 							<Text style={styles.headerTitle}>Schedule</Text>
 							<Text style={styles.date}>{getDisplayedDate()}</Text>
 						</View>
-						<View style={{ width: 140 }}>
-							<SegmentedControl
-								options={["Day", "Week"]}
-								selected={viewMode}
-								onSelect={setViewMode}
-							/>
+						<View style={{ flexDirection: "row", alignItems: "center" }}>
+							{viewMode === "Month" && (
+								<View style={{ flexDirection: "row", marginRight: spacing.md }}>
+									<Pressable
+										onPress={() => {
+											const prev = new Date(currentDate);
+											prev.setMonth(prev.getMonth() - 1);
+											setCurrentDate(prev);
+										}}
+										style={{ padding: 8 }}
+									>
+										<Text style={{ fontSize: 20, color: colors.slate400 }}>
+											{"<"}
+										</Text>
+									</Pressable>
+									<Pressable
+										onPress={() => {
+											const next = new Date(currentDate);
+											next.setMonth(next.getMonth() + 1);
+											setCurrentDate(next);
+										}}
+										style={{ padding: 8 }}
+									>
+										<Text style={{ fontSize: 20, color: colors.slate400 }}>
+											{">"}
+										</Text>
+									</Pressable>
+								</View>
+							)}
+							<View style={{ width: 210 }}>
+								<SegmentedControl
+									options={["Day", "Week", "Month"]}
+									selected={viewMode}
+									onSelect={(val) => {
+										setViewMode(val);
+										// Reset to today when switching? Or keep current?
+										// Let's keep current.
+									}}
+								/>
+							</View>
 						</View>
 					</View>
 					<Pressable
@@ -636,21 +720,35 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					<TimelineCanvas
 						activities={currentDayActivities}
 						onActivityPress={handleActivityPress}
+						onActivityDoublePress={handleActivityDoublePress}
 						onUpdateActivity={handleUpdateTime}
 						onEmptyDoublePress={handleDoublePress}
 						showNowIndicator={
 							selectedDay === DAYS[(new Date().getDay() + 6) % 7]
 						}
 					/>
-				) : (
+				) : viewMode === "Week" ? (
 					<WeeklyView
 						activities={activities}
 						onActivityPress={handleActivityPress}
+						onActivityDoublePress={handleActivityDoublePress}
 						weekStartDate={mondayDate}
 						onUpdateActivity={handleWeeklyUpdate}
+						onEmptyDoublePress={handleDoublePress}
 						onDayPress={(dayIndex) => {
 							const dayLabel = DAYS[dayIndex];
 							setSelectedDay(dayLabel);
+							setViewMode("Day");
+						}}
+					/>
+				) : (
+					<MonthlyView
+						activities={activities}
+						currentMonth={currentDate}
+						onDayPress={(date) => {
+							const dayIndex = (date.getDay() + 6) % 7;
+							setSelectedDay(DAYS[dayIndex]);
+							setCurrentDate(date);
 							setViewMode("Day");
 						}}
 					/>

@@ -18,14 +18,16 @@ interface WeeklyViewProps {
 	startHour?: number;
 	endHour?: number;
 	onActivityPress?: (id: string) => void;
+	onActivityDoublePress?: (id: string) => void;
 	onDayPress?: (dayIndex: number) => void;
+	onEmptyDoublePress?: (time: string) => void;
 	weekStartDate?: Date;
 	onUpdateActivity?: (id: string, day: string, newStartTime: string) => void;
 }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const HOUR_HEIGHT = 40;
-const TIME_COL_WIDTH = 30;
+const TIME_COL_WIDTH = 50;
 
 interface DraggableWeeklyBlockProps extends Omit<TimeBlockProps, "onPress"> {
 	top: number;
@@ -38,6 +40,7 @@ interface DraggableWeeklyBlockProps extends Omit<TimeBlockProps, "onPress"> {
 	onUpdate: (id: string, day: string, newStartTime: string) => void;
 	onDragStateChange?: (isDragging: boolean) => void;
 	onPress?: (id: string) => void;
+	onDoublePress?: (id: string) => void;
 }
 
 function DraggableWeeklyBlock({
@@ -51,8 +54,10 @@ function DraggableWeeklyBlock({
 	onUpdate,
 	onDragStateChange,
 	onPress,
+	onDoublePress,
 	...props
 }: DraggableWeeklyBlockProps) {
+	const lastPressTime = useRef(0);
 	const pan = useRef(new Animated.ValueXY()).current;
 
 	const panResponder = useRef(
@@ -164,29 +169,44 @@ function DraggableWeeklyBlock({
 			}}
 			{...panResponder.panHandlers}
 		>
-			{/* Simple content render if height allows */}
-			{height > 20 && (
-				<Text
-					style={{
-						fontSize: 10,
-						color: isPredicted ? colors.slate600 : "#fff",
-						padding: 2,
-					}}
-					numberOfLines={1}
-				>
-					{props.title}
-				</Text>
-			)}
+			<Pressable
+				onPress={() => {
+					const now = Date.now();
+					if (now - lastPressTime.current < 500) {
+						onDoublePress?.(props.id);
+					} else {
+						onPress?.(props.id);
+					}
+					lastPressTime.current = now;
+				}}
+				style={{ flex: 1 }}
+			>
+				{/* Simple content render if height allows */}
+				{height > 20 && (
+					<Text
+						style={{
+							fontSize: 10,
+							color: isPredicted ? colors.slate600 : "#fff",
+							padding: 2,
+						}}
+						numberOfLines={1}
+					>
+						{props.title}
+					</Text>
+				)}
+			</Pressable>
 		</Animated.View>
 	);
 }
 
 export function WeeklyView({
 	activities,
-	startHour = 6,
+	startHour = 0,
 	endHour = 23,
 	onActivityPress,
+	onActivityDoublePress,
 	onDayPress,
+	onEmptyDoublePress,
 	weekStartDate = new Date(),
 	onUpdateActivity,
 }: WeeklyViewProps) {
@@ -239,11 +259,17 @@ export function WeeklyView({
 							key={hour}
 							style={[
 								styles.timeLabel,
-								{ top: (hour - startHour) * HOUR_HEIGHT + 35 },
+								{ top: (hour - startHour) * HOUR_HEIGHT + 40 },
 							]}
 						>
-							{/* +35 accounts for header height roughly */}
-							{hour}
+							{/* +40 matches header height exactly */}
+							{hour === 0
+								? "12 AM"
+								: hour < 12
+									? `${hour} AM`
+									: hour === 12
+										? "12 PM"
+										: `${hour - 12} PM`}
 						</Text>
 					))}
 				</View>
@@ -274,6 +300,30 @@ export function WeeklyView({
 
 					{/* Grid Lines Area */}
 					<View style={{ position: "relative" }} onLayout={handleLayout}>
+						<Pressable
+							style={StyleSheet.absoluteFill}
+							onPress={(event) => {
+								const { locationY } = event.nativeEvent;
+								const hour = Math.floor(locationY / HOUR_HEIGHT) + startHour;
+								const minutes = Math.floor(
+									((locationY % HOUR_HEIGHT) / HOUR_HEIGHT) * 60,
+								);
+								const timeString = `${hour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+
+								// Simple double press detection for web/native
+								const now = Date.now();
+								if (
+									// @ts-expect-error - using ref-like behavior via local-scoped var for brevity in replacement
+									global._lastWeeklyPress &&
+									// @ts-expect-error
+									now - global._lastWeeklyPress < 500
+								) {
+									onEmptyDoublePress?.(timeString);
+								}
+								// @ts-expect-error
+								global._lastWeeklyPress = now;
+							}}
+						/>
 						{/* Background Grid */}
 						<View
 							style={{
@@ -326,6 +376,7 @@ export function WeeklyView({
 										startHour={startHour}
 										endHour={endHour}
 										onPress={() => onActivityPress?.(activity.id)}
+										onDoublePress={() => onActivityDoublePress?.(activity.id)}
 										onUpdate={(id, d, t) => onUpdateActivity?.(id, d, t)}
 										onDragStateChange={(isDragging) =>
 											setScrollingEnabled(!isDragging)

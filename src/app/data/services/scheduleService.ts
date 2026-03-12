@@ -65,6 +65,18 @@ export async function getScheduledActivitiesForWeek(
 	});
 }
 
+export async function getScheduledActivitiesForMonth(
+	startDate: Date,
+): Promise<ScheduledEventEntity[]> {
+	return withScopedRepositories(async (repositories) => {
+		const start = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+		const end = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 1);
+		return (await repositories.schedule.listForRange(start, end)).map(
+			toScheduledEventEntity,
+		);
+	});
+}
+
 export async function observeScheduledActivitiesForDate(
 	date: Date,
 	onChange: (events: ScheduledEventEntity[]) => void,
