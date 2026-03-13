@@ -21,6 +21,7 @@ export enum ActivitySource {
 	USER_CREATED = "USER_CREATED",
 	SYSTEM_PREDICTED = "SYSTEM_PREDICTED",
 	EXTERNAL_IMPORT = "EXTERNAL_IMPORT",
+	AUTONOMOUS = "AUTONOMOUS",
 }
 
 export interface ActivityEntity {
