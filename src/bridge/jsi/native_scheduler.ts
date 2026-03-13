@@ -20,6 +20,13 @@ export class NativeScheduler {
 		options: SolveOptions = {},
 	): SolveResultTuple[] {
 		const payload = serializeProblem(context.problem);
+		if (!DiemScheduler) {
+			console.error(
+				"[NativeScheduler] DiemScheduler Nitro module not loaded! Cannot solve.",
+			);
+			return [];
+		}
+
 		const rawResult = DiemScheduler.solve(
 			payload,
 			options.maxGenerations ?? DEFAULT_MAX_GENERATIONS,
