@@ -3,15 +3,18 @@ import * as Location from "expo-location";
 import { useCallback, useEffect, useState } from "react";
 import {
 	Alert,
+	Image,
 	Platform,
 	Pressable,
-	SafeAreaView,
 	ScrollView,
 	StyleSheet,
 	Switch,
 	Text,
+	TouchableOpacity,
 	View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { scheduleNotification } from "../../services/notification/notification_service";
 import { Button } from "../components/Button";
 import { ROUTES } from "../constants/routes";
 import {
@@ -108,10 +111,17 @@ export function ProfileScreen({ onLogout, onNavigate }: Props) {
 	};
 
 	const testNotification = async () => {
-		Alert.alert(
-			"Notice",
-			"Notifications are temporarily disabled for build compatibility.",
-		);
+		try {
+			await scheduleNotification(
+				"Diem Test",
+				"Your notification system is working! 🚀",
+				new Date(Date.now() + 3000), // 3 seconds from now
+				{ type: "TEST" },
+			);
+			Alert.alert("Success", "A test notification will appear in 3 seconds.");
+		} catch (err) {
+			Alert.alert("Error", "Failed to schedule test notification.");
+		}
 	};
 
 	const resetModel = () => {
@@ -161,11 +171,42 @@ export function ProfileScreen({ onLogout, onNavigate }: Props) {
 						<Text style={styles.rowLabel}>Receive notifications</Text>
 						<Switch
 							value={settings.notificationsEnabled}
-							onValueChange={(v) => update({ notificationsEnabled: v })}
+							onValueChange={(v: boolean) =>
+								update({ notificationsEnabled: v })
+							}
 							trackColor={{ false: colors.slate200, true: colors.primary }}
 							thumbColor={colors.white}
 						/>
 					</View>
+
+					{settings.notificationsEnabled && (
+						<View style={styles.granularSettings}>
+							<View style={styles.subRow}>
+								<Text style={styles.subRowLabel}>Upcoming Activities</Text>
+								<Switch
+									value={true} // Defaulting to true for now
+									onValueChange={() => {}}
+									style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+								/>
+							</View>
+							<View style={styles.subRow}>
+								<Text style={styles.subRowLabel}>Goal Reminders</Text>
+								<Switch
+									value={true}
+									onValueChange={() => {}}
+									style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+								/>
+							</View>
+							<View style={styles.subRow}>
+								<Text style={styles.subRowLabel}>Daily Reviews</Text>
+								<Switch
+									value={true}
+									onValueChange={() => {}}
+									style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+								/>
+							</View>
+						</View>
+					)}
 				</View>
 
 				<View style={styles.section}>
@@ -296,6 +337,25 @@ const styles = StyleSheet.create({
 		borderColor: colors.slate100,
 	},
 	rowLabel: { fontSize: 16, color: colors.slate700 },
+	granularSettings: {
+		backgroundColor: colors.white,
+		paddingLeft: spacing.xl,
+		paddingRight: spacing.lg,
+		borderBottomLeftRadius: 12,
+		borderBottomRightRadius: 12,
+		borderWidth: 1,
+		borderTopWidth: 0,
+		borderColor: colors.slate100,
+	},
+	subRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		paddingVertical: spacing.md,
+		borderBottomWidth: 1,
+		borderBottomColor: colors.slate50,
+	},
+	subRowLabel: { fontSize: 14, color: colors.slate600 },
 	saveBtn: {
 		backgroundColor: colors.primary,
 		borderRadius: 12,

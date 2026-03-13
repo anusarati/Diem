@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import {
 	ActivityIndicator,
-	SafeAreaView,
 	ScrollView,
 	StyleSheet,
 	Text,
 	View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ActivityBarRow } from "../components/ActivityBarRow";
 import { CategoryHeatmap } from "../components/CategoryHeatmap";
 import { CausalNetView } from "../components/CausalNetView";
