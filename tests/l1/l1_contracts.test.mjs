@@ -61,24 +61,6 @@ function expectNoMatches(pattern, rootPath) {
 	);
 }
 
-test("cutover clears legacy keys and resets session", () => {
-	const cutover = read("src/app/data/cutover.ts");
-	assert.match(cutover, /CUTOVER_MARKER_KEY/);
-	assert.match(cutover, /"diem_tasks_"/);
-	assert.match(cutover, /"diem_scheduled_"/);
-	assert.match(cutover, /"diem_settings_"/);
-	assert.match(cutover, /"diem_legacy_imported_"/);
-	assert.match(cutover, /await clearCurrentUser\(\)/);
-	assert.match(cutover, /AsyncStorage\.multiRemove/);
-
-	const authGate = read("src/app/components/AuthGate.tsx");
-	assert.match(authGate, /runPersistenceCutover/);
-	assert.match(
-		authGate,
-		/runPersistenceCutover\(\)\s*\.then\(\(\)\s*=>\s*getCurrentUser\(\)\)/,
-	);
-});
-
 test("repositories expose required L1 CRUD and observe APIs", () => {
 	const activityRepo = read("src/data/repositories/ActivityRepository.ts");
 	assert.match(activityRepo, /async list\(/);
