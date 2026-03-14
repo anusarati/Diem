@@ -30,7 +30,7 @@
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.2.2",
-		"@nozbe/watermelondb": "^0.25.5",
+		"@nozbe/watermelondb": "^0.28.0",
 		"@react-native-async-storage/async-storage": "2.2.0",
 		"@shopify/flash-list": "2.0.2",
 		"arktype": "^2.1.29",
