@@ -17,6 +17,7 @@ type Props = {
 	startHour: number;
 	onDragEnd?: (id: string, newStartTime: string) => void;
 	onPress?: (id: string) => void;
+	onDoublePress?: (id: string) => void;
 };
 
 export function DraggableTimeBlock({
@@ -25,7 +26,9 @@ export function DraggableTimeBlock({
 	startHour,
 	onDragEnd,
 	onPress,
+	onDoublePress,
 }: Props) {
+	const lastPressTime = React.useRef(0);
 	const isFlexible = activity.type === "flexible";
 
 	// Calculate initial position
@@ -137,7 +140,15 @@ export function DraggableTimeBlock({
 						activity={activity}
 						top={0}
 						height={height}
-						onPress={() => onPress?.(activity.id)}
+						onPress={() => {
+							const now = Date.now();
+							if (now - lastPressTime.current < 500) {
+								onDoublePress?.(activity.id);
+							} else {
+								onPress?.(activity.id);
+							}
+							lastPressTime.current = now;
+						}}
 						style={{ width: "100%" }}
 					/>
 				</Animated.View>

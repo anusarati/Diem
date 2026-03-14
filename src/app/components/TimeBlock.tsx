@@ -21,6 +21,7 @@ export interface TimeBlockProps {
 	type: ActivityType;
 	priority?: PriorityLevel; // NEW
 	categoryColor?: string;
+	fullDate?: string; // NEW: full ISO date string
 	onPress?: () => void;
 	// Positioning props would be calculated by parent, passing style here
 	style?: StyleProp<ViewStyle>;

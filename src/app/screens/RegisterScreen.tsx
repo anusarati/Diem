@@ -1,13 +1,16 @@
 import { useState } from "react";
 import {
+	KeyboardAvoidingView,
+	Platform,
 	Pressable,
-	SafeAreaView,
 	ScrollView,
 	StyleSheet,
 	Text,
 	TextInput,
+	TouchableOpacity,
 	View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { register } from "../data/auth";
 import { colors, spacing } from "../theme";
 

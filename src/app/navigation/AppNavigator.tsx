@@ -31,7 +31,9 @@ export function AppNavigator({ onLogout }: Props) {
 			{currentRoute === ROUTES.MANAGE_ACTIVITIES && (
 				<ManageActivitiesScreen onNavigate={handleNavigate} />
 			)}
-			{currentRoute === ROUTES.PROFILE && <ProfileScreen onLogout={onLogout} />}
+			{currentRoute === ROUTES.PROFILE && (
+				<ProfileScreen onLogout={onLogout} onNavigate={handleNavigate} />
+			)}
 			{currentRoute === ROUTES.CALENDAR && (
 				<ScheduleScreen onNavigate={handleNavigate} />
 			)}

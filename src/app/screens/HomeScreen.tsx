@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-	Pressable,
-	SafeAreaView,
-	ScrollView,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ActivitySource, EventStatus } from "../../types/domain";
 import { ActivityRow } from "../components/ActivityRow";
 import { AddActivityModal } from "../components/AddActivityModal";

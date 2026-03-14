@@ -13,6 +13,7 @@ type Props = {
 	activities: Activity[];
 	onUpdateActivity?: (id: string, newStartTime: string) => void;
 	onActivityPress?: (id: string) => void;
+	onActivityDoublePress?: (id: string) => void;
 	onEmptyPress?: (time: string) => void;
 	onEmptyDoublePress?: (time: string) => void;
 	showNowIndicator?: boolean;
@@ -22,6 +23,7 @@ export function TimelineCanvas({
 	activities,
 	onUpdateActivity,
 	onActivityPress,
+	onActivityDoublePress,
 	onEmptyPress,
 	onEmptyDoublePress,
 	showNowIndicator = true,
@@ -106,6 +108,7 @@ export function TimelineCanvas({
 						startHour={START_HOUR}
 						onDragEnd={handleUpdate}
 						onPress={onActivityPress}
+						onDoublePress={onActivityDoublePress}
 					/>
 				))}
 			</ScrollView>

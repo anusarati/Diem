@@ -4,13 +4,13 @@ import {
 	FlatList,
 	Modal,
 	Pressable,
-	SafeAreaView,
 	ScrollView,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
 	View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { ActivityEntity } from "types/domain";
 import { ActivityForm } from "../components/ActivityForm";
 import { ActivityRow } from "../components/ActivityRow";

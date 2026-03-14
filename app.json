@@ -14,6 +14,24 @@
 			"supportsTablet": true,
 			"bundleIdentifier": "com.arshiyasalehi.diemapp"
 		},
+		"plugins": [
+			[
+				"expo-notifications",
+				{
+					"icon": "./assets/notification-icon.png",
+					"color": "#F9FBFB"
+				}
+			],
+			[
+				"expo-build-properties",
+				{
+					"ios": {
+						"deploymentTarget": "15.1",
+						"useFrameworks": "static"
+					}
+				}
+			]
+		],
 		"android": {
 			"adaptiveIcon": {
 				"backgroundColor": "#F9FBFB"

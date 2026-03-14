@@ -1,4 +1,4 @@
-import type { ActivityFormData } from "app/hooks/useActivityValidation";
+import { useState } from "react";
 import {
 	ScrollView,
 	StyleSheet,
@@ -7,7 +7,9 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
+import type { ActivityFormData } from "../hooks/useActivityValidation";
 import { colors, spacing } from "../theme";
+import { DatePickerModal } from "./DatePickerModal";
 import { TimeRestrictionPicker } from "./TimeRestrictionPicker";
 
 type Props = {
@@ -20,6 +22,8 @@ type Props = {
 };
 
 export function AdvancedConstraintsSheet({ values, onChange, onClose }: Props) {
+	const [showDeadlinePicker, setShowDeadlinePicker] = useState(false);
+
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
@@ -122,13 +126,28 @@ export function AdvancedConstraintsSheet({ values, onChange, onClose }: Props) {
 
 				<View style={styles.field}>
 					<Text style={styles.label}>Strict Deadline</Text>
-					<TextInput
-						style={styles.input}
-						placeholder="YYYY-MM-DD HH:MM"
-						value={values.deadline || ""}
-						onChangeText={(v) => onChange("deadline", v)}
-					/>
+					<TouchableOpacity
+						style={styles.datePickerToggle}
+						onPress={() => setShowDeadlinePicker(true)}
+					>
+						<Text
+							style={[
+								styles.datePickerText,
+								!values.deadline && styles.datePickerPlaceholder,
+							]}
+						>
+							{values.deadline || "Select Date & Time"}
+						</Text>
+						<Text style={styles.calendarIcon}>📅</Text>
+					</TouchableOpacity>
 				</View>
+
+				<DatePickerModal
+					visible={showDeadlinePicker}
+					onClose={() => setShowDeadlinePicker(false)}
+					initialValue={values.deadline}
+					onSave={(val) => onChange("deadline", val)}
+				/>
 
 				<TouchableOpacity style={styles.saveBtn} onPress={onClose}>
 					<Text style={styles.saveBtnText}>Done</Text>
@@ -177,6 +196,29 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 12,
 		fontSize: 15,
 		color: colors.slate800,
+	},
+	datePickerToggle: {
+		height: 48,
+		backgroundColor: colors.slate50,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: colors.slate200,
+		paddingHorizontal: 16,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+	},
+	datePickerText: {
+		fontSize: 15,
+		fontWeight: "600",
+		color: colors.slate800,
+	},
+	datePickerPlaceholder: {
+		color: colors.slate400,
+		fontWeight: "400",
+	},
+	calendarIcon: {
+		fontSize: 16,
 	},
 	separator: {
 		height: 1,

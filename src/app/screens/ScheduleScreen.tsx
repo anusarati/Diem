@@ -9,10 +9,19 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TimelineCanvas } from "../../features/timeline/TimelineCanvas";
+import { useNotificationListener } from "../../services/notification/notification_listener";
+import { requestNotificationPermission } from "../../services/notification/notification_permissions";
+import { scheduleActivityNotifications } from "../../services/notification/notification_scheduler";
 import type { ScheduledEventEntity } from "../../types/domain";
+import {
+	ActivitySource,
+	EventStatus,
+	type Replaceability,
+} from "../../types/domain";
 import { ActivityActionMenu } from "../components/ActivityActionMenu";
 import type { ExistingActivityOption } from "../components/ActivityForm";
 import { AddChoiceModal } from "../components/AddChoiceModal";
+import { MonthlyView } from "../components/MonthlyView";
 import { QuickAddSheet } from "../components/QuickAddSheet";
 import { SegmentedControl } from "../components/SegmentedControl";
 import type { TimeBlockProps } from "../components/TimeBlock";
@@ -24,28 +33,55 @@ import {
 } from "../data/googleCalendarAuth";
 import { importFromIcs, parseIcsContent } from "../data/icsImport";
 import {
+	addScheduledActivity,
 	clearAllCalendarEvents,
 	getScheduledActivitiesForDate,
+	getScheduledActivitiesForMonth,
 	getScheduledActivitiesForWeek,
 	importGoogleCalendar,
+	removeScheduledActivity,
+	updateScheduledActivity,
 } from "../data/services";
+// import { initNotificationService } from "../../services/notification/notification_service"; // Moved to App.tsx
+import { getAllScheduledActivities } from "../data/services/scheduleService";
 import type { ActivityFormData } from "../hooks/useActivityValidation";
 import { colors, spacing } from "../theme";
 import type { AppRoute } from "../types";
+
+const CATEGORY_COLORS: Record<string, string> = {
+	Work: colors.primary,
+	Study: colors.lavenderDark,
+	Fitness: colors.mintDark,
+	Personal: colors.peachDark,
+	Other: colors.slate400,
+};
+
+function getColorForCategory(categoryId: string): string {
+	return CATEGORY_COLORS[categoryId] || colors.primary;
+}
 
 function entityToTimeBlock(e: ScheduledEventEntity): TimeBlockProps {
 	const start = new Date(e.startTime);
 	const dayIndex = (start.getDay() + 6) % 7;
 	const day = DAYS[dayIndex];
 	const startTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+
+	let type: TimeBlockProps["type"] = "fixed";
+	if (e.status === "PREDICTED") {
+		type = "predicted";
+	} else if (e.replaceabilityStatus === "SOFT" || e.flexible) {
+		type = "flexible";
+	}
+
 	return {
 		id: e.id,
 		title: e.title,
 		startTime,
 		durationMinutes: e.duration ?? e.durationMinutes ?? 60,
-		type: "fixed",
+		type,
 		day,
-		categoryColor: colors.primary,
+		categoryColor: getColorForCategory(e.categoryId),
+		fullDate: e.startTime,
 	};
 }
 
@@ -229,11 +265,11 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	const [activitiesLoading, setActivitiesLoading] = useState(true);
 	const [isAddChoiceOpen, setIsAddChoiceOpen] = useState(false);
 	const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-	const [viewMode, setViewMode] = useState("Day"); // 'Day' | 'Week'
+	const [viewMode, setViewMode] = useState("Day"); // 'Day' | 'Week' | 'Month'
 	const [initialTime, setInitialTime] = useState("");
 
-	// Dynamic Date State — mondayDate must be stable (useMemo) to avoid infinite effect loop
-	const [currentDate] = useState(new Date());
+	// Dynamic Date State
+	const [currentDate, setCurrentDate] = useState(new Date());
 	const mondayDate = useMemo(() => getMonday(currentDate), [currentDate]);
 	const [selectedDay, setSelectedDay] = useState(() => {
 		// Default to today's day label (e.g. 'Tue')
@@ -254,24 +290,55 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 			if (viewMode === "Week") {
 				const list = await getScheduledActivitiesForWeek(mondayDate);
 				setActivities(list.map(entityToTimeBlock));
+			} else if (viewMode === "Month") {
+				const list = await getScheduledActivitiesForMonth(currentDate);
+				setActivities(list.map(entityToTimeBlock));
 			} else {
 				const selectedDate = getSelectedDate();
 				const list = await getScheduledActivitiesForDate(selectedDate);
 				setActivities(list.map(entityToTimeBlock));
 			}
-		} catch {
-			setActivities([]);
+		} catch (error) {
+			console.error("Error loading activities:", error);
 		} finally {
 			setActivitiesLoading(false);
+			// After loading activities into UI, sync the OS notifications
+			getAllScheduledActivities().then((allEvents) => {
+				scheduleActivityNotifications(allEvents).catch((err) =>
+					console.error("Failed to sync notifications:", err),
+				);
+			});
 		}
-	}, [viewMode, mondayDate, getSelectedDate]);
+	}, [viewMode, mondayDate, getSelectedDate, currentDate]);
 
 	useEffect(() => {
 		loadActivitiesFromDb();
 	}, [loadActivitiesFromDb]);
 
+	useEffect(() => {
+		// Permissions are still requested here if needed, but service init is in App.tsx
+		requestNotificationPermission().catch((err) =>
+			console.error("Permission request failed:", err),
+		);
+	}, []);
+
+	// Use notification listener for deep linking
+	useNotificationListener({
+		navigate: (screen: string, params?: any) => {
+			// Basic wrapper to match navigation interface used in listener
+			// You might need to bridge this to your actual navigation system
+			console.log(`Deep linking to ${screen}`, params);
+		},
+	});
+
 	// Calculate the displayed date string based on selectedDay
 	const getDisplayedDate = () => {
+		if (viewMode === "Month") {
+			return currentDate.toLocaleDateString("en-US", {
+				month: "long",
+				year: "numeric",
+			});
+		}
 		const dayIndex = DAYS.indexOf(selectedDay);
 		const targetDate = new Date(mondayDate);
 		targetDate.setDate(mondayDate.getDate() + dayIndex);
@@ -348,55 +415,81 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		}
 	};
 
-	const handleAddOrEditActivity = (activityData: ActivityFormData) => {
-		const categoryColor = activityData.priority
-			? getColorForPriority(activityData.priority)
-			: colors.primary;
-
+	const handleAddOrEditActivity = async (activityData: ActivityFormData) => {
 		const type =
 			activityData.replaceabilityStatus === "SOFT" ? "flexible" : "fixed";
+		const selectedDate = getSelectedDate();
+		const [hours, minutes] = (activityData.startTime || initialTime || "09:00")
+			.split(":")
+			.map(Number);
 
-		if (editingActivity) {
-			// UPDATE existing
-			setActivities((prev) =>
-				prev.map((a) => {
-					if (a.id === editingActivity.id) {
-						return {
-							...a,
-							title: activityData.title,
-							startTime: activityData.startTime || a.startTime,
-							durationMinutes: activityData.duration || a.durationMinutes,
-							type: type,
-							priority: activityData.priority,
-							categoryColor: categoryColor,
-							day: a.day,
-						};
-					}
-					return a;
-				}),
-			);
-			setEditingActivity(null);
-		} else {
-			// ADD new
-			const activity: TimeBlockProps = {
-				id: Date.now().toString(),
-				title: activityData.title,
-				startTime: activityData.startTime || initialTime || "09:00",
-				durationMinutes: activityData.duration || 60,
-				type: type,
-				day: selectedDay,
-				priority: activityData.priority,
-				categoryColor: categoryColor,
-			};
-			setActivities([...activities, activity]);
+		const start = new Date(selectedDate);
+		start.setHours(hours, minutes, 0, 0);
+
+		const end = new Date(start);
+		end.setMinutes(end.getMinutes() + (activityData.duration || 60));
+
+		try {
+			if (editingActivity) {
+				await updateScheduledActivity(editingActivity.id, {
+					title: activityData.title,
+					startTime: start.toISOString(),
+					endTime: end.toISOString(),
+					duration: activityData.duration,
+					replaceabilityStatus:
+						activityData.replaceabilityStatus as Replaceability,
+					priority:
+						activityData.priority === "high"
+							? 3
+							: activityData.priority === "medium"
+								? 2
+								: 1,
+					updatedAt: new Date().toISOString(),
+				});
+				setEditingActivity(null);
+			} else {
+				await addScheduledActivity({
+					activityId: `act_${Date.now()}`,
+					categoryId: activityData.category || "Other",
+					title: activityData.title,
+					startTime: start.toISOString(),
+					endTime: end.toISOString(),
+					duration: activityData.duration || 60,
+					status: EventStatus.CONFIRMED,
+					replaceabilityStatus:
+						activityData.replaceabilityStatus as Replaceability,
+					priority:
+						activityData.priority === "high"
+							? 3
+							: activityData.priority === "medium"
+								? 2
+								: 1,
+					isRecurring: activityData.isRecurring,
+					source: ActivitySource.USER_CREATED,
+					isLocked: false,
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
+					date: start.toISOString().split("T")[0],
+				});
+			}
+			await loadActivitiesFromDb();
+		} catch (error) {
+			console.error("Failed to save activity:", error);
+			Alert.alert("Error", "Failed to save activity to database.");
 		}
 	};
 
-	const deleteActivity = () => {
+	const deleteActivity = async () => {
 		if (selectedActivityId) {
-			setActivities((prev) => prev.filter((a) => a.id !== selectedActivityId));
-			setMenuVisible(false);
-			setSelectedActivityId(null);
+			try {
+				await removeScheduledActivity(selectedActivityId);
+				setMenuVisible(false);
+				setSelectedActivityId(null);
+				await loadActivitiesFromDb();
+			} catch (error) {
+				console.error("Failed to delete activity:", error);
+				Alert.alert("Error", "Failed to delete activity.");
+			}
 		}
 	};
 
@@ -423,35 +516,79 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		setIsQuickAddOpen(true);
 	};
 
+	const handleActivityDoublePress = (id: string) => {
+		setSelectedActivityId(id);
+		const activity = activities.find((a) => a.id === id);
+		if (activity) {
+			setEditingActivity({
+				id: activity.id,
+				title: activity.title,
+				startTime: activity.startTime,
+				duration: activity.durationMinutes,
+				type: activity.type,
+				priority: activity.priority,
+			});
+			setMenuVisible(false);
+			setInitialTime(activity.startTime);
+			setIsQuickAddOpen(true);
+		}
+	};
+
 	const handleActivityPress = (id: string) => {
 		setSelectedActivityId(id);
 		setMenuVisible(true);
 	};
 
-	const handleUpdateTime = (id: string, newStartTime: string) => {
-		setActivities((prev) =>
-			prev.map((a) => {
-				if (a.id === id) {
-					return { ...a, startTime: newStartTime };
-				}
-				return a;
-			}),
-		);
+	const handleUpdateTime = async (id: string, newStartTime: string) => {
+		const activity = activities.find((a) => a.id === id);
+		if (!activity) return;
+
+		const selectedDate = getSelectedDate();
+		const [hours, minutes] = newStartTime.split(":").map(Number);
+		const start = new Date(selectedDate);
+		start.setHours(hours, minutes, 0, 0);
+
+		const end = new Date(start);
+		end.setMinutes(end.getMinutes() + activity.durationMinutes);
+
+		try {
+			await updateScheduledActivity(id, {
+				startTime: start.toISOString(),
+				endTime: end.toISOString(),
+			});
+			await loadActivitiesFromDb();
+		} catch (error) {
+			console.error("Failed to update activity time:", error);
+		}
 	};
 
-	const handleWeeklyUpdate = (
+	const handleWeeklyUpdate = async (
 		id: string,
 		day: string,
 		newStartTime: string,
 	) => {
-		setActivities((prev) =>
-			prev.map((a) => {
-				if (a.id === id) {
-					return { ...a, day, startTime: newStartTime };
-				}
-				return a;
-			}),
-		);
+		const activity = activities.find((a) => a.id === id);
+		if (!activity) return;
+
+		const dayIndex = DAYS.indexOf(day);
+		const targetDate = new Date(mondayDate);
+		targetDate.setDate(mondayDate.getDate() + dayIndex);
+
+		const [hours, minutes] = newStartTime.split(":").map(Number);
+		targetDate.setHours(hours, minutes, 0, 0);
+
+		const end = new Date(targetDate);
+		end.setMinutes(end.getMinutes() + activity.durationMinutes);
+
+		try {
+			await updateScheduledActivity(id, {
+				startTime: targetDate.toISOString(),
+				endTime: end.toISOString(),
+			});
+			await loadActivitiesFromDb();
+		} catch (error) {
+			console.error("Failed to update weekly activity:", error);
+		}
 	};
 
 	const handleSheetClose = () => {
@@ -554,12 +691,81 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 							<Text style={styles.headerTitle}>Schedule</Text>
 							<Text style={styles.date}>{getDisplayedDate()}</Text>
 						</View>
-						<View style={{ width: 140 }}>
-							<SegmentedControl
-								options={["Day", "Week"]}
-								selected={viewMode}
-								onSelect={setViewMode}
-							/>
+						<View style={{ flexDirection: "row", alignItems: "center" }}>
+							<Pressable
+								onPress={async () => {
+									console.log("[Notification] Manual test button pressed");
+									const { scheduleNotification } = await import(
+										"../../services/notification/notification_service"
+									);
+									await scheduleNotification(
+										"Diem Test",
+										"This is an interactive test. Long-press me!",
+										new Date(Date.now() + 5000), // 5 seconds from now
+										{
+											type: "ACTIVITY_START_INQUIRY",
+											activityId: "test_id",
+											category: "ACTIVITY_INQUIRY",
+										},
+									);
+									Alert.alert(
+										"Scheduled",
+										"Test notification will appear in 5 seconds. Please close the app or go home to see the banner!",
+									);
+								}}
+								style={({ pressed }) => [
+									{
+										backgroundColor: colors.slate100,
+										padding: 8,
+										borderRadius: 8,
+										marginRight: spacing.sm,
+									},
+									pressed && { opacity: 0.7 },
+								]}
+							>
+								<Text style={{ fontSize: 12, color: colors.slate600 }}>
+									Test Push
+								</Text>
+							</Pressable>
+							{viewMode === "Month" && (
+								<View style={{ flexDirection: "row", marginRight: spacing.md }}>
+									<Pressable
+										onPress={() => {
+											const prev = new Date(currentDate);
+											prev.setMonth(prev.getMonth() - 1);
+											setCurrentDate(prev);
+										}}
+										style={{ padding: 8 }}
+									>
+										<Text style={{ fontSize: 20, color: colors.slate400 }}>
+											{"<"}
+										</Text>
+									</Pressable>
+									<Pressable
+										onPress={() => {
+											const next = new Date(currentDate);
+											next.setMonth(next.getMonth() + 1);
+											setCurrentDate(next);
+										}}
+										style={{ padding: 8 }}
+									>
+										<Text style={{ fontSize: 20, color: colors.slate400 }}>
+											{">"}
+										</Text>
+									</Pressable>
+								</View>
+							)}
+							<View style={{ width: 210 }}>
+								<SegmentedControl
+									options={["Day", "Week", "Month"]}
+									selected={viewMode}
+									onSelect={(val) => {
+										setViewMode(val);
+										// Reset to today when switching? Or keep current?
+										// Let's keep current.
+									}}
+								/>
+							</View>
 						</View>
 					</View>
 					<Pressable
@@ -636,21 +842,35 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					<TimelineCanvas
 						activities={currentDayActivities}
 						onActivityPress={handleActivityPress}
+						onActivityDoublePress={handleActivityDoublePress}
 						onUpdateActivity={handleUpdateTime}
 						onEmptyDoublePress={handleDoublePress}
 						showNowIndicator={
 							selectedDay === DAYS[(new Date().getDay() + 6) % 7]
 						}
 					/>
-				) : (
+				) : viewMode === "Week" ? (
 					<WeeklyView
 						activities={activities}
 						onActivityPress={handleActivityPress}
+						onActivityDoublePress={handleActivityDoublePress}
 						weekStartDate={mondayDate}
 						onUpdateActivity={handleWeeklyUpdate}
+						onEmptyDoublePress={handleDoublePress}
 						onDayPress={(dayIndex) => {
 							const dayLabel = DAYS[dayIndex];
 							setSelectedDay(dayLabel);
+							setViewMode("Day");
+						}}
+					/>
+				) : (
+					<MonthlyView
+						activities={activities}
+						currentMonth={currentDate}
+						onDayPress={(date) => {
+							const dayIndex = (date.getDay() + 6) % 7;
+							setSelectedDay(DAYS[dayIndex]);
+							setCurrentDate(date);
 							setViewMode("Day");
 						}}
 					/>

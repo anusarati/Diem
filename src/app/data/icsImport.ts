@@ -192,6 +192,22 @@ export async function importFromIcs(
 		)
 			? categoryId
 			: DEFAULT_CATEGORY_ID;
+
+		// Determine status and replaceability from keywords/status
+		let status = EventStatus.CONFIRMED;
+		let replaceability = Replaceability.SOFT;
+
+		const upperTitle = ev.title.toUpperCase();
+		if (upperTitle.includes("(FIXED)")) {
+			replaceability = Replaceability.HARD;
+		}
+		if (
+			upperTitle.includes("(PREDICTED)") ||
+			ev.status?.toUpperCase() === "TENTATIVE"
+		) {
+			status = EventStatus.PREDICTED;
+		}
+
 		const now = new Date();
 
 		await repos.schedule.create({
@@ -201,8 +217,8 @@ export async function importFromIcs(
 			startTime: ev.start,
 			endTime: ev.end,
 			duration,
-			status: EventStatus.CONFIRMED,
-			replaceabilityStatus: Replaceability.SOFT,
+			status: status,
+			replaceabilityStatus: replaceability,
 			priority: DEFAULT_PRIORITY,
 			isRecurring: false,
 			source: ActivitySource.EXTERNAL_IMPORT,
