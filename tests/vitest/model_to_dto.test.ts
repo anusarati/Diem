@@ -71,20 +71,26 @@ describe("model_to_dto", () => {
 		expect(dto).toEqual({
 			id: "e1",
 			activityId: "a1",
+			category: "Work",
 			categoryId: "Work",
+			completed: false,
 			title: "Standup",
 			startTime: start.toISOString(),
 			endTime: end.toISOString(),
 			duration: 60,
+			durationMinutes: 60,
 			status: EventStatus.CONFIRMED,
 			replaceabilityStatus: Replaceability.SOFT,
 			priority: 3,
+			flexible: true,
 			isRecurring: false,
 			recurringTemplateId: undefined,
 			source: ActivitySource.USER_CREATED,
 			isLocked: false,
 			createdAt: createdAt.toISOString(),
 			updatedAt: updatedAt.toISOString(),
+			date: "2026-02-27",
+			deadline: end.toISOString(),
 		});
 	});
 

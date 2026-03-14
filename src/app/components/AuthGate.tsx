@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import type { CurrentUser } from "../data/auth";
 import { getCurrentUser } from "../data/auth";
-import { runPersistenceCutover } from "../data/cutover";
 import { completePendingGoogleCalendarAuth } from "../data/googleCalendarAuth";
 import { AppNavigator } from "../navigation/AppNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
@@ -18,8 +17,7 @@ export function AuthGate() {
 
 	const refreshUser = useCallback(() => {
 		setLoading(true);
-		runPersistenceCutover()
-			.then(() => getCurrentUser())
+		getCurrentUser()
 			.then((u) => {
 				setUser(u);
 				setLoading(false);

@@ -31,18 +31,18 @@ export const modelClasses = [
 ];
 
 export {
-	User,
 	Activity,
-	ScheduledEvent,
-	Constraint,
-	RecurringActivity,
-	Goal,
-	UserBehavior,
 	ActivityHistory,
-	MarkovTransitionCount,
+	Constraint,
+	ExternalCalendarIntegration,
+	FrequencyEmaState,
+	Goal,
+	GoalProgress,
 	HNetArcCount,
 	HNetPairCount,
-	FrequencyEmaState,
-	GoalProgress,
-	ExternalCalendarIntegration,
+	MarkovTransitionCount,
+	RecurringActivity,
+	ScheduledEvent,
+	User,
+	UserBehavior,
 };
