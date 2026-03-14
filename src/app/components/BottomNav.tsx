@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ROUTES } from "../constants/routes";
 import { colors, spacing } from "../theme";
 import type { AppRoute } from "../types";
@@ -19,8 +20,12 @@ type Props = {
 };
 
 export function BottomNav({ currentRoute, onNavigate }: Props) {
+	const insets = useSafeAreaInsets();
+
 	return (
-		<View style={styles.container}>
+		<View
+			style={[styles.container, { paddingBottom: spacing.md + insets.bottom }]}
+		>
 			{ITEMS.map(({ route, label }) => {
 				const active = currentRoute === route;
 				return (
