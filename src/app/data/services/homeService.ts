@@ -90,9 +90,14 @@ export async function observeHomeData(
 
 	let disposed = false;
 	let refreshQueued = false;
+	let nextQueued = false;
 
 	const emit = async () => {
-		if (disposed || refreshQueued) {
+		if (disposed) {
+			return;
+		}
+		if (refreshQueued) {
+			nextQueued = true;
 			return;
 		}
 		refreshQueued = true;
@@ -106,6 +111,10 @@ export async function observeHomeData(
 			}
 		} finally {
 			refreshQueued = false;
+			if (nextQueued) {
+				nextQueued = false;
+				void emit();
+			}
 		}
 	};
 
@@ -142,6 +151,53 @@ export async function observeActivitiesForDate(
 	return observeHomeData(date, (data) => {
 		onChange(data.activities);
 	});
+}
+
+/** Observes all activities without history or date scoping */
+export async function observeAllActivities(
+	onChange: (activities: ActivityItem[]) => void,
+): Promise<() => void> {
+	const { scope } = await resolveCurrentScope();
+	const repositories = makeRepositories(scope);
+
+	let disposed = false;
+	let refreshQueued = false;
+	let nextQueued = false;
+
+	const emit = async () => {
+		if (disposed) {
+			return;
+		}
+		if (refreshQueued) {
+			nextQueued = true;
+			return;
+		}
+		refreshQueued = true;
+		try {
+			const rows = await repositories.activity.listAll();
+			const mapped = rows.map((a) => toActivityItem(a, null));
+			if (!disposed) {
+				onChange(mapped.sort((l, r) => l.createdAt.localeCompare(r.createdAt)));
+			}
+		} finally {
+			refreshQueued = false;
+			if (nextQueued) {
+				nextQueued = false;
+				void emit();
+			}
+		}
+	};
+
+	const sub = repositories.activity.observeAll().subscribe(() => {
+		void emit();
+	});
+
+	void emit();
+
+	return () => {
+		disposed = true;
+		sub.unsubscribe();
+	};
 }
 
 export async function getActivitiesForDate(
@@ -308,8 +364,31 @@ export async function removeActivity(
 ): Promise<ActivityItem[]> {
 	return withScopedRepositories(async (repositories) => {
 		await repositories.history.deleteForActivity(activityId);
+		const schedules = await repositories.schedule.listAll();
+		await repositories.database.write(async () => {
+			for (const schedule of schedules.filter(
+				(s) => s.activityId === activityId,
+			)) {
+				await schedule.destroyPermanently();
+			}
+		});
 		await repositories.activity.remove(activityId);
 		return listActivitiesForDateWithRepositories(repositories, date);
+	});
+}
+
+export async function deleteActivityGlobal(activityId: string): Promise<void> {
+	return withScopedRepositories(async (repositories) => {
+		await repositories.history.deleteForActivity(activityId);
+		const schedules = await repositories.schedule.listAll(); // Can optimize if we add findForActivity to schedule repo
+		await repositories.database.write(async () => {
+			for (const schedule of schedules.filter(
+				(s) => s.activityId === activityId,
+			)) {
+				await schedule.destroyPermanently();
+			}
+		});
+		await repositories.activity.remove(activityId);
 	});
 }
 
@@ -343,6 +422,22 @@ export async function renameActivity(
 	});
 }
 
+/** Globally updates an activity */
+export async function updateActivityGlobal(
+	activityId: string,
+	patch: {
+		name?: string;
+		categoryId?: string;
+		priority?: number;
+		defaultDuration?: number;
+		isReplaceable?: boolean;
+	},
+): Promise<void> {
+	return withScopedRepositories(async (repositories) => {
+		await repositories.activity.update(activityId, patch);
+	});
+}
+
 export async function createActivity(
 	date: Date,
 	name: string,
@@ -373,5 +468,26 @@ export async function createActivity(
 		});
 
 		return toActivityItem(activity, null);
+	});
+}
+
+/** Globally creates an activity without instantiating history for a specific date */
+export async function createActivityGlobal(
+	name: string,
+	categoryId: string = DEFAULT_CATEGORY_ID,
+	priority: number = DEFAULT_ACTIVITY_PRIORITY,
+	duration: number = DEFAULT_ACTIVITY_DURATION,
+	isReplaceable: boolean = true,
+): Promise<void> {
+	return withScopedRepositories(async (repositories) => {
+		await repositories.activity.create({
+			categoryId,
+			name: name.trim(),
+			priority,
+			defaultDuration: duration,
+			isReplaceable,
+			color: DEFAULT_ACTIVITY_COLOR,
+			createdAt: new Date(),
+		});
 	});
 }

@@ -1,6 +1,9 @@
+import { BridgeDataSource } from "../../../bridge/assembly/bridge_data_source";
+import { ProblemBuilder } from "../../../bridge/assembly/problem_builder";
 import { toScheduledEventEntity } from "../../../data/mappers/model_to_dto";
 import {
 	ActivitySource,
+	EventStatus,
 	Replaceability,
 	type ScheduledEventEntity,
 } from "../../../types/domain";
@@ -39,6 +42,107 @@ export async function getAllScheduledActivities(): Promise<
 	return withScopedRepositories(async (repositories) =>
 		(await repositories.schedule.listAll()).map(toScheduledEventEntity),
 	);
+}
+
+export async function autoSchedule(options: {
+	onlyEmptyTime: boolean;
+}): Promise<number> {
+	return withScopedRepositories(async (repositories) => {
+		const now = new Date();
+		// Start at current time rounded down to the nearest 15 minutes
+		const horizonStart = new Date(now);
+		horizonStart.setMinutes(
+			Math.floor(horizonStart.getMinutes() / 15) * 15,
+			0,
+			0,
+		);
+
+		// 7 days = 672 timeslots of 15 min
+		const totalSlots = 672;
+
+		const dataSource = new BridgeDataSource(repositories.database);
+		const input = await dataSource.load({
+			horizonStart,
+			totalSlots,
+			scheduleOnlyInEmptyTime: options.onlyEmptyTime,
+		});
+
+		const builder = new ProblemBuilder();
+		const buildResult = builder.build(input, {
+			scheduleOnlyInEmptyTime: options.onlyEmptyTime,
+		});
+
+		if (buildResult.warnings.length > 0) {
+			console.warn("[AutoSchedule] Builder warnings:", buildResult.warnings);
+		}
+
+		let NativeSchedulerClass: typeof import("../../../bridge/jsi/native_scheduler").NativeScheduler;
+		try {
+			const { NativeScheduler } = await import(
+				"../../../bridge/jsi/native_scheduler"
+			);
+			NativeSchedulerClass = NativeScheduler;
+		} catch (_e) {
+			throw new Error(
+				"Automated scheduling requires a custom Development Build. The native rust engine is not available in Expo Go.",
+			);
+		}
+
+		const scheduler = new NativeSchedulerClass();
+		const results = scheduler.solve(buildResult, {
+			maxGenerations: 60,
+			timeLimitMs: 200,
+		});
+
+		let createdCount = 0;
+
+		if (!options.onlyEmptyTime) {
+			// Clear floating events in the horizon if we are regenerating everything
+			const horizonEnd = new Date(
+				horizonStart.getTime() + totalSlots * 15 * 60_000,
+			);
+			const existing = await repositories.schedule.listForRange(
+				horizonStart,
+				horizonEnd,
+			);
+			const toDelete = existing.filter(
+				(e) => !e.isLocked && e.replaceabilityStatus !== Replaceability.HARD,
+			);
+
+			await repositories.database.write(async () => {
+				for (const event of toDelete) {
+					await event.destroyPermanently();
+				}
+			});
+		}
+
+		for (const res of results) {
+			const activity = await repositories.activity.get(res.activityId);
+			if (!activity) continue;
+
+			await repositories.schedule.create({
+				activityId: activity.id,
+				categoryId: activity.categoryId,
+				title: activity.name,
+				startTime: res.startTime,
+				endTime: new Date(
+					res.startTime.getTime() + activity.defaultDuration * 60_000,
+				),
+				duration: activity.defaultDuration,
+				status: EventStatus.PREDICTED,
+				replaceabilityStatus: Replaceability.SOFT,
+				priority: activity.priority,
+				isRecurring: false,
+				source: ActivitySource.SYSTEM_PREDICTED,
+				isLocked: false,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			});
+			createdCount++;
+		}
+
+		return createdCount;
+	});
 }
 
 export async function getScheduledActivitiesForDate(

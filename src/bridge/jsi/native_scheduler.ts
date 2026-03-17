@@ -19,6 +19,12 @@ export class NativeScheduler {
 		context: BuiltProblem,
 		options: SolveOptions = {},
 	): SolveResultTuple[] {
+		if (!DiemScheduler) {
+			throw new Error(
+				"DiemScheduler native module is not linked or not available in Expo Go. You must use a Development Build to run the automated scheduler.",
+			);
+		}
+
 		const payload = serializeProblem(context.problem);
 		const rawResult = DiemScheduler.solve(
 			payload,

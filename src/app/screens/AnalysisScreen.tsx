@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import {
 	ActivityIndicator,
+	Alert,
+	Pressable,
 	SafeAreaView,
 	ScrollView,
 	StyleSheet,
@@ -13,7 +15,7 @@ import { CausalNetView } from "../components/CausalNetView";
 import { GoalTimeRow } from "../components/GoalTimeRow";
 import { ProgressCircle } from "../components/ProgressCircle";
 import { SegmentedControl } from "../components/SegmentedControl";
-import { loadAnalyticsView } from "../data/services";
+import { autoSchedule, loadAnalyticsView } from "../data/services";
 import { colors } from "../theme";
 import type {
 	ActivityBreakdownItem,
@@ -54,6 +56,7 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 	const [scoreSub, setScoreSub] = useState("");
 	const [focusPercent, setFocusPercent] = useState(0);
 	const [flowMinutes, setFlowMinutes] = useState(0);
+	const [isScheduling, setIsScheduling] = useState(false);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -126,6 +129,70 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 						selected={timeframe}
 						onSelect={(v) => setTimeframe(v as Timeframe)}
 					/>
+				</View>
+
+				{/* Schedule Action Buttons */}
+				<View style={styles.actionRow}>
+					<Pressable
+						style={[
+							styles.actionBtn,
+							isScheduling ? styles.actionBtnDisabled : null,
+						]}
+						disabled={isScheduling}
+						onPress={async () => {
+							if (isScheduling) return;
+							setIsScheduling(true);
+							try {
+								const created = await autoSchedule({ onlyEmptyTime: false });
+								await load();
+								Alert.alert(
+									"Success",
+									`Schedule generated! ${created} events created.`,
+								);
+							} catch (error) {
+								console.error("[Schedule Everything] error:", error);
+								Alert.alert(
+									"Scheduling Error",
+									error instanceof Error ? error.message : String(error),
+								);
+							} finally {
+								setIsScheduling(false);
+							}
+						}}
+					>
+						<Text style={styles.actionBtnText}>
+							{isScheduling ? "Scheduling..." : "Schedule Everything"}
+						</Text>
+					</Pressable>
+					<Pressable
+						style={[
+							styles.actionBtnSecondary,
+							isScheduling ? styles.actionBtnDisabled : null,
+						]}
+						disabled={isScheduling}
+						onPress={async () => {
+							if (isScheduling) return;
+							setIsScheduling(true);
+							try {
+								const created = await autoSchedule({ onlyEmptyTime: true });
+								await load();
+								Alert.alert(
+									"Success",
+									`Empty time filled! ${created} events created.`,
+								);
+							} catch (error) {
+								console.error("[Fill Empty Time] error:", error);
+								Alert.alert(
+									"Scheduling Error",
+									error instanceof Error ? error.message : String(error),
+								);
+							} finally {
+								setIsScheduling(false);
+							}
+						}}
+					>
+						<Text style={styles.actionBtnSecondaryText}>Fill Empty Time</Text>
+					</Pressable>
 				</View>
 
 				{/* Score card */}
@@ -403,6 +470,44 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 	},
 	segmentWrap: { paddingHorizontal: 24, paddingVertical: 8, marginTop: 8 },
+	actionRow: {
+		flexDirection: "row",
+		paddingHorizontal: 24,
+		gap: 12,
+		marginTop: 0,
+		marginBottom: 16,
+	},
+	actionBtn: {
+		flex: 1,
+		backgroundColor: colors.primary,
+		paddingVertical: 12,
+		borderRadius: 12,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	actionBtnText: {
+		color: colors.white,
+		fontWeight: "600",
+		fontSize: 14,
+	},
+	actionBtnSecondary: {
+		flex: 1,
+		backgroundColor: colors.white,
+		borderWidth: 1,
+		borderColor: colors.slate200,
+		paddingVertical: 12,
+		borderRadius: 12,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	actionBtnSecondaryText: {
+		color: colors.primary,
+		fontWeight: "600",
+		fontSize: 14,
+	},
+	actionBtnDisabled: {
+		opacity: 0.5,
+	},
 	breakdownHeader: {
 		flexDirection: "row",
 		alignItems: "center",
