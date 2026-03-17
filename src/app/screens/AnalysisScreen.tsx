@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import {
 	ActivityIndicator,
+	SafeAreaView,
 	ScrollView,
 	StyleSheet,
 	Text,
 	View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { ActivityBarRow } from "../components/ActivityBarRow";
 import { CategoryHeatmap } from "../components/CategoryHeatmap";
 import { CausalNetView } from "../components/CausalNetView";
@@ -403,6 +403,44 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 	},
 	segmentWrap: { paddingHorizontal: 24, paddingVertical: 8, marginTop: 8 },
+	actionRow: {
+		flexDirection: "row",
+		paddingHorizontal: 24,
+		gap: 12,
+		marginTop: 0,
+		marginBottom: 16,
+	},
+	actionBtn: {
+		flex: 1,
+		backgroundColor: colors.primary,
+		paddingVertical: 12,
+		borderRadius: 12,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	actionBtnText: {
+		color: colors.white,
+		fontWeight: "600",
+		fontSize: 14,
+	},
+	actionBtnSecondary: {
+		flex: 1,
+		backgroundColor: colors.white,
+		borderWidth: 1,
+		borderColor: colors.slate200,
+		paddingVertical: 12,
+		borderRadius: 12,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	actionBtnSecondaryText: {
+		color: colors.primary,
+		fontWeight: "600",
+		fontSize: 14,
+	},
+	actionBtnDisabled: {
+		opacity: 0.5,
+	},
 	breakdownHeader: {
 		flexDirection: "row",
 		alignItems: "center",
