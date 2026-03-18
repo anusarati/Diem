@@ -33,7 +33,7 @@ type Props = {
 
 type Timeframe = "Day" | "Week" | "Month";
 
-export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
+export function AnalysisScreen({ onNavigate }: Props) {
 	const [timeframe, setTimeframe] = useState<Timeframe>("Week");
 	const [selectedHeatmapCategoryId, setSelectedHeatmapCategoryId] =
 		useState("Work");
@@ -94,17 +94,105 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 	const handleSchedule = async (_onlyEmptyTime: boolean) => {
 		setIsScheduling(true);
 		try {
-			const { solverOrchestrator } = await import(
-				"../../services/solver/solver_orchestrator"
+			const { resolveCurrentScope, makeRepositories } = await import(
+				"../data/services/repositoryContext"
 			);
+			const { getDatabase } = await import("../../data/database");
+			const { BridgeDataSource } = await import(
+				"../../bridge/assembly/bridge_data_source"
+			);
+			const { ProblemBuilder } = await import(
+				"../../bridge/assembly/problem_builder"
+			);
+			const { NativeScheduler } = await import(
+				"../../bridge/jsi/native_scheduler"
+			);
+			const { EventStatus, Replaceability, ActivitySource } = await import(
+				"../../types/domain"
+			);
+
 			const startOfToday = new Date();
 			startOfToday.setHours(0, 0, 0, 0);
+			const horizonStart = startOfToday;
+			const totalSlots = 96;
 
-			await solverOrchestrator.solveAndSynchronize(startOfToday, 96);
+			console.log("Starting scheduling for today...");
+
+			const { scope } = await resolveCurrentScope();
+			const database = getDatabase(scope);
+			const dataSource = new BridgeDataSource(database);
+			const builder = new ProblemBuilder();
+			const repositories = makeRepositories(scope);
+
+			const input = await dataSource.load({
+				horizonStart,
+				totalSlots,
+				scheduleOnlyInEmptyTime: _onlyEmptyTime,
+			});
+
+			const built = builder.build(input);
+
+			const scheduler = new NativeScheduler();
+			const results = scheduler.solve(built, {
+				maxGenerations: 100,
+				timeLimitMs: 500,
+			});
+			console.log("Scheduled activities:", results);
+
+			for (const result of results) {
+				const activityId = result.activityId;
+
+				const startOffsetMinutes = result.startSlot * 15;
+				const startTime = new Date(
+					horizonStart.getTime() + startOffsetMinutes * 60000,
+				);
+				const endTime = new Date(
+					startTime.getTime() + result.durationSlots * 15 * 60000,
+				);
+
+				const existing = await repositories.schedule.listAll();
+				const match = existing.find(
+					(e) =>
+						e.activityId === activityId &&
+						new Date(e.startTime).toDateString() === startTime.toDateString(),
+				);
+
+				if (match) {
+					await repositories.schedule.update(match.id, {
+						startTime,
+						endTime,
+						updatedAt: new Date(),
+					});
+				} else {
+					const activity = await repositories.activity.findById(activityId);
+					if (activity) {
+						await repositories.schedule.create({
+							activityId: activityId,
+							categoryId: activity.categoryId,
+							title: activity.name,
+							startTime,
+							endTime,
+							duration: result.durationSlots * 15,
+							status: EventStatus.CONFIRMED,
+							replaceabilityStatus: Replaceability.SOFT,
+							priority: activity.priority,
+							source: ActivitySource.AUTONOMOUS,
+							isLocked: false,
+							isRecurring: false,
+							createdAt: new Date(),
+							updatedAt: new Date(),
+						});
+					}
+				}
+			}
+
+			await new Promise((resolve) => setTimeout(resolve, 500));
 
 			await load();
 
-			Alert.alert("Success", "Schedule has been updated.");
+			Alert.alert("Success", "Schedule has been updated.", [
+				{ text: "View Calendar", onPress: () => onNavigate("Calendar") },
+			]);
 		} catch (error) {
 			console.error("Scheduling failed: ", error);
 			Alert.alert(

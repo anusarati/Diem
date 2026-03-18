@@ -259,8 +259,18 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 	const scheduledForList = scheduled.filter(
 		(s) => s.source !== ActivitySource.EXTERNAL_IMPORT,
 	);
+	const scheduledActivityIds = new Set(
+		scheduledForList.map((s) => s.activityId),
+	);
+	const unscheduledActivities = activities.filter(
+		(a) => !scheduledActivityIds.has(a.id),
+	);
+
 	const combined: TodoItem[] = [
-		...activities.map((d) => ({ type: "activity" as const, data: d })),
+		...unscheduledActivities.map((d) => ({
+			type: "activity" as const,
+			data: d,
+		})),
 		...scheduledForList.map((d) => ({ type: "scheduled" as const, data: d })),
 	].sort((x, y) => {
 		const atA =
@@ -279,9 +289,9 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
 	});
 
 	const completedCount =
-		activities.filter((a) => a.completed).length +
+		unscheduledActivities.filter((a) => a.completed).length +
 		scheduledForList.filter((s) => s.status === EventStatus.COMPLETED).length;
-	const totalCount = activities.length + scheduledForList.length;
+	const totalCount = unscheduledActivities.length + scheduledForList.length;
 	const focusPercent = totalCount
 		? Math.round((completedCount / totalCount) * 100)
 		: 0;

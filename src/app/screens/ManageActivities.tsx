@@ -118,11 +118,13 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 		index: number;
 	}) => (
 		<View style={styles.activityContainer}>
-			<ActivityRow
-				activity={item}
-				onPress={() => handleEdit(item)}
-				last={index === activities.length - 1}
-			/>
+			<View style={{ flex: 1, paddingLeft: spacing.lg }}>
+				<ActivityRow
+					activity={item}
+					onPress={() => handleEdit(item)}
+					last={index === activities.length - 1}
+				/>
+			</View>
 			<Pressable style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
 				<Text style={styles.deleteBtnText}>Delete</Text>
 			</Pressable>
