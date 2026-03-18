@@ -840,92 +840,95 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 							<Text style={styles.headerTitle}>Schedule</Text>
 							<Text style={styles.date}>{getDisplayedDate()}</Text>
 						</View>
-						<View style={{ flexDirection: "row", alignItems: "center" }}>
-							{/* Collapsible Schedule button */}
-							<View style={styles.scheduleDropWrapper}>
+						{viewMode === "Month" && (
+							<View style={{ flexDirection: "row", alignItems: "center" }}>
 								<Pressable
-									style={({ pressed }) => [
-										styles.scheduleDropBtn,
-										scheduleExpanded && styles.scheduleDropBtnActive,
-										(pressed || isScheduling) && { opacity: 0.75 },
-									]}
-									onPress={() => setScheduleExpanded((v) => !v)}
-									disabled={isScheduling}
+									onPress={() => {
+										const prev = new Date(currentDate);
+										prev.setMonth(prev.getMonth() - 1);
+										setCurrentDate(prev);
+									}}
+									style={{ padding: 8 }}
 								>
-									<Text
-										style={[
-											styles.scheduleDropBtnText,
-											scheduleExpanded && styles.scheduleDropBtnTextActive,
-										]}
-									>
-										{isScheduling
-											? "…"
-											: `Schedule ${scheduleExpanded ? "▴" : "▾"}`}
+									<Text style={{ fontSize: 20, color: colors.slate400 }}>
+										{"<"}
 									</Text>
 								</Pressable>
-								{scheduleExpanded && (
-									<View style={styles.scheduleSubMenu}>
-										<Pressable
-											style={({ pressed }) => [
-												styles.scheduleSubBtn,
-												pressed && { opacity: 0.75 },
-											]}
-											onPress={() => handleSchedule(false)}
-										>
-											<Text style={styles.scheduleSubBtnText}>All</Text>
-										</Pressable>
-										<View style={styles.scheduleSubDivider} />
-										<Pressable
-											style={({ pressed }) => [
-												styles.scheduleSubBtn,
-												pressed && { opacity: 0.75 },
-											]}
-											onPress={() => handleSchedule(true)}
-										>
-											<Text style={styles.scheduleSubBtnText}>Empty</Text>
-										</Pressable>
-									</View>
-								)}
+								<Pressable
+									onPress={() => {
+										const next = new Date(currentDate);
+										next.setMonth(next.getMonth() + 1);
+										setCurrentDate(next);
+									}}
+									style={{ padding: 8 }}
+								>
+									<Text style={{ fontSize: 20, color: colors.slate400 }}>
+										{">"}
+									</Text>
+								</Pressable>
 							</View>
-							{viewMode === "Month" && (
-								<View style={{ flexDirection: "row", marginRight: spacing.md }}>
+						)}
+					</View>
+
+					{/* Controls row: segment picker + schedule dropdown */}
+					<View style={styles.controlsRow}>
+						<View style={{ flex: 1 }}>
+							<SegmentedControl
+								options={["Day", "Week", "Month"]}
+								selected={viewMode}
+								onSelect={(val) => {
+									setViewMode(val);
+									// Reset to today when switching? Or keep current?
+									// Let's keep current.
+								}}
+							/>
+						</View>
+
+						{/* Collapsible Schedule button */}
+						<View style={styles.scheduleDropWrapper}>
+							<Pressable
+								style={({ pressed }) => [
+									styles.scheduleDropBtn,
+									scheduleExpanded && styles.scheduleDropBtnActive,
+									(pressed || isScheduling) && { opacity: 0.75 },
+								]}
+								onPress={() => setScheduleExpanded((v) => !v)}
+								disabled={isScheduling}
+							>
+								<Text
+									style={[
+										styles.scheduleDropBtnText,
+										scheduleExpanded && styles.scheduleDropBtnTextActive,
+									]}
+								>
+									{isScheduling
+										? "…"
+										: `Schedule ${scheduleExpanded ? "▴" : "▾"}`}
+								</Text>
+							</Pressable>
+							{scheduleExpanded && (
+								<View style={styles.scheduleSubMenu}>
 									<Pressable
-										onPress={() => {
-											const prev = new Date(currentDate);
-											prev.setMonth(prev.getMonth() - 1);
-											setCurrentDate(prev);
-										}}
-										style={{ padding: 8 }}
+										style={({ pressed }) => [
+											styles.scheduleSubBtn,
+											pressed && { opacity: 0.75 },
+										]}
+										onPress={() => handleSchedule(false)}
 									>
-										<Text style={{ fontSize: 20, color: colors.slate400 }}>
-											{"<"}
-										</Text>
+										<Text style={styles.scheduleSubBtnText}>All</Text>
 									</Pressable>
+									<View style={styles.scheduleSubDivider} />
 									<Pressable
-										onPress={() => {
-											const next = new Date(currentDate);
-											next.setMonth(next.getMonth() + 1);
-											setCurrentDate(next);
-										}}
-										style={{ padding: 8 }}
+										style={({ pressed }) => [
+											styles.scheduleSubBtn,
+											pressed && { opacity: 0.75 },
+										]}
+										onPress={() => handleSchedule(true)}
 									>
-										<Text style={{ fontSize: 20, color: colors.slate400 }}>
-											{">"}
-										</Text>
+										<Text style={styles.scheduleSubBtnText}>Empty</Text>
 									</Pressable>
 								</View>
 							)}
-							<View style={{ width: 210 }}>
-								<SegmentedControl
-									options={["Day", "Week", "Month"]}
-									selected={viewMode}
-									onSelect={(val) => {
-										setViewMode(val);
-										// Reset to today when switching? Or keep current?
-										// Let's keep current.
-									}}
-								/>
-							</View>
 						</View>
 					</View>
 					<Pressable
@@ -1117,9 +1120,14 @@ const styles = StyleSheet.create({
 		letterSpacing: 1,
 	},
 	// Collapsible schedule button
+	controlsRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: spacing.sm,
+		marginTop: spacing.sm,
+	},
 	scheduleDropWrapper: {
 		position: "relative",
-		marginRight: spacing.sm,
 	},
 	scheduleDropBtn: {
 		paddingHorizontal: 10,
