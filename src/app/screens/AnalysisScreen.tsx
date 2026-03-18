@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import {
 	ActivityIndicator,
+	Alert,
+	Pressable,
 	SafeAreaView,
 	ScrollView,
 	StyleSheet,
@@ -54,6 +56,7 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 	const [scoreSub, setScoreSub] = useState("");
 	const [focusPercent, setFocusPercent] = useState(0);
 	const [flowMinutes, setFlowMinutes] = useState(0);
+	const [isScheduling, setIsScheduling] = useState(false);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -87,6 +90,31 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 	useEffect(() => {
 		load();
 	}, [load]);
+
+	const handleSchedule = async (_onlyEmptyTime: boolean) => {
+		setIsScheduling(true);
+		try {
+			const { solverOrchestrator } = await import(
+				"../../services/solver/solver_orchestrator"
+			);
+			const startOfToday = new Date();
+			startOfToday.setHours(0, 0, 0, 0);
+
+			await solverOrchestrator.solveAndSynchronize(startOfToday, 96);
+
+			await load();
+
+			Alert.alert("Success", "Schedule has been updated.");
+		} catch (error) {
+			console.error("Scheduling failed: ", error);
+			Alert.alert(
+				"Scheduling failed",
+				"The native scheduler may not be available in this environment.",
+			);
+		} finally {
+			setIsScheduling(false);
+		}
+	};
 
 	const flowLabel =
 		flowMinutes < 60
@@ -126,6 +154,40 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 						selected={timeframe}
 						onSelect={(v) => setTimeframe(v as Timeframe)}
 					/>
+				</View>
+
+				{/* Scheduling Buttons */}
+				<View style={styles.actionRow}>
+					<Pressable
+						style={({ pressed }) => [
+							styles.actionBtn,
+							(isScheduling || loading) && styles.actionBtnDisabled,
+							pressed && !isScheduling && !loading && { opacity: 0.8 },
+						]}
+						onPress={() => handleSchedule(false)}
+						disabled={isScheduling || loading}
+					>
+						{isScheduling ? (
+							<ActivityIndicator color={colors.white} />
+						) : (
+							<Text style={styles.actionBtnText}>Schedule everything</Text>
+						)}
+					</Pressable>
+					<Pressable
+						style={({ pressed }) => [
+							styles.actionBtnSecondary,
+							(isScheduling || loading) && styles.actionBtnDisabled,
+							pressed && !isScheduling && !loading && { opacity: 0.8 },
+						]}
+						onPress={() => handleSchedule(true)}
+						disabled={isScheduling || loading}
+					>
+						{isScheduling ? (
+							<ActivityIndicator color={colors.primary} />
+						) : (
+							<Text style={styles.actionBtnSecondaryText}>Only empty time</Text>
+						)}
+					</Pressable>
 				</View>
 
 				{/* Score card */}
