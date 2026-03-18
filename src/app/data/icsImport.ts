@@ -2,6 +2,18 @@
  * Parse .ics (iCalendar) file content and import into scheduled_events + Your activities.
  * Supports VEVENT with DTSTART, DTEND, SUMMARY, UID, STATUS. Category from event name (or Other).
  */
+
+import {
+	HeuristicNetArcRepository,
+	HeuristicNetPairRepository,
+	MarkovTransitionRepository,
+} from "../../data/repositories";
+import {
+	type CompletedActivityEvent,
+	HeuristicNetMiner,
+	HistoryWriteService,
+	MarkovTransitionMiner,
+} from "../../mining";
 import {
 	ActivitySource,
 	EventStatus,
@@ -9,6 +21,7 @@ import {
 } from "../../types/domain";
 import { ACTIVITY_CATEGORIES, matchCategoryFromText } from "./categories";
 import {
+	currentTimeZone,
 	DEFAULT_ACTIVITY_COLOR,
 	DEFAULT_CATEGORY_ID,
 	makeRepositories,
@@ -170,6 +183,8 @@ export async function importFromIcs(
 	let skipped = 0;
 	let cancelled = 0;
 
+	const newlyCompletedEvents: CompletedActivityEvent[] = [];
+
 	for (const ev of parsedEvents) {
 		if (ev.status?.toUpperCase() === "CANCELLED") {
 			cancelled += 1;
@@ -209,6 +224,11 @@ export async function importFromIcs(
 		}
 
 		const now = new Date();
+		const isPast = ev.end <= now;
+
+		if (isPast && status === EventStatus.CONFIRMED) {
+			status = EventStatus.COMPLETED;
+		}
 
 		await repos.schedule.create({
 			activityId,
@@ -241,18 +261,57 @@ export async function importFromIcs(
 				color: DEFAULT_ACTIVITY_COLOR,
 				createdAt: ev.start,
 			});
-			await repos.history.create({
-				activityId: eventActivityId,
-				predictedStartTime: ev.start,
-				predictedDuration: duration,
-				wasCompleted: false,
-				wasSkipped: false,
-				wasReplaced: false,
-				createdAt: ev.start,
-			});
+
+			if (isPast) {
+				const writeService = new HistoryWriteService(repos.database);
+				await writeService.recordCompletion({
+					activityId: eventActivityId,
+					predictedStartTime: ev.start,
+					predictedDuration: duration,
+					actualStartTime: ev.start,
+					actualDuration: duration,
+					timeZone: currentTimeZone(),
+					wasSkipped: false,
+					wasReplaced: false,
+				});
+				newlyCompletedEvents.push({
+					activityId: eventActivityId,
+					startTime: ev.start,
+					durationMinutes: duration,
+				});
+			} else {
+				await repos.history.create({
+					activityId: eventActivityId,
+					predictedStartTime: ev.start,
+					predictedDuration: duration,
+					wasCompleted: false,
+					wasSkipped: false,
+					wasReplaced: false,
+					createdAt: ev.start,
+				});
+			}
 		}
 
 		imported += 1;
+	}
+
+	if (newlyCompletedEvents.length > 0) {
+		newlyCompletedEvents.sort(
+			(a, b) => a.startTime.getTime() - b.startTime.getTime(),
+		);
+
+		const markovMiner = new MarkovTransitionMiner();
+		const hnetMiner = new HeuristicNetMiner();
+
+		await markovMiner.persist(
+			newlyCompletedEvents,
+			new MarkovTransitionRepository(repos.database),
+		);
+		await hnetMiner.persist(
+			newlyCompletedEvents,
+			new HeuristicNetArcRepository(repos.database),
+			new HeuristicNetPairRepository(repos.database),
+		);
 	}
 
 	return { imported, skipped, cancelled };
