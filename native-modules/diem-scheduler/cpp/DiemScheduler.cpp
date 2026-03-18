@@ -16,7 +16,7 @@ DiemScheduler::solve(const std::shared_ptr<ArrayBuffer> &problemData,
                                  static_cast<uint64_t>(timeLimitMs));
 
   auto output = ArrayBuffer::allocate(result.len);
-  if (result.len > 0) {
+  if (result.len > 0 && result.ptr != nullptr) {
     std::memcpy(output->data(), result.ptr, result.len);
     diem_result_free(result.ptr, result.len);
   }
