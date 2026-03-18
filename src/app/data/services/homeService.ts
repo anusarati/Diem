@@ -17,7 +17,6 @@ import {
 	makeRepositories,
 	type RepoBundle,
 	resolveCurrentScope,
-	weekRange,
 	withScopedRepositories,
 } from "./repositoryContext";
 
@@ -31,17 +30,10 @@ function toActivityItem(
 	history: ActivityHistory | null,
 ): ActivityItem {
 	const base = toActivityEntity(activity);
-	const predictedStartTime =
-		history?.predictedStartTime != null
-			? typeof history.predictedStartTime === "string"
-				? history.predictedStartTime
-				: new Date(history.predictedStartTime).toISOString()
-			: undefined;
 	return {
 		...base,
 		completed: history?.wasCompleted ?? false,
 		completedDuration: history?.actualDuration ?? undefined,
-		predictedStartTime,
 	};
 }
 
@@ -50,41 +42,27 @@ async function listActivitiesForDateWithRepositories(
 	date: Date,
 ): Promise<ActivityItem[]> {
 	const { start, end } = dayRange(date);
-	return listActivitiesForRangeWithRepositories(repositories, start, end);
-}
-
-async function listActivitiesForRangeWithRepositories(
-	repositories: RepoBundle,
-	start: Date,
-	end: Date,
-): Promise<ActivityItem[]> {
 	const historyRows = await repositories.history.listForRange(start, end);
+
 	const out: ActivityItem[] = [];
 	for (const history of historyRows) {
 		const activity = await repositories.activity.findById(history.activityId);
-		if (!activity) continue;
+		if (!activity) {
+			continue;
+		}
 		out.push(toActivityItem(activity, history));
 	}
-	return out.sort((left, right) => {
-		const a = left.predictedStartTime ?? left.createdAt;
-		const b = right.predictedStartTime ?? right.createdAt;
-		return a.localeCompare(b);
-	});
+
+	return out.sort((left, right) =>
+		left.createdAt.localeCompare(right.createdAt),
+	);
 }
 
-async function _listScheduledForDateWithRepositories(
+async function listScheduledForDateWithRepositories(
 	repositories: RepoBundle,
 	date: Date,
 ): Promise<ScheduledActivity[]> {
 	const { start, end } = dayRange(date);
-	return listScheduledForRangeWithRepositories(repositories, start, end);
-}
-
-async function listScheduledForRangeWithRepositories(
-	repositories: RepoBundle,
-	start: Date,
-	end: Date,
-): Promise<ScheduledActivity[]> {
 	const rows = await repositories.schedule.listForRange(start, end);
 	return rows
 		.map(toScheduledEventEntity)
@@ -96,21 +74,10 @@ async function listScheduledForRangeWithRepositories(
 }
 
 export async function loadHomeData(date: Date): Promise<HomeData> {
-	return withScopedRepositories(async (repositories) => {
-		const { start, end } = weekRange(date);
-		return {
-			activities: await listActivitiesForRangeWithRepositories(
-				repositories,
-				start,
-				end,
-			),
-			scheduled: await listScheduledForRangeWithRepositories(
-				repositories,
-				start,
-				end,
-			),
-		};
-	});
+	return withScopedRepositories(async (repositories) => ({
+		activities: await listActivitiesForDateWithRepositories(repositories, date),
+		scheduled: await listScheduledForDateWithRepositories(repositories, date),
+	}));
 }
 
 export async function observeHomeData(
@@ -119,34 +86,53 @@ export async function observeHomeData(
 ): Promise<() => void> {
 	const { scope } = await resolveCurrentScope();
 	const repositories = makeRepositories(scope);
-	const { start, end } = weekRange(date);
+	const { start, end } = dayRange(date);
 
 	let disposed = false;
 	let refreshQueued = false;
+	let nextQueued = false;
 
 	const emit = async () => {
-		if (disposed || refreshQueued) return;
+		if (disposed) {
+			return;
+		}
+		if (refreshQueued) {
+			nextQueued = true;
+			return;
+		}
 		refreshQueued = true;
 		try {
 			const [activities, scheduled] = await Promise.all([
-				listActivitiesForRangeWithRepositories(repositories, start, end),
-				listScheduledForRangeWithRepositories(repositories, start, end),
+				listActivitiesForDateWithRepositories(repositories, date),
+				listScheduledForDateWithRepositories(repositories, date),
 			]);
-			if (!disposed) onChange({ activities, scheduled });
+			if (!disposed) {
+				onChange({ activities, scheduled });
+			}
 		} finally {
 			refreshQueued = false;
+			if (nextQueued) {
+				nextQueued = false;
+				void emit();
+			}
 		}
 	};
 
 	const historySubscription = repositories.history
 		.observeForRange(start, end)
-		.subscribe(() => void emit());
+		.subscribe(() => {
+			void emit();
+		});
 	const activitySubscription = repositories.activity
 		.observeAll()
-		.subscribe(() => void emit());
+		.subscribe(() => {
+			void emit();
+		});
 	const scheduleSubscription = repositories.schedule
 		.observeForRange(start, end)
-		.subscribe(() => void emit());
+		.subscribe(() => {
+			void emit();
+		});
 
 	void emit();
 
@@ -165,6 +151,53 @@ export async function observeActivitiesForDate(
 	return observeHomeData(date, (data) => {
 		onChange(data.activities);
 	});
+}
+
+/** Observes all activities without history or date scoping */
+export async function observeAllActivities(
+	onChange: (activities: ActivityItem[]) => void,
+): Promise<() => void> {
+	const { scope } = await resolveCurrentScope();
+	const repositories = makeRepositories(scope);
+
+	let disposed = false;
+	let refreshQueued = false;
+	let nextQueued = false;
+
+	const emit = async () => {
+		if (disposed) {
+			return;
+		}
+		if (refreshQueued) {
+			nextQueued = true;
+			return;
+		}
+		refreshQueued = true;
+		try {
+			const rows = await repositories.activity.listAll();
+			const mapped = rows.map((a) => toActivityItem(a, null));
+			if (!disposed) {
+				onChange(mapped.sort((l, r) => l.createdAt.localeCompare(r.createdAt)));
+			}
+		} finally {
+			refreshQueued = false;
+			if (nextQueued) {
+				nextQueued = false;
+				void emit();
+			}
+		}
+	};
+
+	const sub = repositories.activity.observeAll().subscribe(() => {
+		void emit();
+	});
+
+	void emit();
+
+	return () => {
+		disposed = true;
+		sub.unsubscribe();
+	};
 }
 
 export async function getActivitiesForDate(
@@ -331,8 +364,31 @@ export async function removeActivity(
 ): Promise<ActivityItem[]> {
 	return withScopedRepositories(async (repositories) => {
 		await repositories.history.deleteForActivity(activityId);
+		const schedules = await repositories.schedule.listAll();
+		await repositories.database.write(async () => {
+			for (const schedule of schedules.filter(
+				(s) => s.activityId === activityId,
+			)) {
+				await schedule.destroyPermanently();
+			}
+		});
 		await repositories.activity.remove(activityId);
 		return listActivitiesForDateWithRepositories(repositories, date);
+	});
+}
+
+export async function deleteActivityGlobal(activityId: string): Promise<void> {
+	return withScopedRepositories(async (repositories) => {
+		await repositories.history.deleteForActivity(activityId);
+		const schedules = await repositories.schedule.listAll(); // Can optimize if we add findForActivity to schedule repo
+		await repositories.database.write(async () => {
+			for (const schedule of schedules.filter(
+				(s) => s.activityId === activityId,
+			)) {
+				await schedule.destroyPermanently();
+			}
+		});
+		await repositories.activity.remove(activityId);
 	});
 }
 
@@ -366,31 +422,41 @@ export async function renameActivity(
 	});
 }
 
-export interface CreateActivityOptions {
-	categoryId?: string;
-	priority?: number;
-	defaultDuration?: number;
+/** Globally updates an activity */
+export async function updateActivityGlobal(
+	activityId: string,
+	patch: {
+		name?: string;
+		categoryId?: string;
+		priority?: number;
+		defaultDuration?: number;
+		isReplaceable?: boolean;
+	},
+): Promise<void> {
+	return withScopedRepositories(async (repositories) => {
+		await repositories.activity.update(activityId, patch);
+	});
 }
 
 export async function createActivity(
 	date: Date,
 	name: string,
-	options?: CreateActivityOptions,
+	options?: {
+		categoryId?: string;
+		priority?: number;
+		defaultDuration?: number;
+	},
 ): Promise<ActivityItem> {
 	return withScopedRepositories(async (repositories) => {
 		const trimmedName = name.trim();
 		const { start } = dayRange(date);
 		const createdAt = new Date();
-		const categoryId = options?.categoryId ?? DEFAULT_CATEGORY_ID;
-		const priority = options?.priority ?? DEFAULT_ACTIVITY_PRIORITY;
-		const defaultDuration =
-			options?.defaultDuration ?? DEFAULT_ACTIVITY_DURATION;
 
 		const activity = await repositories.activity.create({
-			categoryId,
+			categoryId: options?.categoryId ?? DEFAULT_CATEGORY_ID,
 			name: trimmedName,
-			priority,
-			defaultDuration,
+			priority: options?.priority ?? DEFAULT_ACTIVITY_PRIORITY,
+			defaultDuration: options?.defaultDuration ?? DEFAULT_ACTIVITY_DURATION,
 			isReplaceable: true,
 			color: DEFAULT_ACTIVITY_COLOR,
 			createdAt,
@@ -399,7 +465,7 @@ export async function createActivity(
 		await repositories.history.create({
 			activityId: activity.id,
 			predictedStartTime: start,
-			predictedDuration: defaultDuration,
+			predictedDuration: DEFAULT_ACTIVITY_DURATION,
 			wasCompleted: false,
 			wasSkipped: false,
 			wasReplaced: false,
@@ -407,5 +473,26 @@ export async function createActivity(
 		});
 
 		return toActivityItem(activity, null);
+	});
+}
+
+/** Globally creates an activity without instantiating history for a specific date */
+export async function createActivityGlobal(
+	name: string,
+	categoryId: string = DEFAULT_CATEGORY_ID,
+	priority: number = DEFAULT_ACTIVITY_PRIORITY,
+	duration: number = DEFAULT_ACTIVITY_DURATION,
+	isReplaceable: boolean = true,
+): Promise<void> {
+	return withScopedRepositories(async (repositories) => {
+		await repositories.activity.create({
+			categoryId,
+			name: name.trim(),
+			priority,
+			defaultDuration: duration,
+			isReplaceable,
+			color: DEFAULT_ACTIVITY_COLOR,
+			createdAt: new Date(),
+		});
 	});
 }

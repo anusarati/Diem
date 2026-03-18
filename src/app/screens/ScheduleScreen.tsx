@@ -324,7 +324,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 
 	// Use notification listener for deep linking
 	useNotificationListener({
-		navigate: (screen: string, params?: any) => {
+		navigate: (screen: string, params?: unknown) => {
 			// Basic wrapper to match navigation interface used in listener
 			// You might need to bridge this to your actual navigation system
 			console.log(`Deep linking to ${screen}`, params);
@@ -400,7 +400,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		useState<EditingActivity | null>(null);
 
 	// Helper to get color from priority
-	const getColorForPriority = (
+	const _getColorForPriority = (
 		priority: "high" | "medium" | "low" | undefined,
 	) => {
 		switch (priority) {
@@ -416,8 +416,6 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	};
 
 	const handleAddOrEditActivity = async (activityData: ActivityFormData) => {
-		const type =
-			activityData.replaceabilityStatus === "SOFT" ? "flexible" : "fixed";
 		const selectedDate = getSelectedDate();
 		const [hours, minutes] = (activityData.startTime || initialTime || "09:00")
 			.split(":")

@@ -4,143 +4,127 @@ import {
 	FlatList,
 	Modal,
 	Pressable,
+	SafeAreaView,
 	ScrollView,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
 	View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import type { ActivityEntity } from "types/domain";
 import { ActivityForm } from "../components/ActivityForm";
 import { ActivityRow } from "../components/ActivityRow";
+import {
+	createActivityGlobal,
+	observeAllActivities,
+	removeActivity,
+	updateActivityGlobal,
+} from "../data/services";
 import type { ActivityFormData } from "../hooks/useActivityValidation";
 import { colors, spacing } from "../theme";
-import type { AppRoute } from "../types";
+import type { ActivityItem, AppRoute } from "../types";
 
 type Props = {
 	onNavigate: (route: AppRoute) => void;
 };
 
 export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
-	const [activities, setActivities] = useState<ActivityEntity[]>([]);
+	const [activities, setActivities] = useState<ActivityItem[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [editModalVisible, setEditModalVisible] = useState(false);
-	const [selectedActivity, setSelectedActivity] =
-		useState<ActivityEntity | null>(null);
+	const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(
+		null,
+	);
 
-	const seedActivities = useCallback(() => {
-		const dummyActivities: ActivityEntity[] = [
-			{
-				id: Math.random().toString(36).substr(2, 9),
-				name: "Morning Yoga",
-				categoryId: "Fitness",
-				priority: 1,
-				defaultDuration: 30,
-				isReplaceable: true,
-				color: colors.mint,
-				createdAt: new Date().toISOString(),
-			},
-			{
-				id: Math.random().toString(36).substr(2, 9),
-				name: "Team Sync",
-				categoryId: "Work",
-				priority: 2,
-				defaultDuration: 45,
-				isReplaceable: false,
-				color: colors.primary,
-				createdAt: new Date().toISOString(),
-			},
-		];
-
-		setActivities(dummyActivities);
-	}, []);
 	useEffect(() => {
-		const timer = setTimeout(() => setLoading(false), 500);
-		return () => clearTimeout(timer);
+		let disposed = false;
+		let stopObserving: (() => void) | null = null;
+		setLoading(true);
+
+		observeAllActivities((data) => {
+			if (disposed) return;
+			setActivities(data);
+			setLoading(false);
+		})
+			.then((stop) => {
+				if (disposed) {
+					stop();
+					return;
+				}
+				stopObserving = stop;
+			})
+			.catch((e) => {
+				console.error("[ManageActivities] error observing docs", e);
+				if (!disposed) setLoading(false);
+			});
+
+		return () => {
+			disposed = true;
+			stopObserving?.();
+		};
 	}, []);
 
-	const handleEdit = useCallback((activity: ActivityEntity) => {
+	const handleEdit = useCallback((activity: ActivityItem) => {
 		setSelectedActivity(activity);
 		setEditModalVisible(true);
 	}, []);
 
-	const handleDelete = useCallback((id: string) => {
-		console.log("Delete triggered for ID:", id);
-		Alert.alert("Delete Activity", "Are you sure?", [
-			{ text: "Cancel", style: "cancel" },
-			{
-				text: "Delete",
-				style: "destructive",
-				onPress: () => {
-					setActivities((prev) => {
-						console.log("ID we want to delete:", id);
-						console.log(
-							"IDs currently in state:",
-							prev.map((a) => a.id),
-						);
-						const newState = prev.filter((a) => a.id !== id);
-						console.log("Items remaining:", newState.length);
-						return newState;
-					});
-				},
-			},
-		]);
+	const handleDelete = useCallback(async (id: string) => {
+		try {
+			await removeActivity(new Date(), id);
+		} catch (e) {
+			console.error("[ManageActivities] delete failed", e);
+			Alert.alert("Error", "Could not delete activity");
+		}
 	}, []);
 
-	const handleSaveActivity = (data: ActivityFormData) => {
-		if (selectedActivity) {
-			setActivities((prev) =>
-				prev.map((a) =>
-					a.id === selectedActivity.id
-						? {
-								...a,
-								name: data.title,
-								categoryId: data.category || "Other",
-								priority:
-									data.priority === "high"
-										? 3
-										: data.priority === "medium"
-											? 2
-											: 1,
-								defaultDuration: data.duration || 30,
-								isReplaceable: data.replaceabilityStatus === "SOFT",
-							}
-						: a,
-				),
-			);
-		} else {
-			const newActivity: ActivityEntity = {
-				id: Math.random().toString(36).substr(2, 9),
-				name: data.title,
-				categoryId: data.category || "Other",
-				priority:
-					data.priority === "high" ? 3 : data.priority === "medium" ? 2 : 1,
-				defaultDuration: data.duration || 30,
-				isReplaceable: data.replaceabilityStatus === "SOFT",
-				color: colors.primary,
-				createdAt: new Date().toISOString(),
-			};
-			setActivities((prev) => [...prev, newActivity]);
+	const handleSaveActivity = async (data: ActivityFormData) => {
+		const priorityValue =
+			data.priority === "high" ? 3 : data.priority === "medium" ? 2 : 1;
+		const durationValue = data.duration || 30;
+		const isReplaceableValue = data.replaceabilityStatus === "SOFT";
+		const categoryIdValue = data.category || "Other";
+
+		try {
+			if (selectedActivity) {
+				await updateActivityGlobal(selectedActivity.id, {
+					name: data.title,
+					categoryId: categoryIdValue,
+					priority: priorityValue,
+					defaultDuration: durationValue,
+					isReplaceable: isReplaceableValue,
+				});
+			} else {
+				await createActivityGlobal(
+					data.title,
+					categoryIdValue,
+					priorityValue,
+					durationValue,
+					isReplaceableValue,
+				);
+			}
+			setEditModalVisible(false);
+			setSelectedActivity(null);
+		} catch (e) {
+			console.error("[ManageActivities] save failed", e);
+			Alert.alert("Error", "Could not save activity");
 		}
-		setEditModalVisible(false);
-		setSelectedActivity(null);
 	};
 
 	const renderItem = ({
 		item,
 		index,
 	}: {
-		item: ActivityEntity;
+		item: ActivityItem;
 		index: number;
 	}) => (
 		<View style={styles.activityContainer}>
-			<ActivityRow
-				activity={item}
-				onToggle={() => {}}
-				onPress={() => handleEdit(item)}
-				last={index === activities.length - 1}
-			/>
+			<View style={{ flex: 1, paddingLeft: spacing.lg }}>
+				<ActivityRow
+					activity={item}
+					onPress={() => handleEdit(item)}
+					last={index === activities.length - 1}
+				/>
+			</View>
 			<Pressable style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
 				<Text style={styles.deleteBtnText}>Delete</Text>
 			</Pressable>
@@ -159,9 +143,6 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 				) : activities.length === 0 ? (
 					<View style={styles.emptyState}>
 						<Text style={styles.muted}>No activities found.</Text>
-						<Pressable style={styles.seedBtn} onPress={seedActivities}>
-							<Text style={styles.seedBtnText}>Seed Dummy Data</Text>
-						</Pressable>
 					</View>
 				) : (
 					<FlatList
