@@ -23,38 +23,61 @@ pub unsafe extern "C" fn diem_solve(
         };
     }
 
-    let data_slice = slice::from_raw_parts(data_ptr, len);
+    let result = std::panic::catch_unwind(|| {
+        log::info!("Entering catch_unwind");
+        let data_slice = slice::from_raw_parts(data_ptr, len);
 
-    let problem = match deserialize_problem(data_slice) {
-        Ok(p) => p,
-        Err(e) => {
-            log::error!("Deserialization failed: {:?}", e);
-            return DiemResult {
-                ptr: std::ptr::null_mut(),
-                len: 0,
-            };
-        }
-    };
+        log::info!("Deserializing problem");
+        let problem = match deserialize_problem(data_slice) {
+            Ok(p) => p,
+            Err(e) => {
+                log::error!("Deserialization failed: {:?}", e);
+                return DiemResult {
+                    ptr: std::ptr::null_mut(),
+                    len: 0,
+                };
+            }
+        };
 
-    match solver::solve(problem, max_generations, time_limit_ms) {
-        Ok(results) => match serialize_result(&results) {
-            Ok(msgpack_bytes) => {
-                let boxed = msgpack_bytes.into_boxed_slice();
-                let len = boxed.len();
-                let ptr = Box::into_raw(boxed) as *mut u8;
-
-                DiemResult { ptr, len }
+        log::info!("Calling solver::solve");
+        match solver::solve(problem, max_generations, time_limit_ms) {
+            Ok(results) => {
+                log::info!("Solver complete. Serializing result.");
+                match serialize_result(&results) {
+                    Ok(msgpack_bytes) => {
+                        log::info!("Serialization complete");
+                        let boxed = msgpack_bytes.into_boxed_slice();
+                        let len = boxed.len();
+                        let ptr = Box::into_raw(boxed) as *mut u8;
+                        log::info!("Returning success with len {}", len);
+                        DiemResult { ptr, len }
+                    }
+                    Err(e) => {
+                        log::error!("Serialization failed: {:?}", e);
+                        DiemResult {
+                            ptr: std::ptr::null_mut(),
+                            len: 0,
+                        }
+                    }
+                }
             }
             Err(e) => {
-                log::error!("Serialization failed: {:?}", e);
+                log::error!("Solver failed: {:?}", e);
                 DiemResult {
                     ptr: std::ptr::null_mut(),
                     len: 0,
                 }
             }
-        },
+        }
+    });
+
+    match result {
+        Ok(res) => {
+            log::info!("Successfully returning out of diem_solve");
+            res
+        }
         Err(e) => {
-            log::error!("Solver failed: {:?}", e);
+            log::error!("Rust panicked in diem_solve: {:?}", e);
             DiemResult {
                 ptr: std::ptr::null_mut(),
                 len: 0,
