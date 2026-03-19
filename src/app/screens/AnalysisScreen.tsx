@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
 	ActivityIndicator,
-	Alert,
-	Pressable,
 	SafeAreaView,
 	ScrollView,
 	StyleSheet,
@@ -33,7 +31,7 @@ type Props = {
 
 type Timeframe = "Day" | "Week" | "Month";
 
-export function AnalysisScreen({ onNavigate }: Props) {
+export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 	const [timeframe, setTimeframe] = useState<Timeframe>("Week");
 	const [selectedHeatmapCategoryId, setSelectedHeatmapCategoryId] =
 		useState("Work");
@@ -56,7 +54,6 @@ export function AnalysisScreen({ onNavigate }: Props) {
 	const [scoreSub, setScoreSub] = useState("");
 	const [focusPercent, setFocusPercent] = useState(0);
 	const [flowMinutes, setFlowMinutes] = useState(0);
-	const [isScheduling, setIsScheduling] = useState(false);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -90,119 +87,6 @@ export function AnalysisScreen({ onNavigate }: Props) {
 	useEffect(() => {
 		load();
 	}, [load]);
-
-	const handleSchedule = async (_onlyEmptyTime: boolean) => {
-		setIsScheduling(true);
-		try {
-			const { resolveCurrentScope, makeRepositories } = await import(
-				"../data/services/repositoryContext"
-			);
-			const { getDatabase } = await import("../../data/database");
-			const { BridgeDataSource } = await import(
-				"../../bridge/assembly/bridge_data_source"
-			);
-			const { ProblemBuilder } = await import(
-				"../../bridge/assembly/problem_builder"
-			);
-			const { NativeScheduler } = await import(
-				"../../bridge/jsi/native_scheduler"
-			);
-			const { EventStatus, Replaceability, ActivitySource } = await import(
-				"../../types/domain"
-			);
-
-			const startOfToday = new Date();
-			startOfToday.setHours(0, 0, 0, 0);
-			const horizonStart = startOfToday;
-			const totalSlots = 96;
-
-			console.log("Starting scheduling for today...");
-
-			const { scope } = await resolveCurrentScope();
-			const database = getDatabase(scope);
-			const dataSource = new BridgeDataSource(database);
-			const builder = new ProblemBuilder();
-			const repositories = makeRepositories(scope);
-
-			const input = await dataSource.load({
-				horizonStart,
-				totalSlots,
-				scheduleOnlyInEmptyTime: _onlyEmptyTime,
-			});
-
-			const built = builder.build(input);
-
-			const scheduler = new NativeScheduler();
-			const results = scheduler.solve(built, {
-				maxGenerations: 100,
-				timeLimitMs: 500,
-			});
-			console.log("Scheduled activities:", results);
-
-			for (const result of results) {
-				const activityId = result.activityId;
-
-				const startOffsetMinutes = result.startSlot * 15;
-				const startTime = new Date(
-					horizonStart.getTime() + startOffsetMinutes * 60000,
-				);
-				const endTime = new Date(
-					startTime.getTime() + result.durationSlots * 15 * 60000,
-				);
-
-				const existing = await repositories.schedule.listAll();
-				const match = existing.find(
-					(e) =>
-						e.activityId === activityId &&
-						new Date(e.startTime).toDateString() === startTime.toDateString(),
-				);
-
-				if (match) {
-					await repositories.schedule.update(match.id, {
-						startTime,
-						endTime,
-						updatedAt: new Date(),
-					});
-				} else {
-					const activity = await repositories.activity.findById(activityId);
-					if (activity) {
-						await repositories.schedule.create({
-							activityId: activityId,
-							categoryId: activity.categoryId,
-							title: activity.name,
-							startTime,
-							endTime,
-							duration: result.durationSlots * 15,
-							status: EventStatus.CONFIRMED,
-							replaceabilityStatus: Replaceability.SOFT,
-							priority: activity.priority,
-							source: ActivitySource.AUTONOMOUS,
-							isLocked: false,
-							isRecurring: false,
-							createdAt: new Date(),
-							updatedAt: new Date(),
-						});
-					}
-				}
-			}
-
-			await new Promise((resolve) => setTimeout(resolve, 500));
-
-			await load();
-
-			Alert.alert("Success", "Schedule has been updated.", [
-				{ text: "View Calendar", onPress: () => onNavigate("Calendar") },
-			]);
-		} catch (error) {
-			console.error("Scheduling failed: ", error);
-			Alert.alert(
-				"Scheduling failed",
-				"The native scheduler may not be available in this environment.",
-			);
-		} finally {
-			setIsScheduling(false);
-		}
-	};
 
 	const flowLabel =
 		flowMinutes < 60
@@ -242,40 +126,6 @@ export function AnalysisScreen({ onNavigate }: Props) {
 						selected={timeframe}
 						onSelect={(v) => setTimeframe(v as Timeframe)}
 					/>
-				</View>
-
-				{/* Scheduling Buttons */}
-				<View style={styles.actionRow}>
-					<Pressable
-						style={({ pressed }) => [
-							styles.actionBtn,
-							(isScheduling || loading) && styles.actionBtnDisabled,
-							pressed && !isScheduling && !loading && { opacity: 0.8 },
-						]}
-						onPress={() => handleSchedule(false)}
-						disabled={isScheduling || loading}
-					>
-						{isScheduling ? (
-							<ActivityIndicator color={colors.white} />
-						) : (
-							<Text style={styles.actionBtnText}>Schedule everything</Text>
-						)}
-					</Pressable>
-					<Pressable
-						style={({ pressed }) => [
-							styles.actionBtnSecondary,
-							(isScheduling || loading) && styles.actionBtnDisabled,
-							pressed && !isScheduling && !loading && { opacity: 0.8 },
-						]}
-						onPress={() => handleSchedule(true)}
-						disabled={isScheduling || loading}
-					>
-						{isScheduling ? (
-							<ActivityIndicator color={colors.primary} />
-						) : (
-							<Text style={styles.actionBtnSecondaryText}>Only empty time</Text>
-						)}
-					</Pressable>
 				</View>
 
 				{/* Score card */}
@@ -553,44 +403,7 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 	},
 	segmentWrap: { paddingHorizontal: 24, paddingVertical: 8, marginTop: 8 },
-	actionRow: {
-		flexDirection: "row",
-		paddingHorizontal: 24,
-		gap: 12,
-		marginTop: 0,
-		marginBottom: 16,
-	},
-	actionBtn: {
-		flex: 1,
-		backgroundColor: colors.primary,
-		paddingVertical: 12,
-		borderRadius: 12,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	actionBtnText: {
-		color: colors.white,
-		fontWeight: "600",
-		fontSize: 14,
-	},
-	actionBtnSecondary: {
-		flex: 1,
-		backgroundColor: colors.white,
-		borderWidth: 1,
-		borderColor: colors.slate200,
-		paddingVertical: 12,
-		borderRadius: 12,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	actionBtnSecondaryText: {
-		color: colors.primary,
-		fontWeight: "600",
-		fontSize: 14,
-	},
-	actionBtnDisabled: {
-		opacity: 0.5,
-	},
+
 	breakdownHeader: {
 		flexDirection: "row",
 		alignItems: "center",

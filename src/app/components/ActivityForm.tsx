@@ -37,6 +37,10 @@ type Props = {
 	existingActivities?: ExistingActivityOption[];
 };
 
+function priorityLabel(p: number): "high" | "medium" | "low" {
+	return p >= 4 ? "high" : p >= 3 ? "medium" : "low";
+}
+
 export function ActivityForm({
 	onSubmit,
 	initialData,
@@ -50,12 +54,26 @@ export function ActivityForm({
 		});
 
 	const [showAdvanced, setShowAdvanced] = useState(false);
+	/** The activity template that was selected from the picker, or null when in
+	 *  free-form mode. Once set, all activity-level fields are locked. */
+	const [selectedActivity, setSelectedActivity] =
+		useState<ExistingActivityOption | null>(null);
 
 	useEffect(() => {
-		reset(initialData);
+		reset({
+			title: "",
+			startTime: "",
+			duration: 60,
+			priority: "medium",
+			replaceabilityStatus: "SOFT",
+			category: "Other",
+			isRecurring: false,
+			...initialData,
+		});
+		// Clear selection when the sheet is re-opened with new initialData
+		setSelectedActivity(null);
 	}, [initialData, reset]);
 
-	const title = watch("title");
 	const priority = watch("priority");
 	const replaceabilityStatus = watch("replaceabilityStatus");
 	const isRecurring = watch("isRecurring");
@@ -80,18 +98,30 @@ export function ActivityForm({
 	]);
 
 	const handleSelectExisting = (activity: ExistingActivityOption) => {
+		setSelectedActivity(activity);
+		// Lock all activity-level fields to the template values
 		setValue("title", activity.name);
-		setValue(
-			"priority",
-			activity.priority === 5
-				? "high"
-				: activity.priority === 3
-					? "medium"
-					: "low",
-		);
+		setValue("priority", priorityLabel(activity.priority));
 		setValue("duration", activity.defaultDuration);
 		setValue("category", activity.categoryId);
 		setValue("replaceabilityStatus", activity.isReplaceable ? "SOFT" : "HARD");
+		// Reset event-level fields to sensible defaults for a new event
+		setValue("startTime", "");
+		setValue("isRecurring", false);
+	};
+
+	const handleDeselectActivity = () => {
+		setSelectedActivity(null);
+		reset({
+			title: "",
+			startTime: "",
+			duration: 60,
+			priority: "medium",
+			replaceabilityStatus: "SOFT",
+			category: "Other",
+			isRecurring: false,
+			...initialData,
+		});
 	};
 
 	if (showAdvanced) {
@@ -106,6 +136,91 @@ export function ActivityForm({
 		);
 	}
 
+	// ── LOCKED MODE: activity selected from existing ──────────────────────────
+	if (selectedActivity) {
+		return (
+			<View style={styles.wrap}>
+				{/* Activity summary card (read-only) */}
+				<View style={styles.lockedCard}>
+					<View style={styles.lockedCardHeader}>
+						<Text style={styles.lockedCardTitle}>{selectedActivity.name}</Text>
+						<TouchableOpacity
+							style={styles.deselectBtn}
+							onPress={handleDeselectActivity}
+						>
+							<Text style={styles.deselectBtnText}>✕ Change</Text>
+						</TouchableOpacity>
+					</View>
+
+					<View style={styles.lockedMeta}>
+						<View style={styles.lockedMetaBadge}>
+							<Text style={styles.lockedMetaLabel}>Priority</Text>
+							<Text style={styles.lockedMetaValue}>
+								{priorityLabel(selectedActivity.priority)
+									.charAt(0)
+									.toUpperCase() +
+									priorityLabel(selectedActivity.priority).slice(1)}
+							</Text>
+						</View>
+						<View style={styles.lockedMetaBadge}>
+							<Text style={styles.lockedMetaLabel}>Default</Text>
+							<Text style={styles.lockedMetaValue}>
+								{selectedActivity.defaultDuration} min
+							</Text>
+						</View>
+						<View style={styles.lockedMetaBadge}>
+							<Text style={styles.lockedMetaLabel}>Category</Text>
+							<Text style={styles.lockedMetaValue}>
+								{selectedActivity.categoryId || "Other"}
+							</Text>
+						</View>
+						<View style={styles.lockedMetaBadge}>
+							<Text style={styles.lockedMetaLabel}>Type</Text>
+							<Text style={styles.lockedMetaValue}>
+								{selectedActivity.isReplaceable ? "Flexible" : "Fixed"}
+							</Text>
+						</View>
+					</View>
+				</View>
+
+				{/* Event-level fields only */}
+				<View style={styles.row}>
+					<View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+						<Text style={styles.label}>Start Time</Text>
+						<TextInput
+							style={styles.input}
+							placeholder="10:00"
+							placeholderTextColor={colors.slate400}
+							value={startTime}
+							onChangeText={(v) => setValue("startTime", v)}
+						/>
+					</View>
+					<View style={[styles.inputGroup, { flex: 1 }]}>
+						<Text style={styles.label}>Duration (min)</Text>
+						<TextInput
+							style={styles.input}
+							placeholder={selectedActivity.defaultDuration.toString()}
+							placeholderTextColor={colors.slate400}
+							keyboardType="numeric"
+							value={duration?.toString()}
+							onChangeText={(v) =>
+								setValue(
+									"duration",
+									parseInt(v, 10) || selectedActivity.defaultDuration,
+								)
+							}
+						/>
+					</View>
+				</View>
+
+				<TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+					<Text style={styles.submitText}>Add to Schedule</Text>
+				</TouchableOpacity>
+			</View>
+		);
+	}
+
+	// ── FREE-FORM MODE ────────────────────────────────────────────────────────
 	return (
 		<View style={styles.wrap}>
 			{existingActivities.length > 0 && showTimeFields && (
@@ -135,7 +250,7 @@ export function ActivityForm({
 					style={[styles.input, errors.title && styles.inputError]}
 					placeholder="e.g. Design Review"
 					placeholderTextColor={colors.slate400}
-					value={title}
+					value={watch("title")}
 					onChangeText={(v) => setValue("title", v)}
 				/>
 				{errors.title && (
@@ -282,6 +397,66 @@ const styles = StyleSheet.create({
 		borderColor: colors.slate200,
 	},
 	pickerText: { fontSize: 13, fontWeight: "600", color: colors.slate600 },
+	// Locked mode styles
+	lockedCard: {
+		backgroundColor: colors.slate50,
+		borderRadius: 16,
+		borderWidth: 1.5,
+		borderColor: colors.primary,
+		padding: spacing.lg,
+		marginBottom: spacing.lg,
+	},
+	lockedCardHeader: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		marginBottom: spacing.md,
+	},
+	lockedCardTitle: {
+		fontSize: 18,
+		fontWeight: "700",
+		color: colors.slate800,
+		flex: 1,
+	},
+	deselectBtn: {
+		paddingHorizontal: 12,
+		paddingVertical: 5,
+		backgroundColor: colors.white,
+		borderRadius: 10,
+		borderWidth: 1,
+		borderColor: colors.slate300,
+	},
+	deselectBtnText: {
+		fontSize: 12,
+		fontWeight: "600",
+		color: colors.slate500,
+	},
+	lockedMeta: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: 8,
+	},
+	lockedMetaBadge: {
+		backgroundColor: colors.white,
+		borderRadius: 10,
+		borderWidth: 1,
+		borderColor: colors.slate200,
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+	},
+	lockedMetaLabel: {
+		fontSize: 10,
+		fontWeight: "600",
+		color: colors.slate400,
+		textTransform: "uppercase",
+		letterSpacing: 0.5,
+		marginBottom: 2,
+	},
+	lockedMetaValue: {
+		fontSize: 13,
+		fontWeight: "700",
+		color: colors.slate700,
+	},
 	advancedBtn: {
 		padding: spacing.lg,
 		backgroundColor: colors.slate50,

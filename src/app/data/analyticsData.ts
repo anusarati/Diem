@@ -13,16 +13,19 @@ import type {
 	ScheduledActivity,
 } from "../types";
 import { getActivitiesForDateRange } from "./services/homeService";
+import { withScopedRepositories } from "./services/repositoryContext";
 import {
 	getAllScheduledActivities,
 	getScheduledActivitiesForWeek,
 } from "./services/scheduleService";
 
-const CATEGORIES = ["Work", "Study", "Fitness", "Personal", "Other"] as const;
+const DEFAULT_ACTIVITY_COLOR = colors.slate600;
 
-type KnownCategory = (typeof CATEGORIES)[number];
+function dateKey(d: Date): string {
+	return d.toISOString().slice(0, 10);
+}
 
-const CATEGORY_COLORS: Record<KnownCategory, string> = {
+const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
 	Work: colors.peachDark,
 	Study: colors.mintDark,
 	Fitness: colors.lavenderDark,
@@ -30,15 +33,22 @@ const CATEGORY_COLORS: Record<KnownCategory, string> = {
 	Other: colors.slate600,
 };
 
-function dateKey(d: Date): string {
-	return d.toISOString().slice(0, 10);
-}
-
-function normalizeCategory(categoryId: string): KnownCategory {
-	if (CATEGORIES.includes(categoryId as KnownCategory)) {
-		return categoryId as KnownCategory;
-	}
-	return "Other";
+// Extract dynamic categories and their colors from actual DB records
+async function getCategoryMetadata() {
+	return withScopedRepositories(async (repos) => {
+		const activities = await repos.activity.listAll();
+		const meta: Record<string, string> = {
+			Other: DEFAULT_CATEGORY_COLORS.Other,
+		};
+		for (const a of activities) {
+			const cat = a.categoryId || "Other";
+			if (!meta[cat] || meta[cat] === DEFAULT_CATEGORY_COLORS.Other) {
+				meta[cat] =
+					a.color || DEFAULT_CATEGORY_COLORS[cat] || DEFAULT_ACTIVITY_COLOR;
+			}
+		}
+		return meta;
+	});
 }
 
 function eventStart(event: ScheduledActivity): Date {
@@ -93,29 +103,30 @@ export async function buildActivityBreakdown(
 		);
 	}
 
-	const byCategory: Record<KnownCategory, number> = {
-		Work: 0,
-		Study: 0,
-		Fitness: 0,
-		Personal: 0,
-		Other: 0,
-	};
+	const meta = await getCategoryMetadata();
+	const activeCategories = Object.keys(meta);
+	const byCategory: Record<string, number> = {};
+
+	for (const cat of activeCategories) {
+		byCategory[cat] = 0;
+	}
+
 	for (const event of scheduled) {
-		const category = normalizeCategory(event.categoryId);
-		byCategory[category] += event.duration;
+		const category = event.categoryId || "Other";
+		byCategory[category] = (byCategory[category] || 0) + event.duration;
 	}
 	const total =
 		Object.values(byCategory).reduce((sum, value) => sum + value, 0) || 1;
 
-	const items: ActivityBreakdownItem[] = CATEGORIES.map((category) => ({
+	const items: ActivityBreakdownItem[] = activeCategories.map((category) => ({
 		label: category,
 		value: formatMinutes(byCategory[category]),
-		color: CATEGORY_COLORS[category],
+		color: meta[category] || DEFAULT_ACTIVITY_COLOR,
 		percent: Math.round((byCategory[category] / total) * 100),
 	}));
 
 	return items.filter((item) => item.percent > 0).length > 0
-		? items
+		? items.sort((a, b) => b.percent - a.percent)
 		: [{ label: "No data", value: "0m", color: colors.slate400, percent: 100 }];
 }
 
@@ -180,27 +191,25 @@ export async function buildGoalTimeData(
 	const { start, end } = getRange(timeframe);
 	const fraction = elapsedFraction(timeframe);
 
-	const completedByCategory: Record<KnownCategory, number> = {
-		Work: 0,
-		Study: 0,
-		Fitness: 0,
-		Personal: 0,
-		Other: 0,
-	};
-	const plannedByCategory: Record<KnownCategory, number> = {
-		Work: 0,
-		Study: 0,
-		Fitness: 0,
-		Personal: 0,
-		Other: 0,
-	};
+	const meta = await getCategoryMetadata();
+	const activeCategories = Object.keys(meta);
+
+	const completedByCategory: Record<string, number> = {};
+	const plannedByCategory: Record<string, number> = {};
+
+	for (const cat of activeCategories) {
+		completedByCategory[cat] = 0;
+		plannedByCategory[cat] = 0;
+	}
 
 	const allScheduled = await getAllScheduledActivities();
 	const scheduledInRange = allScheduled.filter((event) =>
 		eventInRange(event, start, end),
 	);
 	for (const event of scheduledInRange) {
-		const category = normalizeCategory(event.categoryId);
+		const category = event.categoryId || "Other";
+		if (plannedByCategory[category] === undefined)
+			plannedByCategory[category] = 0;
 		plannedByCategory[category] += event.duration;
 	}
 
@@ -208,83 +217,127 @@ export async function buildGoalTimeData(
 	for (const { activities } of activityRanges) {
 		for (const activity of activities) {
 			if (!activity.completed || activity.completedDuration == null) continue;
-			const category = normalizeCategory(activity.categoryId);
+			const category = activity.categoryId || "Other";
+			if (completedByCategory[category] === undefined)
+				completedByCategory[category] = 0;
 			completedByCategory[category] += activity.completedDuration;
 		}
 	}
 
 	for (const event of scheduledInRange) {
 		if (event.status !== EventStatus.COMPLETED) continue;
-		const category = normalizeCategory(event.categoryId);
+		const category = event.categoryId || "Other";
+		if (completedByCategory[category] === undefined)
+			completedByCategory[category] = 0;
 		completedByCategory[category] += event.duration;
 	}
 
-	return CATEGORIES.map((category, index) => {
-		const completedMinutes = completedByCategory[category];
-		const plannedMinutes = plannedByCategory[category];
-		const targetMinutes =
-			plannedMinutes > 0
-				? plannedMinutes
-				: completedMinutes > 0
-					? completedMinutes
-					: 60;
-		const projectedMinutes =
-			fraction > 0 ? Math.round(completedMinutes / fraction) : completedMinutes;
-		return {
-			id: String(index + 1),
-			label: category,
-			targetMinutes,
-			completedMinutes,
-			projectedMinutes,
-			onTrack: targetMinutes === 0 || completedMinutes >= targetMinutes * 0.8,
-		};
+	return activeCategories
+		.map((category, index) => {
+			const completedMinutes = completedByCategory[category] || 0;
+			const plannedMinutes = plannedByCategory[category] || 0;
+			const targetMinutes =
+				plannedMinutes > 0
+					? plannedMinutes
+					: completedMinutes > 0
+						? completedMinutes
+						: 60;
+			const projectedMinutes =
+				fraction > 0
+					? Math.round(completedMinutes / fraction)
+					: completedMinutes;
+			return {
+				id: String(index + 1),
+				label: category,
+				targetMinutes,
+				completedMinutes,
+				projectedMinutes,
+				onTrack: targetMinutes === 0 || completedMinutes >= targetMinutes * 0.8,
+			};
+		})
+		.sort((a, b) => b.completedMinutes - a.completedMinutes);
+}
+
+/** Causal net built from historical markov transitions. */
+export async function buildCausalNet(): Promise<{
+	nodes: CausalNetNode[];
+	edges: CausalNetEdge[];
+}> {
+	return withScopedRepositories(async (repositories) => {
+		const transitions = await repositories.markov.listAll();
+		const allActivities = await repositories.activity.listAll();
+		const activityMap = new Map(allActivities.map((a) => [a.id, a.name]));
+
+		if (transitions.length === 0) {
+			return {
+				nodes: [
+					{
+						id: "placeholder",
+						activityLabel: "Complete activities to see flow",
+						x: 120,
+						y: 80,
+					},
+				],
+				edges: [],
+			};
+		}
+
+		// Sort by most frequent transitions to avoid an unreadable ball of yarn
+		const sortedEdges = [...transitions]
+			.sort((a, b) => b.count - a.count)
+			.slice(0, 15); // Top 15 transitions
+
+		const activeIds = new Set<string>();
+		for (const edge of sortedEdges) {
+			activeIds.add(edge.fromActivityId);
+			activeIds.add(edge.toActivityId);
+		}
+
+		const nodes: CausalNetNode[] = [];
+		let index = 0;
+		for (const id of activeIds) {
+			nodes.push({
+				id,
+				activityLabel: activityMap.get(id) || "Unknown",
+				x: 80 + (index % 3) * 110,
+				y: 80 + Math.floor(index / 3) * 60,
+			});
+			index++;
+		}
+
+		const edges: CausalNetEdge[] = sortedEdges.map((t) => ({
+			from: t.fromActivityId,
+			to: t.toActivityId,
+		}));
+
+		return { nodes, edges };
 	});
 }
 
-/** Causal net placeholder built from event categories. */
-export function buildCausalNet(scheduled: ScheduledActivity[]): {
-	nodes: CausalNetNode[];
-	edges: CausalNetEdge[];
-} {
-	const categories = [
-		...new Set(scheduled.map((event) => normalizeCategory(event.categoryId))),
-	];
-	if (categories.length === 0) {
-		return {
-			nodes: [
-				{ id: "placeholder", activityLabel: "Add activities", x: 120, y: 80 },
-			],
-			edges: [],
-		};
-	}
-	const nodes: CausalNetNode[] = categories.map((category, index) => ({
-		id: category.toLowerCase(),
-		activityLabel: category,
-		x: 80 + index * 70,
-		y: 80 + (index % 2) * 40,
-	}));
-	const edges: CausalNetEdge[] = [];
-	for (let i = 0; i < nodes.length - 1; i += 1) {
-		edges.push({ from: nodes[i].id, to: nodes[i + 1].id });
-	}
-	return { nodes, edges };
-}
-
 /** Heatmap categories = activity categories. */
-export function buildHeatmapCategories(): CategoryHeatmapOption[] {
-	return CATEGORIES.map((category) => ({ id: category, label: category }));
+export async function buildHeatmapCategories(): Promise<
+	CategoryHeatmapOption[]
+> {
+	const meta = await getCategoryMetadata();
+	return Object.keys(meta).map((category) => ({
+		id: category,
+		label: category,
+	}));
 }
 
 /** Heatmap: 7 days x 12 time slots (2h each), value 0–1 from scheduled minutes. */
 export async function buildHeatmapByCategory(): Promise<HeatmapDataByCategory> {
 	const scheduled = await getAllScheduledActivities();
+	const meta = await getCategoryMetadata();
+	const activeCategories = Object.keys(meta);
+
 	const out: HeatmapDataByCategory = {};
-	for (const category of CATEGORIES) {
+	for (const category of activeCategories) {
 		const grid: number[][] = Array.from({ length: 7 }, () =>
 			Array.from({ length: 12 }, () => 0),
 		);
 		for (const event of scheduled.filter(
-			(item) => normalizeCategory(item.categoryId) === category,
+			(item) => (item.categoryId || "Other") === category,
 		)) {
 			const start = eventStart(event);
 			const slot = Math.min(
@@ -453,9 +506,8 @@ export async function loadAnalyticsData(timeframe: "Day" | "Week" | "Month") {
 		buildStats(timeframe),
 	]);
 	const magicHoursDescription = getMagicHoursDescription(magicHours);
-	const scheduled = await getAllScheduledActivities();
 	const { nodes: causalNetNodes, edges: causalNetEdges } =
-		buildCausalNet(scheduled);
+		await buildCausalNet();
 	return {
 		activityBreakdown,
 		goalTimeData,

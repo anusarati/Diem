@@ -44,6 +44,10 @@ import {
 	removeScheduledActivity,
 	updateScheduledActivity,
 } from "../data/services";
+import {
+	makeRepositories,
+	resolveCurrentScope,
+} from "../data/services/repositoryContext";
 // import { initNotificationService } from "../../services/notification/notification_service"; // Moved to App.tsx
 import { getAllScheduledActivities } from "../data/services/scheduleService";
 import type { ActivityFormData } from "../hooks/useActivityValidation";
@@ -225,33 +229,6 @@ const _INITIAL_ACTIVITIES: TimeBlockProps[] = [
 	},
 ];
 
-const EXISTING_ACTIVITIES: ExistingActivityOption[] = [
-	{
-		id: "a1",
-		name: "Gym",
-		priority: 3,
-		defaultDuration: 60,
-		isReplaceable: false,
-		categoryId: "Fitness",
-	},
-	{
-		id: "a2",
-		name: "Study",
-		priority: 2,
-		defaultDuration: 120,
-		isReplaceable: true,
-		categoryId: "Education",
-	},
-	{
-		id: "a3",
-		name: "Coding",
-		priority: 3,
-		defaultDuration: 90,
-		isReplaceable: false,
-		categoryId: "Work",
-	},
-];
-
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 // Helper to get the actual date of the current week's Monday
@@ -267,8 +244,13 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	const [activitiesLoading, setActivitiesLoading] = useState(true);
 	const [isAddChoiceOpen, setIsAddChoiceOpen] = useState(false);
 	const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+	const [existingActivities, setExistingActivities] = useState<
+		ExistingActivityOption[]
+	>([]);
 	const [viewMode, setViewMode] = useState("Day"); // 'Day' | 'Week' | 'Month'
 	const [initialTime, setInitialTime] = useState("");
+	const [isScheduling, setIsScheduling] = useState(false);
+	const [scheduleExpanded, setScheduleExpanded] = useState(false);
 
 	// Dynamic Date State
 	const [currentDate, setCurrentDate] = useState(new Date());
@@ -317,6 +299,31 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		loadActivitiesFromDb();
 	}, [loadActivitiesFromDb]);
 
+	// Load real activity definitions for "Select from existing" in QuickAdd
+	const loadExistingActivities = useCallback(async () => {
+		try {
+			const { scope } = await resolveCurrentScope();
+			const repos = makeRepositories(scope);
+			const all = await repos.activity.listAll();
+			setExistingActivities(
+				all.map((a) => ({
+					id: a.id,
+					name: a.name,
+					priority: a.priority,
+					defaultDuration: a.defaultDuration,
+					isReplaceable: a.isReplaceable,
+					categoryId: a.categoryId,
+				})),
+			);
+		} catch (err) {
+			console.warn("[QuickAdd] Failed to load existing activities:", err);
+		}
+	}, []);
+
+	useEffect(() => {
+		loadExistingActivities();
+	}, [loadExistingActivities]);
+
 	useEffect(() => {
 		// Permissions are still requested here if needed, but service init is in App.tsx
 		requestNotificationPermission().catch((err) =>
@@ -332,6 +339,13 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 			console.log(`Deep linking to ${screen}`, params);
 		},
 	});
+
+	// Refresh picker list each time the sheet is opened
+	useEffect(() => {
+		if (isQuickAddOpen) {
+			loadExistingActivities();
+		}
+	}, [isQuickAddOpen, loadExistingActivities]);
 
 	// Calculate the displayed date string based on selectedDay
 	const getDisplayedDate = () => {
@@ -449,7 +463,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 				setEditingActivity(null);
 			} else {
 				await addScheduledActivity({
-					activityId: `act_${Date.now()}`,
+					activityId: "",
 					categoryId: activityData.category || "Other",
 					title: activityData.title,
 					startTime: start.toISOString(),
@@ -596,6 +610,155 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		setEditingActivity(null);
 	};
 
+	const handleSchedule = async (onlyEmptyTime: boolean) => {
+		setIsScheduling(true);
+		setScheduleExpanded(false);
+		try {
+			const { resolveCurrentScope, makeRepositories } = await import(
+				"../data/services/repositoryContext"
+			);
+			const { getDatabase } = await import("../../data/database");
+			const { BridgeDataSource } = await import(
+				"../../bridge/assembly/bridge_data_source"
+			);
+			const { ProblemBuilder } = await import(
+				"../../bridge/assembly/problem_builder"
+			);
+			const { NativeScheduler } = await import(
+				"../../bridge/jsi/native_scheduler"
+			);
+			const { EventStatus, Replaceability, ActivitySource } = await import(
+				"../../types/domain"
+			);
+
+			// Snap horizonStart to the current 15-min slot (never schedule in the past)
+			const now = new Date();
+			const slotsSinceMidnight = Math.floor(
+				(now.getHours() * 60 + now.getMinutes()) / 15,
+			);
+			const horizonStart = new Date(now);
+			horizonStart.setHours(
+				Math.floor((slotsSinceMidnight * 15) / 60),
+				(slotsSinceMidnight * 15) % 60,
+				0,
+				0,
+			);
+
+			// End of the current view period (Day / Week / Month)
+			let endOfPeriod: Date;
+			if (viewMode === "Week") {
+				// End of current ISO week = next Monday 00:00
+				const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+				endOfPeriod = new Date(now);
+				endOfPeriod.setDate(now.getDate() + daysUntilMonday);
+				endOfPeriod.setHours(0, 0, 0, 0);
+			} else if (viewMode === "Month") {
+				// First moment of next month
+				endOfPeriod = new Date(
+					now.getFullYear(),
+					now.getMonth() + 1,
+					1,
+					0,
+					0,
+					0,
+					0,
+				);
+			} else {
+				// End of today
+				endOfPeriod = new Date(now);
+				endOfPeriod.setHours(24, 0, 0, 0);
+			}
+
+			// Slots from now to end of period (each slot = 15 min), minimum 1
+			const totalSlots = Math.max(
+				1,
+				Math.round(
+					(endOfPeriod.getTime() - horizonStart.getTime()) / (15 * 60 * 1000),
+				),
+			);
+
+			const { scope } = await resolveCurrentScope();
+			const database = getDatabase(scope);
+			const dataSource = new BridgeDataSource(database);
+			const builder = new ProblemBuilder();
+			const repositories = makeRepositories(scope);
+
+			const input = await dataSource.load({
+				horizonStart,
+				totalSlots,
+				scheduleOnlyInEmptyTime: onlyEmptyTime,
+			});
+
+			const built = builder.build(input);
+			const scheduler = new NativeScheduler();
+			const results = scheduler.solve(built, {
+				maxGenerations: 100,
+				timeLimitMs: 500,
+			});
+
+			for (const result of results) {
+				const activityId = result.activityId;
+				const startOffsetMinutes = result.startSlot * 15;
+				const startTime = new Date(
+					horizonStart.getTime() + startOffsetMinutes * 60000,
+				);
+				const endTime = new Date(
+					startTime.getTime() + result.durationSlots * 15 * 60000,
+				);
+
+				const existing = await repositories.schedule.listAll();
+				const match = existing.find(
+					(e) =>
+						e.activityId === activityId &&
+						new Date(e.startTime).toDateString() === startTime.toDateString(),
+				);
+
+				if (match) {
+					await repositories.schedule.update(match.id, {
+						startTime,
+						endTime,
+						updatedAt: new Date(),
+					});
+				} else {
+					const activity = await repositories.activity.findById(activityId);
+					if (activity) {
+						await repositories.schedule.create({
+							activityId: activityId,
+							categoryId: activity.categoryId,
+							title: activity.name,
+							startTime,
+							endTime,
+							duration: result.durationSlots * 15,
+							status: EventStatus.CONFIRMED,
+							replaceabilityStatus: Replaceability.SOFT,
+							priority: activity.priority,
+							source: ActivitySource.AUTONOMOUS,
+							isLocked: false,
+							isRecurring: false,
+							createdAt: new Date(),
+							updatedAt: new Date(),
+						});
+					}
+				}
+			}
+
+			await new Promise((resolve) => setTimeout(resolve, 300));
+			await loadActivitiesFromDb();
+			Alert.alert(
+				"Scheduled",
+				`Auto-schedule complete for this ${viewMode.toLowerCase()}.`,
+			);
+		} catch (error) {
+			console.error("Scheduling failed:", error);
+			Alert.alert(
+				"Scheduling failed",
+				"The native scheduler may not be available in this environment.",
+			);
+		} finally {
+			setIsScheduling(false);
+		}
+	};
+
 	const handleImportGoogleCalendar = async () => {
 		setIsAddChoiceOpen(false);
 		const token = await getGoogleCalendarAccessToken();
@@ -690,81 +853,95 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 							<Text style={styles.headerTitle}>Schedule</Text>
 							<Text style={styles.date}>{getDisplayedDate()}</Text>
 						</View>
-						<View style={{ flexDirection: "row", alignItems: "center" }}>
-							<Pressable
-								onPress={async () => {
-									console.log("[Notification] Manual test button pressed");
-									const { scheduleNotification } = await import(
-										"../../services/notification/notification_service"
-									);
-									await scheduleNotification(
-										"Diem Test",
-										"This is an interactive test. Long-press me!",
-										new Date(Date.now() + 5000), // 5 seconds from now
-										{
-											type: "ACTIVITY_START_INQUIRY",
-											activityId: "test_id",
-											category: "ACTIVITY_INQUIRY",
-										},
-									);
-									Alert.alert(
-										"Scheduled",
-										"Test notification will appear in 5 seconds. Please close the app or go home to see the banner!",
-									);
+						{viewMode === "Month" && (
+							<View style={{ flexDirection: "row", alignItems: "center" }}>
+								<Pressable
+									onPress={() => {
+										const prev = new Date(currentDate);
+										prev.setMonth(prev.getMonth() - 1);
+										setCurrentDate(prev);
+									}}
+									style={{ padding: 8 }}
+								>
+									<Text style={{ fontSize: 20, color: colors.slate400 }}>
+										{"<"}
+									</Text>
+								</Pressable>
+								<Pressable
+									onPress={() => {
+										const next = new Date(currentDate);
+										next.setMonth(next.getMonth() + 1);
+										setCurrentDate(next);
+									}}
+									style={{ padding: 8 }}
+								>
+									<Text style={{ fontSize: 20, color: colors.slate400 }}>
+										{">"}
+									</Text>
+								</Pressable>
+							</View>
+						)}
+					</View>
+
+					{/* Controls row: segment picker + schedule dropdown */}
+					<View style={styles.controlsRow}>
+						<View style={{ flex: 1 }}>
+							<SegmentedControl
+								options={["Day", "Week", "Month"]}
+								selected={viewMode}
+								onSelect={(val) => {
+									setViewMode(val);
+									// Reset to today when switching? Or keep current?
+									// Let's keep current.
 								}}
+							/>
+						</View>
+
+						{/* Collapsible Schedule button */}
+						<View style={styles.scheduleDropWrapper}>
+							<Pressable
 								style={({ pressed }) => [
-									{
-										backgroundColor: colors.slate100,
-										padding: 8,
-										borderRadius: 8,
-										marginRight: spacing.sm,
-									},
-									pressed && { opacity: 0.7 },
+									styles.scheduleDropBtn,
+									scheduleExpanded && styles.scheduleDropBtnActive,
+									(pressed || isScheduling) && { opacity: 0.75 },
 								]}
+								onPress={() => setScheduleExpanded((v) => !v)}
+								disabled={isScheduling}
 							>
-								<Text style={{ fontSize: 12, color: colors.slate600 }}>
-									Test Push
+								<Text
+									style={[
+										styles.scheduleDropBtnText,
+										scheduleExpanded && styles.scheduleDropBtnTextActive,
+									]}
+								>
+									{isScheduling
+										? "…"
+										: `Schedule ${scheduleExpanded ? "▴" : "▾"}`}
 								</Text>
 							</Pressable>
-							{viewMode === "Month" && (
-								<View style={{ flexDirection: "row", marginRight: spacing.md }}>
+							{scheduleExpanded && (
+								<View style={styles.scheduleSubMenu}>
 									<Pressable
-										onPress={() => {
-											const prev = new Date(currentDate);
-											prev.setMonth(prev.getMonth() - 1);
-											setCurrentDate(prev);
-										}}
-										style={{ padding: 8 }}
+										style={({ pressed }) => [
+											styles.scheduleSubBtn,
+											pressed && { opacity: 0.75 },
+										]}
+										onPress={() => handleSchedule(false)}
 									>
-										<Text style={{ fontSize: 20, color: colors.slate400 }}>
-											{"<"}
-										</Text>
+										<Text style={styles.scheduleSubBtnText}>All</Text>
 									</Pressable>
+									<View style={styles.scheduleSubDivider} />
 									<Pressable
-										onPress={() => {
-											const next = new Date(currentDate);
-											next.setMonth(next.getMonth() + 1);
-											setCurrentDate(next);
-										}}
-										style={{ padding: 8 }}
+										style={({ pressed }) => [
+											styles.scheduleSubBtn,
+											pressed && { opacity: 0.75 },
+										]}
+										onPress={() => handleSchedule(true)}
 									>
-										<Text style={{ fontSize: 20, color: colors.slate400 }}>
-											{">"}
-										</Text>
+										<Text style={styles.scheduleSubBtnText}>Empty</Text>
 									</Pressable>
 								</View>
 							)}
-							<View style={{ width: 210 }}>
-								<SegmentedControl
-									options={["Day", "Week", "Month"]}
-									selected={viewMode}
-									onSelect={(val) => {
-										setViewMode(val);
-										// Reset to today when switching? Or keep current?
-										// Let's keep current.
-									}}
-								/>
-							</View>
 						</View>
 					</View>
 					<Pressable
@@ -900,7 +1077,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					isOpen={isQuickAddOpen}
 					onClose={handleSheetClose}
 					onSave={handleAddOrEditActivity}
-					existingActivities={EXISTING_ACTIVITIES}
+					existingActivities={existingActivities}
 					initialTime={initialTime}
 					initialData={
 						editingActivity
@@ -954,6 +1131,67 @@ const styles = StyleSheet.create({
 		marginTop: 4,
 		textTransform: "uppercase",
 		letterSpacing: 1,
+	},
+	// Collapsible schedule button
+	controlsRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: spacing.sm,
+		marginTop: spacing.sm,
+	},
+	scheduleDropWrapper: {
+		position: "relative",
+	},
+	scheduleDropBtn: {
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+		backgroundColor: colors.slate50,
+		borderRadius: 8,
+		borderWidth: 1,
+		borderColor: colors.slate200,
+	},
+	scheduleDropBtnActive: {
+		backgroundColor: colors.primary,
+		borderColor: colors.primary,
+	},
+	scheduleDropBtnText: {
+		fontSize: 12,
+		fontWeight: "600",
+		color: colors.slate700,
+	},
+	scheduleDropBtnTextActive: {
+		color: colors.white,
+	},
+	scheduleSubMenu: {
+		position: "absolute",
+		top: 34,
+		right: 0,
+		backgroundColor: colors.white,
+		borderRadius: 10,
+		borderWidth: 1,
+		borderColor: colors.slate200,
+		overflow: "hidden",
+		zIndex: 100,
+		shadowColor: "#000",
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.08,
+		shadowRadius: 8,
+		elevation: 8,
+		minWidth: 90,
+	},
+	scheduleSubBtn: {
+		paddingVertical: 10,
+		paddingHorizontal: 16,
+		alignItems: "center",
+	},
+	scheduleSubBtnText: {
+		fontSize: 13,
+		fontWeight: "600",
+		color: colors.slate800,
+	},
+	scheduleSubDivider: {
+		height: 1,
+		backgroundColor: colors.slate100,
 	},
 	clearAllBtn: {
 		marginTop: spacing.md,
