@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
 	ActivityIndicator,
+	Pressable,
 	SafeAreaView,
 	ScrollView,
 	StyleSheet,
@@ -13,6 +14,7 @@ import { CausalNetView } from "../components/CausalNetView";
 import { GoalTimeRow } from "../components/GoalTimeRow";
 import { ProgressCircle } from "../components/ProgressCircle";
 import { SegmentedControl } from "../components/SegmentedControl";
+import { seedAnalyticsDataForWeek } from "../data/seedAnalyticsData";
 import { loadAnalyticsView } from "../data/services";
 import { colors } from "../theme";
 import type {
@@ -54,6 +56,8 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 	const [scoreSub, setScoreSub] = useState("");
 	const [focusPercent, setFocusPercent] = useState(0);
 	const [flowMinutes, setFlowMinutes] = useState(0);
+	const [isSeeding, setIsSeeding] = useState(false);
+	const [seedError, setSeedError] = useState<string | null>(null);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -86,6 +90,19 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 
 	useEffect(() => {
 		load();
+	}, [load]);
+
+	const handleSeedData = useCallback(async () => {
+		setIsSeeding(true);
+		setSeedError(null);
+		try {
+			await seedAnalyticsDataForWeek();
+			await load();
+		} catch (err) {
+			setSeedError(err instanceof Error ? err.message : "Seed failed");
+		} finally {
+			setIsSeeding(false);
+		}
 	}, [load]);
 
 	const flowLabel =
@@ -224,6 +241,21 @@ export function AnalysisScreen({ onNavigate: _onNavigate }: Props) {
 							width={320}
 							height={220}
 						/>
+						<Pressable
+							style={({ pressed }) => [
+								styles.seedButton,
+								pressed && styles.seedButtonPressed,
+							]}
+							onPress={handleSeedData}
+							disabled={isSeeding}
+						>
+							<Text style={styles.seedButtonText}>
+								{isSeeding ? "Seeding…" : "Seed data for this week"}
+							</Text>
+						</Pressable>
+						{seedError ? (
+							<Text style={styles.seedError}>{seedError}</Text>
+						) : null}
 					</View>
 				</View>
 
@@ -442,6 +474,26 @@ const styles = StyleSheet.create({
 		padding: 24,
 		borderWidth: 1,
 		borderColor: colors.slate100,
+	},
+	seedButton: {
+		marginTop: 16,
+		alignSelf: "center",
+		paddingVertical: 10,
+		paddingHorizontal: 16,
+		backgroundColor: colors.peachDark,
+		borderRadius: 12,
+	},
+	seedButtonPressed: { opacity: 0.8 },
+	seedButtonText: {
+		fontSize: 14,
+		fontWeight: "600",
+		color: colors.white,
+	},
+	seedError: {
+		marginTop: 8,
+		fontSize: 12,
+		color: colors.red400,
+		textAlign: "center",
 	},
 	magicTitle: {
 		fontSize: 18,

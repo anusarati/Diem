@@ -4,6 +4,7 @@ import {
 	Replaceability,
 	type ScheduledEventEntity,
 } from "../../../types/domain";
+import { rebuildMarkovTransitionCountsFromHistory } from "./markovService";
 import {
 	DEFAULT_ACTIVITY_COLOR,
 	dayRange,
@@ -152,9 +153,23 @@ export async function updateScheduledActivity(
 }
 
 export async function removeScheduledActivity(id: string): Promise<boolean> {
-	return withScopedRepositories((repositories) =>
-		repositories.schedule.remove(id),
-	);
+	return withScopedRepositories(async (repositories) => {
+		const scheduled = await repositories.schedule.findById(id);
+		if (!scheduled) return false;
+
+		const wasRemoved = await repositories.schedule.remove(id);
+		if (!wasRemoved) return false;
+
+		// Keep analytics consistent: removing a scheduled event should remove
+		// any recorded completion history for the same activity on that day.
+		await repositories.history.deleteForActivityOnDate(
+			scheduled.activityId,
+			scheduled.startTime,
+		);
+
+		await rebuildMarkovTransitionCountsFromHistory(repositories);
+		return true;
+	});
 }
 
 /**
