@@ -20,8 +20,7 @@ async function ensureActivityForScheduledEvent(
 	event: ScheduledActivityInput,
 ): Promise<string> {
 	const createdAt = new Date(event.createdAt);
-	const activity = await repositories.activity.upsert({
-		id: event.activityId,
+	const activity = await repositories.activity.upsertByName({
 		categoryId: event.categoryId,
 		name: event.title,
 		priority: event.priority,

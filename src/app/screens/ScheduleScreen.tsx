@@ -1,3 +1,5 @@
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Alert,
@@ -42,6 +44,10 @@ import {
 	removeScheduledActivity,
 	updateScheduledActivity,
 } from "../data/services";
+import {
+	makeRepositories,
+	resolveCurrentScope,
+} from "../data/services/repositoryContext";
 // import { initNotificationService } from "../../services/notification/notification_service"; // Moved to App.tsx
 import { getAllScheduledActivities } from "../data/services/scheduleService";
 import type { ActivityFormData } from "../hooks/useActivityValidation";
@@ -223,33 +229,6 @@ const _INITIAL_ACTIVITIES: TimeBlockProps[] = [
 	},
 ];
 
-const EXISTING_ACTIVITIES: ExistingActivityOption[] = [
-	{
-		id: "a1",
-		name: "Gym",
-		priority: 3,
-		defaultDuration: 60,
-		isReplaceable: false,
-		categoryId: "Fitness",
-	},
-	{
-		id: "a2",
-		name: "Study",
-		priority: 2,
-		defaultDuration: 120,
-		isReplaceable: true,
-		categoryId: "Education",
-	},
-	{
-		id: "a3",
-		name: "Coding",
-		priority: 3,
-		defaultDuration: 90,
-		isReplaceable: false,
-		categoryId: "Work",
-	},
-];
-
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 // Helper to get the actual date of the current week's Monday
@@ -265,6 +244,9 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	const [activitiesLoading, setActivitiesLoading] = useState(true);
 	const [isAddChoiceOpen, setIsAddChoiceOpen] = useState(false);
 	const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+	const [existingActivities, setExistingActivities] = useState<
+		ExistingActivityOption[]
+	>([]);
 	const [viewMode, setViewMode] = useState("Day"); // 'Day' | 'Week' | 'Month'
 	const [initialTime, setInitialTime] = useState("");
 	const [isScheduling, setIsScheduling] = useState(false);
@@ -317,6 +299,31 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		loadActivitiesFromDb();
 	}, [loadActivitiesFromDb]);
 
+	// Load real activity definitions for "Select from existing" in QuickAdd
+	const loadExistingActivities = useCallback(async () => {
+		try {
+			const { scope } = await resolveCurrentScope();
+			const repos = makeRepositories(scope);
+			const all = await repos.activity.listAll();
+			setExistingActivities(
+				all.map((a) => ({
+					id: a.id,
+					name: a.name,
+					priority: a.priority,
+					defaultDuration: a.defaultDuration,
+					isReplaceable: a.isReplaceable,
+					categoryId: a.categoryId,
+				})),
+			);
+		} catch (err) {
+			console.warn("[QuickAdd] Failed to load existing activities:", err);
+		}
+	}, []);
+
+	useEffect(() => {
+		loadExistingActivities();
+	}, [loadExistingActivities]);
+
 	useEffect(() => {
 		// Permissions are still requested here if needed, but service init is in App.tsx
 		requestNotificationPermission().catch((err) =>
@@ -332,6 +339,13 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 			console.log(`Deep linking to ${screen}`, params);
 		},
 	});
+
+	// Refresh picker list each time the sheet is opened
+	useEffect(() => {
+		if (isQuickAddOpen) {
+			loadExistingActivities();
+		}
+	}, [isQuickAddOpen, loadExistingActivities]);
 
 	// Calculate the displayed date string based on selectedDay
 	const getDisplayedDate = () => {
@@ -449,7 +463,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 				setEditingActivity(null);
 			} else {
 				await addScheduledActivity({
-					activityId: `act_${Date.now()}`,
+					activityId: "",
 					categoryId: activityData.category || "Other",
 					title: activityData.title,
 					startTime: start.toISOString(),
@@ -803,13 +817,12 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		// Native: use expo-document-picker + expo-file-system
 		(async () => {
 			try {
-				const DocumentPicker = (await import("expo-document-picker")).default;
-				const FileSystem = await import("expo-file-system/legacy");
 				const result = await DocumentPicker.getDocumentAsync({
 					type: ["text/calendar", "application/octet-stream"],
 					copyToCacheDirectory: true,
 				});
 				if (result.canceled || !result.assets?.[0]?.uri) return;
+
 				const content = await FileSystem.readAsStringAsync(
 					result.assets[0].uri,
 					{ encoding: FileSystem.EncodingType.UTF8 },
@@ -1064,7 +1077,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					isOpen={isQuickAddOpen}
 					onClose={handleSheetClose}
 					onSave={handleAddOrEditActivity}
-					existingActivities={EXISTING_ACTIVITIES}
+					existingActivities={existingActivities}
 					initialTime={initialTime}
 					initialData={
 						editingActivity

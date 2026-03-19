@@ -15,6 +15,7 @@ import { ActivityForm } from "../components/ActivityForm";
 import { ActivityRow } from "../components/ActivityRow";
 import {
 	createActivityGlobal,
+	getAllActivities,
 	observeAllActivities,
 	removeActivity,
 	updateActivityGlobal,
@@ -80,7 +81,7 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 	const handleSaveActivity = async (data: ActivityFormData) => {
 		const priorityValue =
 			data.priority === "high" ? 3 : data.priority === "medium" ? 2 : 1;
-		const durationValue = data.duration || 30;
+		const durationValue = parseInt(data.duration as any, 10) || 30;
 		const isReplaceableValue = data.replaceabilityStatus === "SOFT";
 		const categoryIdValue = data.category || "Other";
 
@@ -104,6 +105,8 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 			}
 			setEditModalVisible(false);
 			setSelectedActivity(null);
+			const updated = await getAllActivities();
+			setActivities(updated);
 		} catch (e) {
 			console.error("[ManageActivities] save failed", e);
 			Alert.alert("Error", "Could not save activity");

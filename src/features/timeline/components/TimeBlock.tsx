@@ -85,11 +85,18 @@ export const TimeBlock = React.memo(
 						borderWidth: variantStyle.borderWidth,
 						borderStyle: variantStyle.borderStyle,
 						opacity: variantStyle.opacity,
+						paddingVertical: height <= 45 ? 2 : spacing.sm,
 					},
 					style,
 				]}
 			>
-				<Text style={[styles.title, { color: textColor }]} numberOfLines={1}>
+				<Text
+					style={[
+						styles.title,
+						{ color: textColor, fontSize: height <= 45 ? 12 : 14 },
+					]}
+					numberOfLines={1}
+				>
 					{title}
 				</Text>
 				{subtitle && height > 40 && (
