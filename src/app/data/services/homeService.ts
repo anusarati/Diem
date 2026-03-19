@@ -5,8 +5,12 @@ import {
 import type ActivityModel from "../../../data/models/Activity";
 import type ActivityHistory from "../../../data/models/ActivityHistory";
 import { HistoryWriteService } from "../../../mining";
-import { EventStatus } from "../../../types/domain";
-import type { ActivityItem, ScheduledActivity } from "../../types";
+import { EventStatus, RecurrenceFrequency } from "../../../types/domain";
+import type {
+	ActivityItem,
+	RecurrencePattern,
+	ScheduledActivity,
+} from "../../types";
 import { rebuildMarkovTransitionCountsFromHistory } from "./markovService";
 import {
 	currentTimeZone,
@@ -29,12 +33,16 @@ export interface HomeData {
 function toActivityItem(
 	activity: ActivityModel,
 	history: ActivityHistory | null,
+	isRecurring?: boolean,
+	recurrencePattern?: RecurrencePattern,
 ): ActivityItem {
 	const base = toActivityEntity(activity);
 	return {
 		...base,
 		completed: history?.wasCompleted ?? false,
 		completedDuration: history?.actualDuration ?? undefined,
+		isRecurring,
+		recurrencePattern,
 	};
 }
 
@@ -44,6 +52,7 @@ async function listActivitiesForDateWithRepositories(
 ): Promise<ActivityItem[]> {
 	const { start, end } = dayRange(date);
 	const historyRows = await repositories.history.listForRange(start, end);
+	const recurringRows = await repositories.recurringActivity.listAll();
 
 	const out: ActivityItem[] = [];
 	for (const history of historyRows) {
@@ -51,7 +60,16 @@ async function listActivitiesForDateWithRepositories(
 		if (!activity) {
 			continue;
 		}
-		out.push(toActivityItem(activity, history));
+		const recurring = recurringRows.find((r) => r.templateId === activity.id);
+		const isRecurring = !!recurring;
+		const recurrencePattern: RecurrencePattern | undefined = recurring
+			? {
+					frequency: recurring.frequency as RecurrenceFrequency,
+					interval: recurring.interval,
+					daysOfWeek: recurring.daysOfWeek,
+				}
+			: undefined;
+		out.push(toActivityItem(activity, history, isRecurring, recurrencePattern));
 	}
 
 	return out.sort((left, right) =>
@@ -157,7 +175,18 @@ export async function observeActivitiesForDate(
 export async function getAllActivities(): Promise<ActivityItem[]> {
 	return withScopedRepositories(async (repositories) => {
 		const rows = await repositories.activity.listAll();
-		const mapped = rows.map((a) => toActivityItem(a, null));
+		const recurringRows = await repositories.recurringActivity.listAll();
+		const mapped = rows.map((a) => {
+			const recurring = recurringRows.find((r) => r.templateId === a.id);
+			const recurrencePattern: RecurrencePattern | undefined = recurring
+				? {
+						frequency: recurring.frequency as any,
+						interval: recurring.interval,
+						daysOfWeek: recurring.daysOfWeek,
+					}
+				: undefined;
+			return toActivityItem(a, null, !!recurring, recurrencePattern);
+		});
 		return mapped.sort((l, r) => l.createdAt.localeCompare(r.createdAt));
 	});
 }
@@ -182,8 +211,21 @@ export async function observeAllActivities(
 		}
 		refreshQueued = true;
 		try {
-			const rows = await repositories.activity.listAll();
-			const mapped = rows.map((a) => toActivityItem(a, null));
+			const [rows, recurringRows] = await Promise.all([
+				repositories.activity.listAll(),
+				repositories.recurringActivity.listAll(),
+			]);
+			const mapped = rows.map((a) => {
+				const recurring = recurringRows.find((r) => r.templateId === a.id);
+				const recurrencePattern: RecurrencePattern | undefined = recurring
+					? {
+							frequency: recurring.frequency as any,
+							interval: recurring.interval,
+							daysOfWeek: recurring.daysOfWeek,
+						}
+					: undefined;
+				return toActivityItem(a, null, !!recurring, recurrencePattern);
+			});
 			if (!disposed) {
 				onChange(mapped.sort((l, r) => l.createdAt.localeCompare(r.createdAt)));
 			}
@@ -441,10 +483,50 @@ export async function updateActivityGlobal(
 		priority?: number;
 		defaultDuration?: number;
 		isReplaceable?: boolean;
+		isRecurring?: boolean;
+		recurrencePattern?: RecurrencePattern;
 	},
 ): Promise<void> {
 	return withScopedRepositories(async (repositories) => {
 		await repositories.activity.update(activityId, patch);
+
+		if (patch.isRecurring !== undefined) {
+			if (patch.isRecurring) {
+				const existing =
+					await repositories.recurringActivity.findByTemplateId(activityId);
+				if (!existing) {
+					const activity = await repositories.activity.findById(activityId);
+					if (activity) {
+						await repositories.recurringActivity.create({
+							templateId: activityId,
+							categoryId: activity.categoryId,
+							title: activity.name,
+							frequency:
+								(patch.recurrencePattern?.frequency as RecurrenceFrequency) ||
+								RecurrenceFrequency.WEEKLY,
+							interval: patch.recurrencePattern?.interval || 1,
+							daysOfWeek: patch.recurrencePattern?.daysOfWeek || [],
+							startDate: new Date(),
+							preferredStartTime: "09:00",
+							typicalDuration: activity.defaultDuration,
+							priority: activity.priority,
+							isActive: true,
+						});
+					}
+				} else if (patch.recurrencePattern) {
+					await repositories.database.write(async () => {
+						await existing.update((record) => {
+							record.frequency = patch.recurrencePattern
+								?.frequency as RecurrenceFrequency;
+							record.interval = patch.recurrencePattern?.interval ?? 1;
+							record.daysOfWeek = patch.recurrencePattern?.daysOfWeek || [];
+						});
+					});
+				}
+			} else {
+				await repositories.recurringActivity.deleteByTemplateId(activityId);
+			}
+		}
 	});
 }
 
@@ -493,9 +575,11 @@ export async function createActivityGlobal(
 	priority: number = DEFAULT_ACTIVITY_PRIORITY,
 	duration: number = DEFAULT_ACTIVITY_DURATION,
 	isReplaceable: boolean = true,
+	isRecurring: boolean = false,
+	recurrencePattern?: RecurrencePattern,
 ): Promise<void> {
 	return withScopedRepositories(async (repositories) => {
-		await repositories.activity.create({
+		const activity = await repositories.activity.create({
 			categoryId,
 			name: name.trim(),
 			priority,
@@ -504,5 +588,23 @@ export async function createActivityGlobal(
 			color: DEFAULT_ACTIVITY_COLOR,
 			createdAt: new Date(),
 		});
+
+		if (isRecurring) {
+			await repositories.recurringActivity.create({
+				templateId: activity.id,
+				categoryId,
+				title: name.trim(),
+				frequency:
+					(recurrencePattern?.frequency as RecurrenceFrequency) ||
+					RecurrenceFrequency.WEEKLY,
+				interval: recurrencePattern?.interval || 1,
+				daysOfWeek: recurrencePattern?.daysOfWeek || [],
+				startDate: new Date(),
+				preferredStartTime: "09:00",
+				typicalDuration: duration,
+				priority,
+				isActive: true,
+			});
+		}
 	});
 }

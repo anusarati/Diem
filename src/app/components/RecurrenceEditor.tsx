@@ -15,13 +15,18 @@ export type RecurrencePattern = {
 };
 
 type Props = {
-	pattern: RecurrencePattern;
-	setPattern: (pattern: RecurrencePattern) => void;
+	value: RecurrencePattern;
+	onChange: (pattern: RecurrencePattern) => void;
 };
 
-export function RecurrenceEditor({ pattern, setPattern }: Props) {
+export function RecurrenceEditor({ value, onChange: setPattern }: Props) {
+	const pattern = value || {
+		frequency: "DAILY",
+		interval: 1,
+		daysOfWeek: [],
+	};
 	const frequencies: Frequency[] = ["DAILY", "WEEKLY", "MONTHLY"];
-	const daysOfWeekLabels = ["S", "M", "T", "W", "T", "F", "S"];
+	const daysOfWeekLabels = ["S", "M", "T", "W", "Th", "F", "Sa"];
 
 	const toggleDay = (dayIndex: number) => {
 		const currentDays = pattern.daysOfWeek || [];

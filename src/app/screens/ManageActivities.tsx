@@ -81,7 +81,7 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 	const handleSaveActivity = async (data: ActivityFormData) => {
 		const priorityValue =
 			data.priority === "high" ? 3 : data.priority === "medium" ? 2 : 1;
-		const durationValue = parseInt(data.duration as any, 10) || 30;
+		const durationValue = parseInt(String(data.duration), 10) || 30;
 		const isReplaceableValue = data.replaceabilityStatus === "SOFT";
 		const categoryIdValue = data.category || "Other";
 
@@ -93,6 +93,8 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 					priority: priorityValue,
 					defaultDuration: durationValue,
 					isReplaceable: isReplaceableValue,
+					isRecurring: data.isRecurring,
+					recurrencePattern: data.recurrencePattern,
 				});
 			} else {
 				await createActivityGlobal(
@@ -101,6 +103,8 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 					priorityValue,
 					durationValue,
 					isReplaceableValue,
+					data.isRecurring,
+					data.recurrencePattern,
 				);
 			}
 			setEditModalVisible(false);
@@ -192,6 +196,8 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 												replaceabilityStatus: selectedActivity.isReplaceable
 													? "SOFT"
 													: "HARD",
+												isRecurring: selectedActivity.isRecurring,
+												recurrencePattern: selectedActivity.recurrencePattern,
 											}
 										: undefined
 								}

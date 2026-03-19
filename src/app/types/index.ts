@@ -21,7 +21,7 @@ export type UserSettings = {
 export type ActivityCategory = string;
 export type ScheduledActivity = ScheduledEventEntity;
 
-export type { ActivityItem } from "./activity";
+export type { ActivityItem, RecurrencePattern } from "./activity";
 export type {
 	ActivityBreakdownItem,
 	CategoryHeatmapOption,

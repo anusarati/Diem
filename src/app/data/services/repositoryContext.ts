@@ -8,6 +8,7 @@ import {
 	HeuristicNetPairRepository,
 	HistoryRepository,
 	MarkovTransitionRepository,
+	RecurringActivityRepository,
 	ScheduleRepository,
 	UserBehaviorRepository,
 	UserRepository,
@@ -31,6 +32,7 @@ export interface RepoBundle {
 	hnetPair: HeuristicNetPairRepository;
 	markov: MarkovTransitionRepository;
 	frequencyEma: FrequencyEmaStateRepository;
+	recurringActivity: RecurringActivityRepository;
 }
 
 export function makeRepositories(scope: string): RepoBundle {
@@ -47,6 +49,7 @@ export function makeRepositories(scope: string): RepoBundle {
 		hnetPair: new HeuristicNetPairRepository(database),
 		markov: new MarkovTransitionRepository(database),
 		frequencyEma: new FrequencyEmaStateRepository(database),
+		recurringActivity: new RecurringActivityRepository(database),
 	};
 }
 
