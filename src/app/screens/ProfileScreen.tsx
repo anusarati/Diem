@@ -21,6 +21,7 @@ import {
 	observeCurrentUserProfileData,
 	saveUserSettings,
 } from "../data/services";
+import { exportData, importData } from "../data/services/backupDataService";
 import { colors, spacing } from "../theme";
 import type { AppRoute, UserSettings } from "../types";
 
@@ -134,6 +135,42 @@ export function ProfileScreen({ onLogout, onNavigate }: Props) {
 					text: "Reset",
 					style: "destructive",
 					onPress: () => setDebugLog((prev) => ["Model reset!", ...prev]),
+				},
+			],
+		);
+	};
+
+	const handleExport = async () => {
+		try {
+			await exportData();
+			setDebugLog((prev) => ["Data exported!", ...prev]);
+		} catch (err) {
+			Alert.alert("Error", `Export failed: ${(err as Error).message}`);
+		}
+	};
+
+	const handleImport = () => {
+		Alert.alert(
+			"Import Data",
+			"Are you sure? This will delete all existing data and restore from the backup file.",
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Import & Replace",
+					style: "destructive",
+					onPress: async () => {
+						try {
+							const result = await importData();
+							if (result.success) {
+								Alert.alert("Success", result.message);
+								setDebugLog((prev) => ["Data imported!", ...prev]);
+							} else {
+								Alert.alert("Failed", result.message);
+							}
+						} catch (err) {
+							Alert.alert("Error", `Import failed: ${(err as Error).message}`);
+						}
+					},
 				},
 			],
 		);
@@ -257,6 +294,31 @@ export function ProfileScreen({ onLogout, onNavigate }: Props) {
 							onPress={resetModel}
 							style={{ marginTop: spacing.md, alignSelf: "flex-start" }}
 						/>
+					</View>
+				</View>
+
+				<View style={styles.section}>
+					<Text style={styles.sectionTitle}>Data Backup & Restore</Text>
+					<View style={styles.card}>
+						<Text style={styles.cardText}>
+							Export your database for safe backup, or import an existing backup
+							file. This will replace the current data.
+						</Text>
+						<View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
+							<Button
+								label="Export Data"
+								icon="📤"
+								onPress={handleExport}
+								style={{ flex: 1 }}
+							/>
+							<Button
+								label="Import Data"
+								icon="📥"
+								variant="danger"
+								onPress={handleImport}
+								style={{ flex: 1 }}
+							/>
+						</View>
 					</View>
 				</View>
 
