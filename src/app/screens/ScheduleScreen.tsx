@@ -243,7 +243,9 @@ const getMonday = (d: Date) => {
 	d = new Date(d);
 	const day = d.getDay();
 	const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-	return new Date(d.setDate(diff));
+	const result = new Date(d.setDate(diff));
+	result.setHours(0, 0, 0, 0);
+	return result;
 };
 
 export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
@@ -577,7 +579,14 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		}
 	};
 
-	const handleDoublePress = (time: string) => {
+	const handleDoublePress = (arg1: number | string, arg2?: string) => {
+		let time = "";
+		if (typeof arg1 === "number") {
+			setSelectedDay(DAYS[arg1]);
+			time = arg2 || "09:00";
+		} else {
+			time = arg1;
+		}
 		setInitialTime(time);
 		setEditingActivity(null);
 		setIsQuickAddOpen(true);

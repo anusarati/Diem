@@ -29,7 +29,7 @@ interface WeeklyViewProps {
 	onActivityPress?: (id: string) => void;
 	onActivityDoublePress?: (id: string) => void;
 	onDayPress?: (dayIndex: number) => void;
-	onEmptyDoublePress?: (time: string) => void;
+	onEmptyDoublePress?: (dayIndex: number, time: string) => void;
 	weekStartDate?: Date;
 	onUpdateActivity?: (id: string, day: string, newStartTime: string) => void;
 }
@@ -399,7 +399,7 @@ export function WeeklyView({
 
 			if (dayIdx >= 0 && dayIdx < 7 && h >= startHour && h <= endHour) {
 				const timeString = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
-				if (onEmptyDoublePress) runOnJS(onEmptyDoublePress)(timeString);
+				if (onEmptyDoublePress) runOnJS(onEmptyDoublePress)(dayIdx, timeString);
 			}
 		});
 
