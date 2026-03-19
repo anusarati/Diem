@@ -17,6 +17,7 @@ import {
 import {
 	ActivitySource,
 	EventStatus,
+	RecurrenceFrequency,
 	Replaceability,
 } from "../../types/domain";
 import { ACTIVITY_CATEGORIES, matchCategoryFromText } from "./categories";
@@ -40,6 +41,7 @@ export interface IcsParsedEvent {
 	activityUid?: string;
 	status?: string;
 	rrule?: string;
+	originalRrule?: string;
 }
 
 /**
@@ -142,14 +144,7 @@ function parseIcsDateTime(value: string): Date {
  * Expand a recurring event into individual instances within a range.
  * Currently supports FREQ=WEEKLY with BYDAY.
  */
-function expandRecurringEvents(
-	event: IcsParsedEvent,
-	rangeStart: Date,
-	rangeEnd: Date,
-): IcsParsedEvent[] {
-	if (!event.rrule) return [event];
-
-	const rrule = event.rrule;
+function parseRrule(rrule: string) {
 	const parts = rrule.split(";").reduce(
 		(acc, p) => {
 			const [k, v] = p.split("=");
@@ -159,9 +154,6 @@ function expandRecurringEvents(
 		{} as Record<string, string>,
 	);
 
-	if (parts.FREQ !== "WEEKLY") return [event];
-
-	const byDay = parts.BYDAY ? parts.BYDAY.split(",") : [];
 	const dayMap: Record<string, number> = {
 		MO: 1,
 		TU: 2,
@@ -171,14 +163,41 @@ function expandRecurringEvents(
 		SA: 6,
 		SU: 0,
 	};
-	const targetDays = byDay.map((d) => dayMap[d]).filter((d) => d !== undefined);
+
+	let frequency = RecurrenceFrequency.WEEKLY;
+	if (parts.FREQ === "DAILY") frequency = RecurrenceFrequency.DAILY;
+	if (parts.FREQ === "MONTHLY") frequency = RecurrenceFrequency.MONTHLY;
+
+	const interval = parseInt(parts.INTERVAL || "1", 10);
+	const byDay = parts.BYDAY ? parts.BYDAY.split(",") : [];
+	const daysOfWeek = byDay.map((d) => dayMap[d]).filter((d) => d !== undefined);
+
+	return {
+		parts,
+		frequency,
+		interval,
+		daysOfWeek,
+		until: parts.UNTIL ? parseIcsDateTime(parts.UNTIL) : null,
+	};
+}
+
+function expandRecurringEvents(
+	event: IcsParsedEvent,
+	rangeStart: Date,
+	rangeEnd: Date,
+): IcsParsedEvent[] {
+	if (!event.rrule) return [event];
+
+	const rrule = event.rrule;
+	const { parts, interval, daysOfWeek, until: rruleUntil } = parseRrule(rrule);
+
+	if (parts.FREQ !== "WEEKLY") return [event];
+
+	const targetDays = daysOfWeek;
 
 	let until = rangeEnd;
-	if (parts.UNTIL) {
-		const parsedUntil = parseIcsDateTime(parts.UNTIL);
-		if (!Number.isNaN(parsedUntil.getTime()) && parsedUntil < until) {
-			until = parsedUntil;
-		}
+	if (rruleUntil && rruleUntil < until) {
+		until = rruleUntil;
 	}
 
 	const duration = event.end.getTime() - event.start.getTime();
@@ -188,7 +207,12 @@ function expandRecurringEvents(
 	const startDay = event.start.getDay();
 	if (targetDays.length === 0 || targetDays.includes(startDay)) {
 		if (event.start >= rangeStart && event.start <= until) {
-			instances.push({ ...event, rrule: undefined, activityUid: event.uid });
+			instances.push({
+				...event,
+				rrule: undefined,
+				activityUid: event.uid,
+				originalRrule: event.rrule,
+			});
 		}
 	}
 
@@ -212,6 +236,7 @@ function expandRecurringEvents(
 					end,
 					uid: `${event.uid}_${timestamp}`,
 					activityUid: event.uid,
+					originalRrule: event.rrule,
 					rrule: undefined,
 				});
 			}
@@ -365,6 +390,40 @@ export async function importFromIcs(
 				color: DEFAULT_ACTIVITY_COLOR,
 				createdAt: ev.start,
 			});
+
+			if (ev.activityUid && ev.originalRrule) {
+				const { frequency, interval, daysOfWeek } = parseRrule(
+					ev.originalRrule,
+				);
+				await repos.recurringActivity.create({
+					templateId: eventActivityId,
+					categoryId: safeCategoryId,
+					title: ev.title,
+					frequency,
+					interval,
+					daysOfWeek,
+					startDate: ev.start,
+					preferredStartTime: ev.start.toTimeString().slice(0, 5),
+					typicalDuration: duration,
+					priority: DEFAULT_PRIORITY,
+					isActive: true,
+				});
+			} else if (ev.activityUid) {
+				// Fallback for non-rrule repetition if ever needed
+				await repos.recurringActivity.create({
+					templateId: eventActivityId,
+					categoryId: safeCategoryId,
+					title: ev.title,
+					frequency: RecurrenceFrequency.WEEKLY,
+					interval: 1,
+					daysOfWeek: [],
+					startDate: ev.start,
+					preferredStartTime: ev.start.toTimeString().slice(0, 5),
+					typicalDuration: duration,
+					priority: DEFAULT_PRIORITY,
+					isActive: true,
+				});
+			}
 
 			if (isPast) {
 				const writeService = new HistoryWriteService(repos.database);

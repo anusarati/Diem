@@ -339,8 +339,8 @@ export function ActivityForm({
 
 			{isRecurring && (
 				<RecurrenceEditor
-					pattern={recurrencePattern}
-					setPattern={(v) => setValue("recurrencePattern", v)}
+					value={recurrencePattern}
+					onChange={(v) => setValue("recurrencePattern", v)}
 				/>
 			)}
 

@@ -5,6 +5,7 @@ export * from "./HeuristicNetArcRepository";
 export * from "./HeuristicNetPairRepository";
 export * from "./HistoryRepository";
 export * from "./MarkovTransitionRepository";
+export * from "./RecurringActivityRepository";
 export * from "./ScheduleRepository";
 export * from "./UserBehaviorRepository";
 export * from "./UserRepository";
