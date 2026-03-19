@@ -1,12 +1,12 @@
 import { useRef, useState } from "react";
 import {
 	Animated,
-	type LayoutChangeEvent,
 	PanResponder,
 	Pressable,
 	ScrollView,
 	StyleSheet,
 	Text,
+	useWindowDimensions,
 	View,
 } from "react-native";
 import { NowIndicator } from "../../features/timeline/components/NowIndicator";
@@ -26,8 +26,9 @@ interface WeeklyViewProps {
 }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const HOUR_HEIGHT = 40;
+const HOUR_HEIGHT = 80;
 const TIME_COL_WIDTH = 50;
+const MIN_COLUMN_WIDTH = 120;
 
 interface DraggableWeeklyBlockProps extends Omit<TimeBlockProps, "onPress"> {
 	top: number;
@@ -150,7 +151,7 @@ function DraggableWeeklyBlock({
 				left: left,
 				top: top,
 				width: width - 4, // padding
-				height: Math.max(height - 2, 16),
+				height: Math.max(height, 20),
 				backgroundColor: isPredicted
 					? `${props.categoryColor || colors.primary}20`
 					: props.categoryColor || colors.primary,
@@ -191,6 +192,8 @@ function DraggableWeeklyBlock({
 						lineHeight: height <= 20 ? 10 : 12,
 					}}
 					numberOfLines={1}
+					adjustsFontSizeToFit
+					minimumFontScale={0.6}
 				>
 					{props.title}
 				</Text>
@@ -214,14 +217,13 @@ export function WeeklyView({
 		{ length: endHour - startHour + 1 },
 		(_, i) => startHour + i,
 	);
-	const [scrollingEnabled, setScrollingEnabled] = useState(true);
-	const [columnWidth, setColumnWidth] = useState(0);
 
-	const handleLayout = (event: LayoutChangeEvent) => {
-		const { width } = event.nativeEvent.layout;
-		// Divide total width by 7 days
-		setColumnWidth(width / 7);
-	};
+	const { width: windowWidth } = useWindowDimensions();
+	const weekViewWidth = Math.max(windowWidth - TIME_COL_WIDTH, 0);
+	const columnWidth = Math.max(weekViewWidth / 7, MIN_COLUMN_WIDTH);
+	const contentWidth = columnWidth * 7;
+
+	const [scrollingEnabled, setScrollingEnabled] = useState(true);
 
 	const getPosition = (
 		day: string,
@@ -245,12 +247,73 @@ export function WeeklyView({
 		return { top, height, left };
 	};
 
+	const headerScrollRef = useRef<ScrollView | null>(null);
+	const bodyScrollRef = useRef<ScrollView | null>(null);
+	const isSyncingScroll = useRef(false);
+
+	const syncHorizontalScroll = (x: number, source: "header" | "body") => {
+		if (isSyncingScroll.current) return;
+		isSyncingScroll.current = true;
+
+		const target =
+			source === "header" ? bodyScrollRef.current : headerScrollRef.current;
+		target?.scrollTo({ x, animated: false });
+
+		requestAnimationFrame(() => {
+			isSyncingScroll.current = false;
+		});
+	};
+
 	return (
 		<ScrollView
 			style={styles.container}
 			contentContainerStyle={styles.contentContainer}
 			scrollEnabled={scrollingEnabled}
+			stickyHeaderIndices={[0]}
 		>
+			{/* Header Row (sticks to top while vertical scrolling) */}
+			<View style={styles.stickyHeaderRow}>
+				<View
+					style={{
+						width: TIME_COL_WIDTH,
+						backgroundColor: colors.backgroundLight,
+					}}
+				/>
+				<ScrollView
+					ref={headerScrollRef}
+					horizontal
+					showsHorizontalScrollIndicator
+					scrollEventThrottle={16}
+					onScroll={(e) =>
+						syncHorizontalScroll(e.nativeEvent.contentOffset.x, "header")
+					}
+					contentContainerStyle={{ width: contentWidth }}
+					style={{ flex: 1 }}
+				>
+					<View style={{ flexDirection: "row", height: 40 }}>
+						{DAYS.map((day, index) => {
+							const date = new Date(weekStartDate);
+							date.setDate(weekStartDate.getDate() + index);
+							const dateString = date.toLocaleDateString("en-US", {
+								month: "short",
+								day: "numeric",
+							});
+							return (
+								<Pressable
+									key={day}
+									style={[styles.dayHeaderCell, { width: columnWidth }]}
+									onPress={() => onDayPress?.(index)}
+								>
+									<Text style={styles.dayHeader}>{day}</Text>
+									<Text style={styles.dateHeader}>{dateString}</Text>
+								</Pressable>
+							);
+						})}
+					</View>
+				</ScrollView>
+			</View>
+
+			{/* Grid Area */}
 			<View style={styles.row}>
 				{/* Time Labels Column */}
 				<View style={[styles.timeColumn, { width: TIME_COL_WIDTH }]}>
@@ -275,141 +338,135 @@ export function WeeklyView({
 				</View>
 
 				{/* Main Grid Container */}
-				<View style={{ flex: 1 }}>
-					{/* Header Row */}
-					<View style={{ flexDirection: "row", height: 40 }}>
-						{DAYS.map((day, index) => {
-							const date = new Date(weekStartDate);
-							date.setDate(weekStartDate.getDate() + index);
-							const dateString = date.toLocaleDateString("en-US", {
-								month: "short",
-								day: "numeric",
-							});
-							return (
-								<Pressable
-									key={day}
-									style={styles.dayHeaderCell}
-									onPress={() => onDayPress?.(index)}
-								>
-									<Text style={styles.dayHeader}>{day}</Text>
-									<Text style={styles.dateHeader}>{dateString}</Text>
-								</Pressable>
-							);
-						})}
-					</View>
+				<ScrollView
+					ref={bodyScrollRef}
+					horizontal
+					nestedScrollEnabled
+					showsHorizontalScrollIndicator
+					style={{ flex: 1 }}
+					scrollEventThrottle={16}
+					onScroll={(e) =>
+						syncHorizontalScroll(e.nativeEvent.contentOffset.x, "body")
+					}
+					contentContainerStyle={{ width: contentWidth }}
+				>
+					<View style={{ width: contentWidth }}>
+						{/* Grid Lines Area */}
+						<View style={{ position: "relative" }}>
+							<Pressable
+								style={StyleSheet.absoluteFill}
+								onPress={(event) => {
+									const { locationY } = event.nativeEvent;
+									const hour = Math.floor(locationY / HOUR_HEIGHT) + startHour;
+									const minutes = Math.floor(
+										((locationY % HOUR_HEIGHT) / HOUR_HEIGHT) * 60,
+									);
+									const timeString = `${hour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 
-					{/* Grid Lines Area */}
-					<View style={{ position: "relative" }} onLayout={handleLayout}>
-						<Pressable
-							style={StyleSheet.absoluteFill}
-							onPress={(event) => {
-								const { locationY } = event.nativeEvent;
-								const hour = Math.floor(locationY / HOUR_HEIGHT) + startHour;
-								const minutes = Math.floor(
-									((locationY % HOUR_HEIGHT) / HOUR_HEIGHT) * 60,
-								);
-								const timeString = `${hour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-
-								// Simple double press detection for web/native
-								const now = Date.now();
-								if (
-									// @ts-expect-error - using ref-like behavior via local-scoped var for brevity in replacement
-									global._lastWeeklyPress &&
+									// Simple double press detection for web/native
+									const now = Date.now();
+									if (
+										// @ts-expect-error - using ref-like behavior via local-scoped var for brevity in replacement
+										global._lastWeeklyPress &&
+										// @ts-expect-error
+										now - global._lastWeeklyPress < 500
+									) {
+										onEmptyDoublePress?.(timeString);
+									}
 									// @ts-expect-error
-									now - global._lastWeeklyPress < 500
-								) {
-									onEmptyDoublePress?.(timeString);
-								}
-								// @ts-expect-error
-								global._lastWeeklyPress = now;
-							}}
-						/>
-						{/* Background Grid */}
-						<View
-							style={{
-								flexDirection: "row",
-								position: "absolute",
-								top: 0,
-								left: 0,
-								right: 0,
-								bottom: 0,
-							}}
-						>
-							{DAYS.map((day) => (
-								<View key={day} style={styles.dayColumnLine}>
-									{hours.map((h) => (
-										<View
-											key={h}
-											style={[styles.gridCell, { height: HOUR_HEIGHT }]}
+									global._lastWeeklyPress = now;
+								}}
+							/>
+							{/* Background Grid */}
+							<View
+								style={{
+									flexDirection: "row",
+									position: "absolute",
+									top: 0,
+									left: 0,
+									width: contentWidth,
+									bottom: 0,
+								}}
+							>
+								{DAYS.map((day) => (
+									<View
+										key={day}
+										style={[styles.dayColumnLine, { width: columnWidth }]}
+									>
+										{hours.map((h) => (
+											<View
+												key={h}
+												style={[styles.gridCell, { height: HOUR_HEIGHT }]}
+											/>
+										))}
+									</View>
+								))}
+							</View>
+
+							{/* Ghost logic to ensure height matches content */}
+							<View style={{ opacity: 0 }}>
+								{hours.map((h) => (
+									<View key={h} style={{ height: HOUR_HEIGHT }} />
+								))}
+							</View>
+
+							{/* Activities Layer */}
+							{columnWidth > 0 &&
+								activities.map((activity) => {
+									const pos = getPosition(
+										activity.day || "Mon",
+										activity.startTime,
+										activity.durationMinutes,
+									);
+									if (!pos) return null;
+
+									return (
+										<DraggableWeeklyBlock
+											key={activity.id + activity.startTime + activity.day}
+											{...activity}
+											top={pos.top}
+											height={pos.height}
+											left={pos.left}
+											width={columnWidth}
+											columnWidth={columnWidth}
+											startHour={startHour}
+											endHour={endHour}
+											onPress={() => onActivityPress?.(activity.id)}
+											onDoublePress={() => onActivityDoublePress?.(activity.id)}
+											onUpdate={(id, d, t) => onUpdateActivity?.(id, d, t)}
+											onDragStateChange={(isDragging) =>
+												setScrollingEnabled(!isDragging)
+											}
 										/>
-									))}
-								</View>
-							))}
+									);
+								})}
+
+							{/* Now Indicator */}
+							{(() => {
+								const now = new Date();
+								// Find if 'now' is within the week range [weekStartDate, weekStartDate + 7]
+								const start = new Date(weekStartDate);
+								start.setHours(0, 0, 0, 0);
+								const end = new Date(start);
+								end.setDate(start.getDate() + 7);
+
+								if (now >= start && now < end) {
+									const dayIndex = (now.getDay() + 6) % 7; // 0=Mon, 6=Sun
+									const left = dayIndex * columnWidth;
+									return (
+										<NowIndicator
+											hourHeight={HOUR_HEIGHT}
+											startHour={startHour}
+											width={columnWidth}
+											left={left}
+										/>
+									);
+								}
+								return null;
+							})()}
 						</View>
-
-						{/* Ghost logic to ensure height matches content */}
-						<View style={{ opacity: 0 }}>
-							{hours.map((h) => (
-								<View key={h} style={{ height: HOUR_HEIGHT }} />
-							))}
-						</View>
-
-						{/* Activities Layer */}
-						{columnWidth > 0 &&
-							activities.map((activity) => {
-								const pos = getPosition(
-									activity.day || "Mon",
-									activity.startTime,
-									activity.durationMinutes,
-								);
-								if (!pos) return null;
-
-								return (
-									<DraggableWeeklyBlock
-										key={activity.id + activity.startTime + activity.day}
-										{...activity}
-										top={pos.top}
-										height={pos.height}
-										left={pos.left}
-										width={columnWidth}
-										columnWidth={columnWidth}
-										startHour={startHour}
-										endHour={endHour}
-										onPress={() => onActivityPress?.(activity.id)}
-										onDoublePress={() => onActivityDoublePress?.(activity.id)}
-										onUpdate={(id, d, t) => onUpdateActivity?.(id, d, t)}
-										onDragStateChange={(isDragging) =>
-											setScrollingEnabled(!isDragging)
-										}
-									/>
-								);
-							})}
-
-						{/* Now Indicator */}
-						{(() => {
-							const now = new Date();
-							// Find if 'now' is within the week range [weekStartDate, weekStartDate + 7]
-							const start = new Date(weekStartDate);
-							start.setHours(0, 0, 0, 0);
-							const end = new Date(start);
-							end.setDate(start.getDate() + 7);
-
-							if (now >= start && now < end) {
-								const dayIndex = (now.getDay() + 6) % 7; // 0=Mon, 6=Sun
-								const left = dayIndex * columnWidth;
-								return (
-									<NowIndicator
-										hourHeight={HOUR_HEIGHT}
-										startHour={startHour}
-										width={columnWidth}
-										left={left}
-									/>
-								);
-							}
-							return null;
-						})()}
 					</View>
-				</View>
+				</ScrollView>
 			</View>
 		</ScrollView>
 	);
@@ -419,6 +476,14 @@ const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: colors.backgroundLight },
 	contentContainer: { paddingBottom: 100, paddingTop: spacing.md },
 	row: { flexDirection: "row" },
+	stickyHeaderRow: {
+		flexDirection: "row",
+		height: 40,
+		backgroundColor: colors.backgroundLight,
+		borderBottomWidth: 1,
+		borderBottomColor: colors.slate200,
+		zIndex: 10,
+	},
 	timeColumn: {
 		width: 30,
 		marginTop: 0, // Reset margin since we handle spacing manually
@@ -431,7 +496,6 @@ const styles = StyleSheet.create({
 		transform: [{ translateY: -6 }],
 	},
 	dayHeaderCell: {
-		flex: 1,
 		alignItems: "center",
 		justifyContent: "center",
 		borderBottomWidth: 1,
@@ -451,7 +515,6 @@ const styles = StyleSheet.create({
 		marginTop: 2,
 	},
 	dayColumnLine: {
-		flex: 1,
 		borderLeftWidth: 1,
 		borderLeftColor: colors.slate100,
 	},
