@@ -1,3 +1,5 @@
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Alert,
@@ -652,13 +654,12 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		// Native: use expo-document-picker + expo-file-system
 		(async () => {
 			try {
-				const DocumentPicker = (await import("expo-document-picker")).default;
-				const FileSystem = await import("expo-file-system/legacy");
 				const result = await DocumentPicker.getDocumentAsync({
 					type: ["text/calendar", "application/octet-stream"],
 					copyToCacheDirectory: true,
 				});
 				if (result.canceled || !result.assets?.[0]?.uri) return;
+
 				const content = await FileSystem.readAsStringAsync(
 					result.assets[0].uri,
 					{ encoding: FileSystem.EncodingType.UTF8 },
