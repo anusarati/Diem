@@ -21,6 +21,7 @@ import {
 	Replaceability,
 } from "../../types/domain";
 import { ACTIVITY_CATEGORIES, matchCategoryFromText } from "./categories";
+import { rebuildMarkovTransitionCountsFromHistory } from "./services/markovService";
 import {
 	currentTimeZone,
 	DEFAULT_ACTIVITY_COLOR,
@@ -38,7 +39,14 @@ export interface IcsParsedEvent {
 	end: Date;
 	title: string;
 	uid: string;
-	activityUid?: string;
+	/**
+	 * Stable identifier for recurring event *series* so analytics can group
+	 * occurrences as the same logical activity.
+	 *
+	 * `uid` stays unique per expanded occurrence and is used as `externalId`
+	 * for schedule deduplication.
+	 */
+	seriesUid?: string;
 	status?: string;
 	rrule?: string;
 	originalRrule?: string;
@@ -209,8 +217,8 @@ function expandRecurringEvents(
 		if (event.start >= rangeStart && event.start <= until) {
 			instances.push({
 				...event,
+				seriesUid: event.seriesUid ?? event.uid,
 				rrule: undefined,
-				activityUid: event.uid,
 				originalRrule: event.rrule,
 			});
 		}
@@ -235,7 +243,7 @@ function expandRecurringEvents(
 					start,
 					end,
 					uid: `${event.uid}_${timestamp}`,
-					activityUid: event.uid,
+					seriesUid: event.seriesUid ?? event.uid,
 					originalRrule: event.rrule,
 					rrule: undefined,
 				});
@@ -314,15 +322,10 @@ export async function importFromIcs(
 		}
 	}
 
+	const writeService = new HistoryWriteService(repos.database);
 	for (const ev of expandedEvents) {
 		if (ev.status?.toUpperCase() === "CANCELLED") {
 			cancelled += 1;
-			continue;
-		}
-
-		const existing = await repos.schedule.findByExternalId(ev.uid);
-		if (existing) {
-			skipped += 1;
 			continue;
 		}
 
@@ -355,32 +358,20 @@ export async function importFromIcs(
 		const now = new Date();
 		const isPast = ev.end <= now;
 
-		if (isPast && status === EventStatus.CONFIRMED) {
+		// If the occurrence has already ended, treat it as completed for
+		// analytics (Markov/causal net), regardless of what the ICS marked it
+		// as (CONFIRMED/TENTATIVE/PREDICTED/etc.).
+		if (isPast) {
 			status = EventStatus.COMPLETED;
 		}
 
-		await repos.schedule.create({
-			activityId,
-			categoryId: safeCategoryId,
-			title: ev.title,
-			startTime: ev.start,
-			endTime: ev.end,
-			duration,
-			status: status,
-			replaceabilityStatus: replaceability,
-			priority: DEFAULT_PRIORITY,
-			isRecurring: false,
-			source: ActivitySource.EXTERNAL_IMPORT,
-			isLocked: false,
-			createdAt: now,
-			updatedAt: now,
-			externalId: ev.uid,
-		});
-
-		const eventActivityId = `${ICS_ACTIVITY_ID_PREFIX}${ev.activityUid || ev.uid}`;
-		let eventActivity = await repos.activity.findById(eventActivityId);
+		const seriesUid = ev.seriesUid ?? ev.uid;
+		const eventActivityId = `${ICS_ACTIVITY_ID_PREFIX}${seriesUid}`;
+		// Always ensure the logical activity exists (series-level) so all
+		// occurrences contribute to the same Markov transitions.
+		const eventActivity = await repos.activity.findById(eventActivityId);
 		if (!eventActivity) {
-			eventActivity = await repos.activity.create({
+			await repos.activity.create({
 				id: eventActivityId,
 				categoryId: safeCategoryId,
 				name: ev.title,
@@ -390,44 +381,87 @@ export async function importFromIcs(
 				color: DEFAULT_ACTIVITY_COLOR,
 				createdAt: ev.start,
 			});
+		}
 
-			if (ev.activityUid && ev.originalRrule) {
-				const { frequency, interval, daysOfWeek } = parseRrule(
-					ev.originalRrule,
-				);
-				await repos.recurringActivity.create({
-					templateId: eventActivityId,
-					categoryId: safeCategoryId,
-					title: ev.title,
-					frequency,
-					interval,
-					daysOfWeek,
-					startDate: ev.start,
-					preferredStartTime: ev.start.toTimeString().slice(0, 5),
-					typicalDuration: duration,
-					priority: DEFAULT_PRIORITY,
-					isActive: true,
-				});
-			} else if (ev.activityUid) {
-				// Fallback for non-rrule repetition if ever needed
-				await repos.recurringActivity.create({
-					templateId: eventActivityId,
-					categoryId: safeCategoryId,
-					title: ev.title,
-					frequency: RecurrenceFrequency.WEEKLY,
-					interval: 1,
-					daysOfWeek: [],
-					startDate: ev.start,
-					preferredStartTime: ev.start.toTimeString().slice(0, 5),
-					typicalDuration: duration,
-					priority: DEFAULT_PRIORITY,
-					isActive: true,
+		if (ev.seriesUid && ev.originalRrule) {
+			const { frequency, interval, daysOfWeek } = parseRrule(ev.originalRrule);
+			await repos.recurringActivity.create({
+				templateId: eventActivityId,
+				categoryId: safeCategoryId,
+				title: ev.title,
+				frequency,
+				interval,
+				daysOfWeek,
+				startDate: ev.start,
+				preferredStartTime: ev.start.toTimeString().slice(0, 5),
+				typicalDuration: duration,
+				priority: DEFAULT_PRIORITY,
+				isActive: true,
+			});
+		} else if (ev.seriesUid) {
+			// Fallback for non-rrule repetition if ever needed
+			await repos.recurringActivity.create({
+				templateId: eventActivityId,
+				categoryId: safeCategoryId,
+				title: ev.title,
+				frequency: RecurrenceFrequency.WEEKLY,
+				interval: 1,
+				daysOfWeek: [],
+				startDate: ev.start,
+				preferredStartTime: ev.start.toTimeString().slice(0, 5),
+				typicalDuration: duration,
+				priority: DEFAULT_PRIORITY,
+				isActive: true,
+			});
+		}
+
+		// Create schedule occurrence if missing; otherwise keep it (but we still
+		// may need to update history / markov inputs).
+		const existingSchedule = await repos.schedule.findByExternalId(ev.uid);
+		if (!existingSchedule) {
+			await repos.schedule.create({
+				activityId,
+				categoryId: safeCategoryId,
+				title: ev.title,
+				startTime: ev.start,
+				endTime: ev.end,
+				duration,
+				status,
+				replaceabilityStatus: replaceability,
+				priority: DEFAULT_PRIORITY,
+				isRecurring: false,
+				source: ActivitySource.EXTERNAL_IMPORT,
+				isLocked: false,
+				createdAt: now,
+				updatedAt: now,
+				externalId: ev.uid,
+			});
+			imported += 1;
+		} else {
+			// If time has moved forward since the last import, sync completion
+			// status so analytics based on schedule.status stay accurate.
+			if (existingSchedule.status !== status) {
+				await repos.schedule.update(existingSchedule.id, {
+					status,
+					updatedAt: now,
 				});
 			}
+			skipped += 1;
+		}
 
-			if (isPast) {
-				const writeService = new HistoryWriteService(repos.database);
+		// Ensure history row exists for this occurrence (idempotent),
+		// and mark it completed if the occurrence is in the past.
+		const existingHistory =
+			await repos.history.findForActivityAndPredictedStartTime(
+				eventActivityId,
+				ev.start,
+			);
+
+		if (status === EventStatus.COMPLETED) {
+			const wasCompleted = existingHistory?.wasCompleted ?? false;
+			if (!wasCompleted) {
 				await writeService.recordCompletion({
+					historyId: existingHistory?.id,
 					activityId: eventActivityId,
 					predictedStartTime: ev.start,
 					predictedDuration: duration,
@@ -442,20 +476,18 @@ export async function importFromIcs(
 					startTime: ev.start,
 					durationMinutes: duration,
 				});
-			} else {
-				await repos.history.create({
-					activityId: eventActivityId,
-					predictedStartTime: ev.start,
-					predictedDuration: duration,
-					wasCompleted: false,
-					wasSkipped: false,
-					wasReplaced: false,
-					createdAt: ev.start,
-				});
 			}
+		} else if (!existingHistory) {
+			await repos.history.create({
+				activityId: eventActivityId,
+				predictedStartTime: ev.start,
+				predictedDuration: duration,
+				wasCompleted: false,
+				wasSkipped: false,
+				wasReplaced: false,
+				createdAt: ev.start,
+			});
 		}
-
-		imported += 1;
 	}
 
 	if (newlyCompletedEvents.length > 0) {
@@ -475,6 +507,15 @@ export async function importFromIcs(
 			new HeuristicNetArcRepository(repos.database),
 			new HeuristicNetPairRepository(repos.database),
 		);
+
+		// Ensure derived transition counts match the latest completion history
+		// (important for recurring instances and for schema/logic changes).
+		await rebuildMarkovTransitionCountsFromHistory(repos, {
+			// iCal schedules can have longer gaps between consecutive events
+			// than our default Markov window; use a slightly more forgiving
+			// gap tolerance so recurring sequences are visible in the causal net.
+			gapToleranceSlots: 6,
+		});
 	}
 
 	return { imported, skipped, cancelled };

@@ -11,7 +11,7 @@ export interface SolveOptions {
 	timeLimitMs?: number;
 }
 
-const DEFAULT_MAX_GENERATIONS = 60;
+const DEFAULT_MAX_GENERATIONS = 1200;
 const DEFAULT_TIME_LIMIT_MS = 200;
 
 export class NativeScheduler {

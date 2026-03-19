@@ -11,6 +11,7 @@ import type {
 	RecurrencePattern,
 	ScheduledActivity,
 } from "../../types";
+import { rebuildMarkovTransitionCountsFromHistory } from "./markovService";
 import {
 	currentTimeZone,
 	DEFAULT_ACTIVITY_COLOR,
@@ -422,6 +423,7 @@ export async function removeActivity(
 			}
 		});
 		await repositories.activity.remove(activityId);
+		await rebuildMarkovTransitionCountsFromHistory(repositories);
 		return listActivitiesForDateWithRepositories(repositories, date);
 	});
 }
@@ -438,6 +440,7 @@ export async function deleteActivityGlobal(activityId: string): Promise<void> {
 			}
 		});
 		await repositories.activity.remove(activityId);
+		await rebuildMarkovTransitionCountsFromHistory(repositories);
 	});
 }
 

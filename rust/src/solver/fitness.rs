@@ -211,8 +211,7 @@ impl Fitness for DiemFitness {
 
         let mut prev_day = usize::MAX;
         let mut prev_week = usize::MAX;
-        let mut max_end_so_far = 0u16;
-
+        let mut active_ends = Vec::with_capacity(schedule_items.len());
         for i in 0..schedule_items.len() {
             let curr = &schedule_items[i];
             let activity = &self.problem.activities[curr.act_idx];
@@ -235,9 +234,11 @@ impl Fitness for DiemFitness {
             }
 
             // --- B. Overlaps & Markov ---
-            if curr.start < max_end_so_far {
-                penalties += Self::PENALTY_OVERLAP;
+            active_ends.retain(|&end| end > curr.start);
+            if !active_ends.is_empty() {
+                penalties += (active_ends.len() as f32) * Self::PENALTY_OVERLAP;
             }
+
             if i > 0 {
                 let prev = &schedule_items[i - 1];
                 if curr.start >= prev.end && curr.start - prev.end <= Self::MARKOV_GAP_TOLERANCE {
@@ -249,7 +250,7 @@ impl Fitness for DiemFitness {
                     }
                 }
             }
-            max_end_so_far = max_end_so_far.max(curr.end);
+            active_ends.push(curr.end);
 
             // --- C. INPUT BINDINGS (Strictly Before) ---
             for binding in &activity.input_bindings {
@@ -1353,6 +1354,63 @@ mod tests {
         assert!(
             score_abc < score_ab,
             "packing another overlapping activity into the same block must decrease fitness, but instead it increased it!"
+        );
+    }
+
+    #[test]
+    fn overlap_count_stacks_proportionally() {
+        let mut a = base_activity(0);
+        a.duration_slots = 10;
+
+        let mut b = base_activity(1);
+        b.duration_slots = 4;
+
+        let mut c = base_activity(2);
+        c.duration_slots = 4;
+
+        let problem = Problem {
+            activities: vec![a, b, c],
+            floating_indices: vec![0, 1, 2],
+            fixed_indices: vec![],
+            global_constraints: vec![],
+            heatmap: vec![],
+            markov_matrix: vec![],
+            total_slots: 96,
+        };
+
+        let candidate_slots = build_candidate_start_slots(&problem);
+        let genotype = genotype_for(&problem, &candidate_slots);
+
+        // Schedule 1: A at 0 (ends 10), B at 2 (ends 6)
+        // Overlaps = 1 (B with A). Total penalty count = 1.
+        let single_overlap =
+            chromosome_from_assignments(&problem, &candidate_slots, &[(0, 0), (2, 1)]);
+
+        // Schedule 2: A at 0 (ends 10), B at 2 (ends 6), C at 4 (ends 8)
+        // C overlaps with B and with A.
+        // Ideal penalty count = 3 (B with A, C with A, C with B).
+        let triple_overlap =
+            chromosome_from_assignments(&problem, &candidate_slots, &[(0, 0), (2, 1), (4, 2)]);
+
+        let mut fitness = DiemFitness::new(problem.clone(), candidate_slots.clone());
+        let mut fitness_single = fitness.clone();
+        let score_single = fitness_single
+            .calculate_for_chromosome(&single_overlap, &genotype)
+            .expect("fitness should be computed");
+
+        let score_triple = fitness
+            .calculate_for_chromosome(&triple_overlap, &genotype)
+            .expect("fitness should be computed");
+
+        // The penalty for single overlap is 1M.
+        // Penalty for triple should be 3M.
+        // Difference should be 2,000,000 (roughly).
+        // If it only triggers ONCE per item, the diff is only 1,000,000.
+        let penalty_diff = (score_single - score_triple) as f32;
+        assert!(
+            penalty_diff > 1_500_000.0,
+            "Expected scoring penalty to stack proportionally (diff was {} but should represent 2 incremental overlaps)",
+            penalty_diff
         );
     }
 }

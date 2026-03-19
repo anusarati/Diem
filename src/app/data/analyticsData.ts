@@ -258,13 +258,30 @@ export async function buildGoalTimeData(
 		.sort((a, b) => b.completedMinutes - a.completedMinutes);
 }
 
-/** Causal net built from historical markov transitions. */
-export async function buildCausalNet(): Promise<{
+/** Causal net built from historical markov transitions for a timeframe. */
+export async function buildCausalNet(
+	timeframe: "Day" | "Week" | "Month",
+): Promise<{
 	nodes: CausalNetNode[];
 	edges: CausalNetEdge[];
 }> {
 	return withScopedRepositories(async (repositories) => {
-		const transitions = await repositories.markov.listAll();
+		const allTransitions = await repositories.markov.listAll();
+		const now = new Date();
+		const endOfToday = new Date(
+			now.getFullYear(),
+			now.getMonth(),
+			now.getDate() + 1,
+		);
+		const { start: rangeStart, end: rangeEnd } = getRange(timeframe);
+		const cappedEnd = new Date(
+			Math.min(rangeEnd.getTime(), endOfToday.getTime()),
+		);
+		const transitions = allTransitions.filter((t) => {
+			const at = t.lastObservedAt.getTime();
+			return at >= rangeStart.getTime() && at < cappedEnd.getTime();
+		});
+
 		const allActivities = await repositories.activity.listAll();
 		const activityMap = new Map(allActivities.map((a) => [a.id, a.name]));
 
@@ -282,33 +299,72 @@ export async function buildCausalNet(): Promise<{
 			};
 		}
 
-		// Sort by most frequent transitions to avoid an unreadable ball of yarn
-		const sortedEdges = [...transitions]
-			.sort((a, b) => b.count - a.count)
-			.slice(0, 15); // Top 15 transitions
+		// We want variety: if we only take the top-N edges, a few very frequent
+		// activities can dominate and the graph collapses to a small subset.
+		// Instead:
+		// 1) pick top activities by total transition count involving them
+		// 2) keep edges between those activities
+		const MAX_NODES = 12;
+		const MAX_EDGES = 40;
 
-		const activeIds = new Set<string>();
-		for (const edge of sortedEdges) {
-			activeIds.add(edge.fromActivityId);
-			activeIds.add(edge.toActivityId);
+		// Score each activity by total transition counts involving it.
+		const nodeScore = new Map<string, number>();
+		for (const t of transitions) {
+			nodeScore.set(
+				t.fromActivityId,
+				(nodeScore.get(t.fromActivityId) ?? 0) + t.count,
+			);
+			nodeScore.set(
+				t.toActivityId,
+				(nodeScore.get(t.toActivityId) ?? 0) + t.count,
+			);
 		}
 
+		const topNodeIds = [...nodeScore.entries()]
+			.sort((a, b) => b[1] - a[1])
+			.slice(0, MAX_NODES)
+			.map(([id]) => id)
+			.filter((id) => activityMap.has(id));
+
+		// Sort edges by frequency, then keep those connecting top activities.
+		const edges: CausalNetEdge[] = [...transitions]
+			.sort((a, b) => b.count - a.count)
+			.filter(
+				(t) =>
+					topNodeIds.includes(t.fromActivityId) &&
+					topNodeIds.includes(t.toActivityId) &&
+					activityMap.has(t.fromActivityId) &&
+					activityMap.has(t.toActivityId),
+			)
+			.slice(0, MAX_EDGES)
+			.map((t) => ({ from: t.fromActivityId, to: t.toActivityId }));
+
 		const nodes: CausalNetNode[] = [];
-		let index = 0;
-		for (const id of activeIds) {
+		for (let index = 0; index < topNodeIds.length; index++) {
+			const id = topNodeIds[index];
+			const label = activityMap.get(id);
+			if (label === undefined) continue;
 			nodes.push({
 				id,
-				activityLabel: activityMap.get(id) || "Unknown",
+				activityLabel: label,
 				x: 80 + (index % 3) * 110,
 				y: 80 + Math.floor(index / 3) * 60,
 			});
-			index++;
 		}
 
-		const edges: CausalNetEdge[] = sortedEdges.map((t) => ({
-			from: t.fromActivityId,
-			to: t.toActivityId,
-		}));
+		if (nodes.length === 0 || edges.length === 0) {
+			return {
+				nodes: [
+					{
+						id: "placeholder",
+						activityLabel: "Complete activities to see flow",
+						x: 120,
+						y: 80,
+					},
+				],
+				edges: [],
+			};
+		}
 
 		return { nodes, edges };
 	});
@@ -507,7 +563,7 @@ export async function loadAnalyticsData(timeframe: "Day" | "Week" | "Month") {
 	]);
 	const magicHoursDescription = getMagicHoursDescription(magicHours);
 	const { nodes: causalNetNodes, edges: causalNetEdges } =
-		await buildCausalNet();
+		await buildCausalNet(timeframe);
 	return {
 		activityBreakdown,
 		goalTimeData,
