@@ -42,6 +42,7 @@ import {
 	getScheduledActivitiesForWeek,
 	importGoogleCalendar,
 	removeScheduledActivity,
+	toggleScheduledCompletion,
 	updateScheduledActivity,
 } from "../data/services";
 import {
@@ -88,6 +89,8 @@ function entityToTimeBlock(e: ScheduledEventEntity): TimeBlockProps {
 		day,
 		categoryColor: getColorForCategory(e.categoryId),
 		fullDate: e.startTime,
+		completed: e.status === EventStatus.COMPLETED,
+		status: e.status,
 	};
 }
 
@@ -503,6 +506,25 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 			} catch (error) {
 				console.error("Failed to delete activity:", error);
 				Alert.alert("Error", "Failed to delete activity.");
+			}
+		}
+	};
+
+	const toggleComplete = async () => {
+		if (selectedActivityId) {
+			try {
+				const act = activities.find((a) => a.id === selectedActivityId);
+				if (!act) return;
+
+				await toggleScheduledCompletion(
+					selectedActivityId,
+					(act.status as EventStatus) ?? EventStatus.CONFIRMED,
+				);
+				setMenuVisible(false);
+				await loadActivitiesFromDb();
+			} catch (error) {
+				console.error("Failed to toggle complete:", error);
+				Alert.alert("Error", "Failed to toggle completed status.");
 			}
 		}
 	};
@@ -1137,6 +1159,10 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					onClose={() => setMenuVisible(false)}
 					onEdit={startEditing}
 					onDelete={deleteActivity}
+					onComplete={toggleComplete}
+					isCompleted={
+						activities.find((a) => a.id === selectedActivityId)?.completed
+					}
 				/>
 			</View>
 		</SafeAreaView>

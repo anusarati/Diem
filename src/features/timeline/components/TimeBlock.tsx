@@ -18,6 +18,8 @@ export type Activity = {
 	type: BlockVariant;
 	day?: string;
 	categoryColor?: string;
+	completed?: boolean; // ADDED
+	status?: string; // ADDED
 };
 
 type Props = {
@@ -32,7 +34,7 @@ type Props = {
 
 export const TimeBlock = React.memo(
 	({ activity, top, height, width, left, onPress, style }: Props) => {
-		const { title, subtitle, categoryColor, color, type } = activity;
+		const { title, subtitle, categoryColor, color, type, completed } = activity;
 		const displayColor = categoryColor || color || colors.primary;
 
 		const getStyles = () => {
@@ -84,9 +86,10 @@ export const TimeBlock = React.memo(
 						borderColor: variantStyle.borderColor,
 						borderWidth: variantStyle.borderWidth,
 						borderStyle: variantStyle.borderStyle,
-						opacity: variantStyle.opacity,
+						opacity: completed ? 0.65 : variantStyle.opacity,
 						paddingVertical: height <= 45 ? 2 : spacing.sm,
 					},
+					completed && { borderLeftWidth: 4, borderLeftColor: colors.slate400 },
 					style,
 				]}
 			>
@@ -94,10 +97,11 @@ export const TimeBlock = React.memo(
 					style={[
 						styles.title,
 						{ color: textColor, fontSize: height <= 45 ? 12 : 14 },
+						completed && { textDecorationLine: "line-through" },
 					]}
 					numberOfLines={1}
 				>
-					{title}
+					{completed ? `✅ ${title}` : title}
 				</Text>
 				{subtitle && height > 40 && (
 					<Text
