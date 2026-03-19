@@ -448,46 +448,62 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 
 		try {
 			if (editingActivity) {
-				await updateScheduledActivity(editingActivity.id, {
-					title: activityData.title,
-					startTime: start.toISOString(),
-					endTime: end.toISOString(),
-					duration: activityData.duration,
-					replaceabilityStatus:
-						activityData.replaceabilityStatus as Replaceability,
-					priority:
-						activityData.priority === "high"
-							? 3
-							: activityData.priority === "medium"
-								? 2
-								: 1,
-					updatedAt: new Date().toISOString(),
-				});
+				await updateScheduledActivity(
+					editingActivity.id,
+					{
+						title: activityData.title,
+						startTime: start.toISOString(),
+						endTime: end.toISOString(),
+						duration: activityData.duration,
+						replaceabilityStatus:
+							activityData.replaceabilityStatus as Replaceability,
+						priority:
+							activityData.priority === "high"
+								? 3
+								: activityData.priority === "medium"
+									? 2
+									: 1,
+						isRecurring: activityData.isRecurring,
+						updatedAt: new Date().toISOString(),
+					},
+					{
+						recurrencePattern: activityData.isRecurring
+							? (activityData.recurrencePattern as any)
+							: undefined,
+					},
+				);
 				setEditingActivity(null);
 			} else {
-				await addScheduledActivity({
-					activityId: "",
-					categoryId: activityData.category || "Other",
-					title: activityData.title,
-					startTime: start.toISOString(),
-					endTime: end.toISOString(),
-					duration: activityData.duration || 60,
-					status: EventStatus.CONFIRMED,
-					replaceabilityStatus:
-						activityData.replaceabilityStatus as Replaceability,
-					priority:
-						activityData.priority === "high"
-							? 3
-							: activityData.priority === "medium"
-								? 2
-								: 1,
-					isRecurring: activityData.isRecurring,
-					source: ActivitySource.USER_CREATED,
-					isLocked: false,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
-					date: start.toISOString().split("T")[0],
-				});
+				await addScheduledActivity(
+					{
+						activityId: "",
+						categoryId: activityData.category || "Other",
+						title: activityData.title,
+						startTime: start.toISOString(),
+						endTime: end.toISOString(),
+						duration: activityData.duration || 60,
+						status: EventStatus.CONFIRMED,
+						replaceabilityStatus:
+							activityData.replaceabilityStatus as Replaceability,
+						priority:
+							activityData.priority === "high"
+								? 3
+								: activityData.priority === "medium"
+									? 2
+									: 1,
+						isRecurring: activityData.isRecurring,
+						source: ActivitySource.USER_CREATED,
+						isLocked: false,
+						createdAt: new Date().toISOString(),
+						updatedAt: new Date().toISOString(),
+						date: start.toISOString().split("T")[0],
+					},
+					{
+						recurrencePattern: activityData.isRecurring
+							? (activityData.recurrencePattern as any)
+							: undefined,
+					},
+				);
 			}
 			await loadActivitiesFromDb();
 		} catch (error) {
