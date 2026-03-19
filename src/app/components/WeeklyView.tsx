@@ -181,19 +181,19 @@ function DraggableWeeklyBlock({
 				}}
 				style={{ flex: 1 }}
 			>
-				{/* Simple content render if height allows */}
-				{height > 20 && (
-					<Text
-						style={{
-							fontSize: 10,
-							color: isPredicted ? colors.slate600 : "#fff",
-							padding: 2,
-						}}
-						numberOfLines={1}
-					>
-						{props.title}
-					</Text>
-				)}
+				{/* Simple content render */}
+				<Text
+					style={{
+						fontSize: height <= 20 ? 8 : 10,
+						color: isPredicted ? colors.slate600 : "#fff",
+						paddingHorizontal: 2,
+						paddingVertical: height <= 20 ? 0 : 2,
+						lineHeight: height <= 20 ? 10 : 12,
+					}}
+					numberOfLines={1}
+				>
+					{props.title}
+				</Text>
 			</Pressable>
 		</Animated.View>
 	);
