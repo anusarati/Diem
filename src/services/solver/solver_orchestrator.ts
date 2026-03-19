@@ -42,7 +42,7 @@ export class SolverOrchestrator {
 
 		// 3. Solve
 		const results = this.scheduler.solve(built, {
-			maxGenerations: 100,
+			maxGenerations: 1200,
 			timeLimitMs: 500,
 		});
 
