@@ -853,34 +853,52 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 							<Text style={styles.headerTitle}>Schedule</Text>
 							<Text style={styles.date}>{getDisplayedDate()}</Text>
 						</View>
-						{viewMode === "Month" && (
-							<View style={{ flexDirection: "row", alignItems: "center" }}>
-								<Pressable
-									onPress={() => {
-										const prev = new Date(currentDate);
+						<View style={{ flexDirection: "row", alignItems: "center" }}>
+							<Pressable
+								onPress={() => {
+									const prev = new Date(currentDate);
+									if (viewMode === "Month") {
 										prev.setMonth(prev.getMonth() - 1);
-										setCurrentDate(prev);
-									}}
-									style={{ padding: 8 }}
-								>
-									<Text style={{ fontSize: 20, color: colors.slate400 }}>
-										{"<"}
-									</Text>
-								</Pressable>
-								<Pressable
-									onPress={() => {
-										const next = new Date(currentDate);
+									} else if (viewMode === "Week") {
+										prev.setDate(prev.getDate() - 7);
+									} else {
+										prev.setDate(prev.getDate() - 1);
+									}
+									setCurrentDate(prev);
+									if (viewMode === "Day") {
+										const dayIdx = (prev.getDay() + 6) % 7;
+										setSelectedDay(DAYS[dayIdx]);
+									}
+								}}
+								style={{ padding: 8 }}
+							>
+								<Text style={{ fontSize: 20, color: colors.slate400 }}>
+									{"<"}
+								</Text>
+							</Pressable>
+							<Pressable
+								onPress={() => {
+									const next = new Date(currentDate);
+									if (viewMode === "Month") {
 										next.setMonth(next.getMonth() + 1);
-										setCurrentDate(next);
-									}}
-									style={{ padding: 8 }}
-								>
-									<Text style={{ fontSize: 20, color: colors.slate400 }}>
-										{">"}
-									</Text>
-								</Pressable>
-							</View>
-						)}
+									} else if (viewMode === "Week") {
+										next.setDate(next.getDate() + 7);
+									} else {
+										next.setDate(next.getDate() + 1);
+									}
+									setCurrentDate(next);
+									if (viewMode === "Day") {
+										const dayIdx = (next.getDay() + 6) % 7;
+										setSelectedDay(DAYS[dayIdx]);
+									}
+								}}
+								style={{ padding: 8 }}
+							>
+								<Text style={{ fontSize: 20, color: colors.slate400 }}>
+									{">"}
+								</Text>
+							</Pressable>
+						</View>
 					</View>
 
 					{/* Controls row: segment picker + schedule dropdown */}
