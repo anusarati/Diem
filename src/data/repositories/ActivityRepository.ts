@@ -42,6 +42,28 @@ export class ActivityRepository {
 		return this.listAll();
 	}
 
+	/**
+	 * Find an activity by exact name (case-insensitive).
+	 * Returns the first match or null if none exists.
+	 */
+	async findByName(name: string): Promise<Activity | null> {
+		const all = await this.listAll();
+		const needle = name.trim().toLowerCase();
+		return all.find((a) => a.name.trim().toLowerCase() === needle) ?? null;
+	}
+
+	/**
+	 * Find an activity by name; if it does not exist, create it.
+	 * The returned record's id is stable for repeated calls with the same name.
+	 */
+	async upsertByName(input: ActivityCreateInput): Promise<Activity> {
+		const existing = await this.findByName(input.name);
+		if (existing) {
+			return existing;
+		}
+		return this.create(input);
+	}
+
 	observeAll() {
 		return this.collection.query().observe();
 	}

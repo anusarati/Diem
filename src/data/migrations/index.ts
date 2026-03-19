@@ -2,6 +2,7 @@ import {
 	addColumns,
 	createTable,
 	schemaMigrations,
+	unsafeExecuteSql,
 } from "@nozbe/watermelondb/Schema/migrations";
 
 export default schemaMigrations({
@@ -135,6 +136,14 @@ export default schemaMigrations({
 						},
 					],
 				}),
+			],
+		},
+		{
+			toVersion: 6,
+			steps: [
+				unsafeExecuteSql(
+					"CREATE INDEX IF NOT EXISTS activities_name_idx ON activities (name);",
+				),
 			],
 		},
 	],

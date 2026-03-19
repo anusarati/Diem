@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export default appSchema({
-	version: 5,
+	version: 6,
 	tables: [
 		tableSchema({
 			name: "users",
@@ -19,7 +19,7 @@ export default appSchema({
 			name: "activities",
 			columns: [
 				{ name: "category_id", type: "string", isIndexed: true },
-				{ name: "name", type: "string" },
+				{ name: "name", type: "string", isIndexed: true },
 				{ name: "priority", type: "number" },
 				{ name: "default_duration", type: "number" }, // minutes
 				{ name: "is_replaceable", type: "boolean" },
