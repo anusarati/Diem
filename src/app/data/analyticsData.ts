@@ -258,13 +258,23 @@ export async function buildGoalTimeData(
 		.sort((a, b) => b.completedMinutes - a.completedMinutes);
 }
 
-/** Causal net built from historical markov transitions. */
+/** Causal net built from historical markov transitions (only from completions on or before today). */
 export async function buildCausalNet(): Promise<{
 	nodes: CausalNetNode[];
 	edges: CausalNetEdge[];
 }> {
 	return withScopedRepositories(async (repositories) => {
-		const transitions = await repositories.markov.listAll();
+		const allTransitions = await repositories.markov.listAll();
+		const now = new Date();
+		const endOfToday = new Date(
+			now.getFullYear(),
+			now.getMonth(),
+			now.getDate() + 1,
+		);
+		const transitions = allTransitions.filter(
+			(t) => t.lastObservedAt.getTime() < endOfToday.getTime(),
+		);
+
 		const allActivities = await repositories.activity.listAll();
 		const activityMap = new Map(allActivities.map((a) => [a.id, a.name]));
 
@@ -287,28 +297,33 @@ export async function buildCausalNet(): Promise<{
 			.sort((a, b) => b.count - a.count)
 			.slice(0, 15); // Top 15 transitions
 
+		// Only include edges where both activities exist (avoid "Unknown" nodes from deleted/missing activities)
+		const edges: CausalNetEdge[] = sortedEdges
+			.filter(
+				(t) =>
+					activityMap.has(t.fromActivityId) && activityMap.has(t.toActivityId),
+			)
+			.map((t) => ({ from: t.fromActivityId, to: t.toActivityId }));
+
 		const activeIds = new Set<string>();
-		for (const edge of sortedEdges) {
-			activeIds.add(edge.fromActivityId);
-			activeIds.add(edge.toActivityId);
+		for (const edge of edges) {
+			activeIds.add(edge.from);
+			activeIds.add(edge.to);
 		}
 
 		const nodes: CausalNetNode[] = [];
 		let index = 0;
 		for (const id of activeIds) {
+			const label = activityMap.get(id);
+			if (label === undefined) continue;
 			nodes.push({
 				id,
-				activityLabel: activityMap.get(id) || "Unknown",
+				activityLabel: label,
 				x: 80 + (index % 3) * 110,
 				y: 80 + Math.floor(index / 3) * 60,
 			});
 			index++;
 		}
-
-		const edges: CausalNetEdge[] = sortedEdges.map((t) => ({
-			from: t.fromActivityId,
-			to: t.toActivityId,
-		}));
 
 		return { nodes, edges };
 	});
