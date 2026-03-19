@@ -52,7 +52,16 @@ export function ActivityForm({
 	const [showAdvanced, setShowAdvanced] = useState(false);
 
 	useEffect(() => {
-		reset(initialData);
+		reset({
+			title: "",
+			startTime: "",
+			duration: 60,
+			priority: "medium",
+			replaceabilityStatus: "SOFT",
+			category: "Other",
+			isRecurring: false,
+			...initialData,
+		});
 	}, [initialData, reset]);
 
 	const title = watch("title");
