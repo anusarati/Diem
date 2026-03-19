@@ -5,7 +5,13 @@ import * as Sharing from "expo-sharing";
 
 import { Alert, Platform } from "react-native";
 import schema from "../../../data/schema";
-import { withScopedRepositories } from "./repositoryContext";
+import {
+	type CompletedActivityEvent,
+	FrequencyEmaMiner,
+	HeuristicNetMiner,
+} from "../../../mining";
+import { rebuildMarkovTransitionCountsFromHistory } from "./markovService";
+import { currentTimeZone, withScopedRepositories } from "./repositoryContext";
 
 interface BackupData {
 	version: number;
@@ -136,6 +142,62 @@ export async function importData(): Promise<{
 					await database.batch(allOperations);
 				}
 			});
+
+			// Rebuild behavioral models from restored history
+			const tz = currentTimeZone();
+
+			// 1. Frequency EMA
+			const emaMiner = new FrequencyEmaMiner();
+			await emaMiner.reconcile({
+				repositories: {
+					emaStateRepository: repositories.frequencyEma,
+					userBehaviorRepository: repositories.userBehavior,
+					historyRepository: repositories.history,
+				},
+				timeZone: tz,
+			});
+
+			// 2. Markov
+			await rebuildMarkovTransitionCountsFromHistory(repositories);
+
+			// 3. Heuristic Net
+			await repositories.hnetArc.clear();
+			await repositories.hnetPair.clear();
+
+			const now = new Date();
+			const endOfToday = new Date(
+				now.getFullYear(),
+				now.getMonth(),
+				now.getDate() + 1,
+			);
+			const historyRows = await repositories.history.listForRange(
+				new Date(0),
+				endOfToday,
+			);
+
+			const completedEvents: CompletedActivityEvent[] = historyRows
+				.map((history) => {
+					if (!history.wasCompleted || !history.actualStartTime) return null;
+					const durationMinutes =
+						history.actualDuration ?? history.predictedDuration ?? 15;
+					if (durationMinutes <= 0) return null;
+					return {
+						activityId: history.activityId,
+						startTime: history.actualStartTime,
+						durationMinutes,
+					};
+				})
+				.filter((event): event is CompletedActivityEvent => event !== null)
+				.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+
+			if (completedEvents.length > 0) {
+				const hnetMiner = new HeuristicNetMiner();
+				await hnetMiner.persist(
+					completedEvents,
+					repositories.hnetArc,
+					repositories.hnetPair,
+				);
+			}
 
 			return { success: true, message: "Data imported successfully" };
 		} catch (err) {

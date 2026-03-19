@@ -334,6 +334,7 @@ export async function toggleActivityCompletion(
 			});
 			const writeService = new HistoryWriteService(repositories.database);
 			await writeService.markActivityDirty(activityId);
+			await rebuildMarkovTransitionCountsFromHistory(repositories);
 			return listActivitiesForDateWithRepositories(repositories, date);
 		}
 
@@ -361,6 +362,8 @@ export async function toggleActivityCompletion(
 			wasSkipped: false,
 			wasReplaced: false,
 		});
+
+		await rebuildMarkovTransitionCountsFromHistory(repositories);
 
 		return listActivitiesForDateWithRepositories(repositories, date);
 	});
@@ -449,15 +452,55 @@ export async function toggleScheduledCompletion(
 	currentStatus: EventStatus,
 ): Promise<ScheduledActivity | null> {
 	return withScopedRepositories(async (repositories) => {
+		const event = await repositories.schedule.findById(eventId);
+		if (!event) return null;
+
 		const nextStatus =
 			currentStatus === EventStatus.COMPLETED
 				? EventStatus.CONFIRMED
 				: EventStatus.COMPLETED;
+
 		const updated = await repositories.schedule.update(eventId, {
 			status: nextStatus,
 			updatedAt: new Date(),
 		});
-		return updated ? toScheduledEventEntity(updated) : null;
+
+		if (!updated) return null;
+
+		const history =
+			await repositories.history.findForActivityAndPredictedStartTime(
+				updated.activityId,
+				updated.startTime,
+			);
+
+		const writeService = new HistoryWriteService(repositories.database);
+
+		if (nextStatus === EventStatus.COMPLETED) {
+			await writeService.recordCompletion({
+				historyId: history?.id,
+				activityId: updated.activityId,
+				predictedStartTime: updated.startTime,
+				predictedDuration: updated.duration,
+				actualStartTime: updated.startTime,
+				actualDuration: updated.duration,
+				timeZone: currentTimeZone(),
+				wasSkipped: false,
+				wasReplaced: false,
+			});
+		} else if (history) {
+			await repositories.history.update(history.id, {
+				wasCompleted: false,
+				actualStartTime: null,
+				actualDuration: null,
+				wasSkipped: false,
+				wasReplaced: false,
+			});
+			await writeService.markActivityDirty(updated.activityId);
+		}
+
+		await rebuildMarkovTransitionCountsFromHistory(repositories);
+
+		return toScheduledEventEntity(updated);
 	});
 }
 
