@@ -188,10 +188,9 @@ export class HeuristicInjector {
 		warnings: string[],
 	): HeatmapEntry[] {
 		const entries: HeatmapEntry[] = [];
-		const horizonMidnight = new Date(input.horizonStart);
-		horizonMidnight.setHours(0, 0, 0, 0);
-		const offsetMs = input.horizonStart.getTime() - horizonMidnight.getTime();
-		const offsetSlots = Math.trunc(offsetMs / (15 * 60 * 1000)); // Slots since midnight
+		const hours = input.horizonStart.getHours();
+		const minutes = input.horizonStart.getMinutes();
+		const offsetSlots = Math.trunc((hours * 60 + minutes) / 15); // Slots since midnight
 		const numDays = Math.ceil(input.totalSlots / 96) + 1;
 
 		for (const row of input.userBehavior) {

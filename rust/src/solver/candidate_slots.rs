@@ -5,14 +5,13 @@ fn build_forbidden_slot_mask(problem: &Problem) -> Vec<bool> {
     let mut mask = vec![false; total_slots];
 
     for constraint in &problem.global_constraints {
-        if let GlobalConstraint::ForbiddenZone { start, end } = constraint {
-            let start_idx = (*start as usize).min(total_slots);
-            let end_idx = (*end as usize).min(total_slots);
-            if start_idx >= end_idx {
-                continue;
-            }
-            for slot in &mut mask[start_idx..end_idx] {
-                *slot = true;
+        if let GlobalConstraint::ForbiddenZone { start, end, .. } = constraint {
+            let start_index = (*start as usize).min(total_slots);
+            let end_index = (*end as usize).min(total_slots);
+            if start_index < end_index {
+                for slot in &mut mask[start_index..end_index] {
+                    *slot = true;
+                }
             }
         }
     }
@@ -101,7 +100,11 @@ mod tests {
             activities: vec![floating, fixed],
             floating_indices: vec![0],
             fixed_indices: vec![1],
-            global_constraints: vec![GlobalConstraint::ForbiddenZone { start: 1, end: 3 }],
+            global_constraints: vec![GlobalConstraint::ForbiddenZone {
+                start: 1,
+                end: 3,
+                activity_id: None,
+            }],
             heatmap: vec![],
             markov_matrix: vec![],
             total_slots: 10,

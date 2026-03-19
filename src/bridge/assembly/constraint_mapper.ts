@@ -9,7 +9,7 @@ import {
 	type UserSequenceValue,
 } from "../../types/domain";
 import type { RustActivity, RustGlobalConstraint } from "../types";
-import { allWeekdaysMask } from "./time_slots";
+import { allWeekdaysMask, minutesToSlots } from "./time_slots";
 
 const HARD_BINDING_WEIGHT = 1_000_000;
 const USER_FREQUENCY_PENALTY_WEIGHT = 50_000;
@@ -43,6 +43,8 @@ export interface ConstraintMapperInput {
 	activitiesByNumericId: Map<number, RustActivity>;
 	activityIdToNumeric: Map<string, number>;
 	categoryIdToNumeric: Map<string, number>;
+	totalSlots: number;
+	horizonStart: Date;
 }
 
 export interface ConstraintMapperResult {
@@ -154,12 +156,34 @@ export class ConstraintMapper {
 						);
 						break;
 					}
-					globalConstraints.push({
-						ForbiddenZone: {
-							start: value.startSlot,
-							end: value.endSlot,
-						},
-					});
+
+					const activityId = constraint.activityId
+						? (input.activityIdToNumeric.get(constraint.activityId) ?? null)
+						: null;
+
+					const horizonHours = input.horizonStart.getHours();
+					const horizonMins = input.horizonStart.getMinutes();
+					const startSlotClock = Math.floor(
+						(horizonHours * 60 + horizonMins) / 15,
+					);
+
+					const numDays = Math.ceil(input.totalSlots / 96) + 1;
+					for (let d = 0; d < numDays; d++) {
+						const relStart = d * 96 + value.startSlot - startSlotClock;
+						const relEnd = d * 96 + value.endSlot - startSlotClock;
+
+						if (relStart >= input.totalSlots || relEnd <= 0) {
+							continue;
+						}
+
+						globalConstraints.push({
+							ForbiddenZone: {
+								start: Math.max(0, relStart),
+								end: Math.min(input.totalSlots, relEnd),
+								activity_id: activityId,
+							},
+						});
+					}
 					break;
 				}
 				case ConstraintType.GLOBAL_CUMULATIVE_TIME: {
@@ -194,8 +218,8 @@ export class ConstraintMapper {
 							activity_id: activityId,
 							category_id: categoryId,
 							period_slots: value.periodSlots,
-							min_duration: value.minDuration,
-							max_duration: value.maxDuration,
+							min_duration: minutesToSlots(value.minDuration),
+							max_duration: minutesToSlots(value.maxDuration),
 							deadline_end: value.deadlineEndSlot ?? null,
 						},
 					});

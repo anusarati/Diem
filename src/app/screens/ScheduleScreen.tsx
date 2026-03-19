@@ -785,6 +785,27 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 				timeLimitMs: 500,
 			});
 
+			const allEvents = await repositories.schedule.listAll();
+			const horizonEnd = new Date(
+				horizonStart.getTime() + totalSlots * 15 * 60000,
+			);
+			const autonomousInHorizon = allEvents.filter((e) => {
+				const start = new Date(e.startTime).getTime();
+				return (
+					e.source === ActivitySource.AUTONOMOUS &&
+					start >= horizonStart.getTime() &&
+					start <= horizonEnd.getTime()
+				);
+			});
+
+			if (autonomousInHorizon.length > 0) {
+				await database.write(async () => {
+					for (const e of autonomousInHorizon) {
+						await e.destroyPermanently();
+					}
+				});
+			}
+
 			for (const result of results) {
 				const activityId = result.activityId;
 				const startOffsetMinutes = result.startSlot * 15;
@@ -795,39 +816,24 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 					startTime.getTime() + result.durationSlots * 15 * 60000,
 				);
 
-				const existing = await repositories.schedule.listAll();
-				const match = existing.find(
-					(e) =>
-						e.activityId === activityId &&
-						new Date(e.startTime).toDateString() === startTime.toDateString(),
-				);
-
-				if (match) {
-					await repositories.schedule.update(match.id, {
+				const activity = await repositories.activity.findById(activityId);
+				if (activity) {
+					await repositories.schedule.create({
+						activityId: activityId,
+						categoryId: activity.categoryId,
+						title: activity.name,
 						startTime,
 						endTime,
+						duration: result.durationSlots * 15,
+						status: EventStatus.CONFIRMED,
+						replaceabilityStatus: Replaceability.SOFT,
+						priority: activity.priority,
+						source: ActivitySource.AUTONOMOUS,
+						isLocked: false,
+						isRecurring: false,
+						createdAt: new Date(),
 						updatedAt: new Date(),
 					});
-				} else {
-					const activity = await repositories.activity.findById(activityId);
-					if (activity) {
-						await repositories.schedule.create({
-							activityId: activityId,
-							categoryId: activity.categoryId,
-							title: activity.name,
-							startTime,
-							endTime,
-							duration: result.durationSlots * 15,
-							status: EventStatus.CONFIRMED,
-							replaceabilityStatus: Replaceability.SOFT,
-							priority: activity.priority,
-							source: ActivitySource.AUTONOMOUS,
-							isLocked: false,
-							isRecurring: false,
-							createdAt: new Date(),
-							updatedAt: new Date(),
-						});
-					}
 				}
 			}
 
