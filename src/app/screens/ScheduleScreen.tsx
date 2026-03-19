@@ -596,6 +596,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		setSelectedActivityId(id);
 		const activity = activities.find((a) => a.id === id);
 		if (activity) {
+			if (activity.day) setSelectedDay(activity.day);
 			setEditingActivity({
 				id: activity.id,
 				title: activity.title,
@@ -618,6 +619,8 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 
 	const handleActivityPress = (id: string) => {
 		setSelectedActivityId(id);
+		const activity = activities.find((a) => a.id === id);
+		if (activity?.day) setSelectedDay(activity.day);
 		setMenuVisible(true);
 	};
 
@@ -747,7 +750,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 			}
 
 			// Snap targetStart to the current 15-min slot
-			const slotsSinceMidnight = Math.floor(
+			const slotsSinceMidnight = Math.ceil(
 				(targetStart.getHours() * 60 + targetStart.getMinutes()) / 15,
 			);
 			const horizonStart = new Date(targetStart);
