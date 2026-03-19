@@ -631,43 +631,63 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 				"../../types/domain"
 			);
 
-			// Snap horizonStart to the current 15-min slot (never schedule in the past)
 			const now = new Date();
-			const slotsSinceMidnight = Math.floor(
-				(now.getHours() * 60 + now.getMinutes()) / 15,
-			);
-			const horizonStart = new Date(now);
-			horizonStart.setHours(
-				Math.floor((slotsSinceMidnight * 15) / 60),
-				(slotsSinceMidnight * 15) % 60,
-				0,
-				0,
-			);
 
-			// End of the current view period (Day / Week / Month)
+			// Calculate minimum time in current view
+			let minTime: Date;
 			let endOfPeriod: Date;
-			if (viewMode === "Week") {
-				// End of current ISO week = next Monday 00:00
-				const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
-				endOfPeriod = new Date(now);
-				endOfPeriod.setDate(now.getDate() + daysUntilMonday);
-				endOfPeriod.setHours(0, 0, 0, 0);
-			} else if (viewMode === "Month") {
-				// First moment of next month
-				endOfPeriod = new Date(
-					now.getFullYear(),
-					now.getMonth() + 1,
+
+			if (viewMode === "Month") {
+				minTime = new Date(
+					currentDate.getFullYear(),
+					currentDate.getMonth(),
 					1,
 					0,
 					0,
 					0,
 					0,
 				);
+				endOfPeriod = new Date(
+					currentDate.getFullYear(),
+					currentDate.getMonth() + 1,
+					1,
+					0,
+					0,
+					0,
+					0,
+				);
+			} else if (viewMode === "Week") {
+				minTime = new Date(mondayDate);
+				minTime.setHours(0, 0, 0, 0);
+				endOfPeriod = new Date(minTime);
+				endOfPeriod.setDate(endOfPeriod.getDate() + 7);
 			} else {
-				// End of today
-				endOfPeriod = new Date(now);
-				endOfPeriod.setHours(24, 0, 0, 0);
+				// Day
+				minTime = new Date(getSelectedDate());
+				minTime.setHours(0, 0, 0, 0);
+				endOfPeriod = new Date(minTime);
+				endOfPeriod.setDate(endOfPeriod.getDate() + 1);
 			}
+
+			// targetStart is later of minTime and now
+			const targetStart = minTime.getTime() > now.getTime() ? minTime : now;
+
+			if (targetStart >= endOfPeriod) {
+				Alert.alert("Schedule", "This view period is in the past.");
+				return;
+			}
+
+			// Snap targetStart to the current 15-min slot
+			const slotsSinceMidnight = Math.floor(
+				(targetStart.getHours() * 60 + targetStart.getMinutes()) / 15,
+			);
+			const horizonStart = new Date(targetStart);
+			horizonStart.setHours(
+				Math.floor((slotsSinceMidnight * 15) / 60),
+				(slotsSinceMidnight * 15) % 60,
+				0,
+				0,
+			);
 
 			// Slots from now to end of period (each slot = 15 min), minimum 1
 			const totalSlots = Math.max(
