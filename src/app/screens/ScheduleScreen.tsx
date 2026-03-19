@@ -692,7 +692,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 			const built = builder.build(input);
 			const scheduler = new NativeScheduler();
 			const results = scheduler.solve(built, {
-				maxGenerations: 100,
+				maxGenerations: 1200,
 				timeLimitMs: 500,
 			});
 
