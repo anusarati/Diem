@@ -38,6 +38,7 @@ export interface IcsParsedEvent {
 	title: string;
 	uid: string;
 	status?: string;
+	rrule?: string;
 }
 
 /**
@@ -57,6 +58,7 @@ function parseVeventBlock(block: string): IcsParsedEvent | null {
 	let summary = "";
 	let uid = "";
 	let status = "";
+	let rrule = "";
 	for (const line of lines) {
 		const colon = line.indexOf(":");
 		if (colon === -1) continue;
@@ -79,6 +81,9 @@ function parseVeventBlock(block: string): IcsParsedEvent | null {
 			case "STATUS":
 				status = value;
 				break;
+			case "RRULE":
+				rrule = value;
+				break;
 			default:
 				break;
 		}
@@ -97,6 +102,7 @@ function parseVeventBlock(block: string): IcsParsedEvent | null {
 		title: summary.trim() || "(No title)",
 		uid: uid || `ics_${start.getTime()}_${Math.random().toString(36).slice(2)}`,
 		status: status || "",
+		rrule: rrule || undefined,
 	};
 }
 
@@ -129,6 +135,89 @@ function parseIcsDateTime(value: string): Date {
 		return date;
 	}
 	return new Date(cleaned);
+}
+
+/**
+ * Expand a recurring event into individual instances within a range.
+ * Currently supports FREQ=WEEKLY with BYDAY.
+ */
+function expandRecurringEvents(
+	event: IcsParsedEvent,
+	rangeStart: Date,
+	rangeEnd: Date,
+): IcsParsedEvent[] {
+	if (!event.rrule) return [event];
+
+	const rrule = event.rrule;
+	const parts = rrule.split(";").reduce(
+		(acc, p) => {
+			const [k, v] = p.split("=");
+			if (k && v) acc[k] = v;
+			return acc;
+		},
+		{} as Record<string, string>,
+	);
+
+	if (parts.FREQ !== "WEEKLY") return [event];
+
+	const byDay = parts.BYDAY ? parts.BYDAY.split(",") : [];
+	const dayMap: Record<string, number> = {
+		MO: 1,
+		TU: 2,
+		WE: 3,
+		TH: 4,
+		FR: 5,
+		SA: 6,
+		SU: 0,
+	};
+	const targetDays = byDay.map((d) => dayMap[d]).filter((d) => d !== undefined);
+
+	let until = rangeEnd;
+	if (parts.UNTIL) {
+		const parsedUntil = parseIcsDateTime(parts.UNTIL);
+		if (!Number.isNaN(parsedUntil.getTime()) && parsedUntil < until) {
+			until = parsedUntil;
+		}
+	}
+
+	const duration = event.end.getTime() - event.start.getTime();
+	const instances: IcsParsedEvent[] = [];
+
+	// Use start date as first instance if it matches BYDAY or if BYDAY is empty
+	const startDay = event.start.getDay();
+	if (targetDays.length === 0 || targetDays.includes(startDay)) {
+		if (event.start >= rangeStart && event.start <= until) {
+			instances.push({ ...event, rrule: undefined });
+		}
+	}
+
+	// Iterate from start date up to until/rangeEnd
+	const current = new Date(event.start);
+	current.setDate(current.getDate() + 1); // Start from next day
+
+	while (current <= until) {
+		const currentDay = current.getDay();
+		if (targetDays.length === 0 || targetDays.includes(currentDay)) {
+			if (current >= rangeStart && current <= rangeEnd) {
+				const start = new Date(current);
+				const end = new Date(current.getTime() + duration);
+				const timestamp = start
+					.toISOString()
+					.replace(/[-:.]/g, "")
+					.slice(0, 15);
+				instances.push({
+					...event,
+					start,
+					end,
+					uid: `${event.uid}_${timestamp}`,
+					rrule: undefined,
+				});
+			}
+		}
+		current.setDate(current.getDate() + 1);
+	}
+
+	return instances.length > 0 ? instances : [event];
 }
 
 /**
@@ -185,7 +274,20 @@ export async function importFromIcs(
 
 	const newlyCompletedEvents: CompletedActivityEvent[] = [];
 
+	// Define expansion range (e.g., March 2026 for this test, but generally ± 3 months from now)
+	const rangeStart = new Date(2026, 2, 1); // March 1st, 2026
+	const rangeEnd = new Date(2026, 2, 31, 23, 59, 59);
+
+	const expandedEvents: IcsParsedEvent[] = [];
 	for (const ev of parsedEvents) {
+		if (ev.rrule) {
+			expandedEvents.push(...expandRecurringEvents(ev, rangeStart, rangeEnd));
+		} else {
+			expandedEvents.push(ev);
+		}
+	}
+
+	for (const ev of expandedEvents) {
 		if (ev.status?.toUpperCase() === "CANCELLED") {
 			cancelled += 1;
 			continue;
