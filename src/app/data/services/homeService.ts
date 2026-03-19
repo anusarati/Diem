@@ -153,7 +153,14 @@ export async function observeActivitiesForDate(
 	});
 }
 
-/** Observes all activities without history or date scoping */
+export async function getAllActivities(): Promise<ActivityItem[]> {
+	return withScopedRepositories(async (repositories) => {
+		const rows = await repositories.activity.listAll();
+		const mapped = rows.map((a) => toActivityItem(a, null));
+		return mapped.sort((l, r) => l.createdAt.localeCompare(r.createdAt));
+	});
+}
+
 export async function observeAllActivities(
 	onChange: (activities: ActivityItem[]) => void,
 ): Promise<() => void> {

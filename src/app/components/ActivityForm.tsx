@@ -258,7 +258,7 @@ export function ActivityForm({
 				)}
 			</View>
 
-			{showTimeFields && (
+			{showTimeFields ? (
 				<View style={styles.row}>
 					<View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
 						<Text style={styles.label}>Start Time</Text>
@@ -273,14 +273,32 @@ export function ActivityForm({
 					<View style={[styles.inputGroup, { flex: 1 }]}>
 						<Text style={styles.label}>Duration (min)</Text>
 						<TextInput
-							style={styles.input}
+							style={[styles.input, errors.duration && styles.inputError]}
 							placeholder="60"
 							placeholderTextColor={colors.slate400}
 							keyboardType="numeric"
 							value={duration?.toString()}
 							onChangeText={(v) => setValue("duration", parseInt(v, 10) || 0)}
 						/>
+						{errors.duration && (
+							<Text style={styles.errorText}>{errors.duration.message}</Text>
+						)}
 					</View>
+				</View>
+			) : (
+				<View style={styles.inputGroup}>
+					<Text style={styles.label}>Default Duration (min)</Text>
+					<TextInput
+						style={[styles.input, errors.duration && styles.inputError]}
+						placeholder="60"
+						placeholderTextColor={colors.slate400}
+						keyboardType="numeric"
+						value={duration?.toString()}
+						onChangeText={(v) => setValue("duration", parseInt(v, 10) || 0)}
+					/>
+					{errors.duration && (
+						<Text style={styles.errorText}>{errors.duration.message}</Text>
+					)}
 				</View>
 			)}
 
@@ -335,6 +353,19 @@ export function ActivityForm({
 					Frequencies, durations, and restrictions
 				</Text>
 			</TouchableOpacity>
+
+			{Object.keys(errors).length > 0 && (
+				<View style={styles.errorSummary}>
+					<Text style={styles.errorSummaryTitle}>
+						Please fix the following:
+					</Text>
+					{Object.entries(errors).map(([key, error]) => (
+						<Text key={key} style={styles.errorText}>
+							• {key}: {error?.message || "Invalid value"}
+						</Text>
+					))}
+				</View>
+			)}
 
 			<TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
 				<Text style={styles.submitText}>Save Activity</Text>
@@ -489,4 +520,18 @@ const styles = StyleSheet.create({
 		elevation: 4,
 	},
 	submitText: { color: colors.white, fontSize: 16, fontWeight: "700" },
+	errorSummary: {
+		backgroundColor: "#FEF2F2",
+		borderRadius: 12,
+		padding: spacing.md,
+		marginTop: spacing.lg,
+		borderWidth: 1,
+		borderColor: "#FEE2E2",
+	},
+	errorSummaryTitle: {
+		fontSize: 14,
+		fontWeight: "700",
+		color: colors.red400,
+		marginBottom: 4,
+	},
 });
