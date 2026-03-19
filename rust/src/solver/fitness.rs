@@ -60,7 +60,7 @@ impl DiemFitness {
 
     // Weights (Soft Constraints/Objectives)
     const WEIGHT_PRIORITY: f32 = 10.0;
-    const WEIGHT_HEATMAP: f32 = 5.0;
+    const WEIGHT_HEATMAP: f32 = 100.0;
     const WEIGHT_MARKOV: f32 = 5.0;
     const FREQUENCY_OVERSHOOT_MULTIPLIER: f32 = 6.0;
     const REWARD_NO_ACTIVITY: f32 = 0.01;

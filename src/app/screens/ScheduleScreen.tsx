@@ -5,6 +5,7 @@ import {
 	Alert,
 	Platform,
 	Pressable,
+	Share,
 	StyleSheet,
 	Text,
 	View,
@@ -816,6 +817,37 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 			setIsScheduling(false);
 		}
 	};
+	//
+	const handleShareSchedule = async () => {
+		const sorted = [...activities].sort((a, b) => {
+			const dateA = new Date(a.fullDate || 0).getTime();
+			const dateB = new Date(b.fullDate || 0).getTime();
+			return dateA - dateB;
+		});
+
+		let text = "📅 Schedule:\n";
+		const groupedByDay: Record<string, typeof activities> = {};
+		for (const act of sorted) {
+			const d = new Date(act.fullDate || 0);
+			const options: Intl.DateTimeFormatOptions = {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			};
+			const dayStr = d.toLocaleDateString("en-US", options);
+			if (!groupedByDay[dayStr]) groupedByDay[dayStr] = [];
+			groupedByDay[dayStr].push(act);
+		}
+
+		for (const [day, list] of Object.entries(groupedByDay)) {
+			text += `\n--- ${day} ---\n`;
+			for (const act of list) {
+				text += `- ${act.startTime} | ${act.title}\n`;
+			}
+		}
+
+		await Share.share({ message: text });
+	};
 
 	const handleImportGoogleCalendar = async () => {
 		setIsAddChoiceOpen(false);
@@ -1020,6 +1052,17 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 							)}
 						</View>
 					</View>
+
+					<Pressable
+						style={({ pressed }) => [
+							styles.clearAllBtn,
+							{ backgroundColor: colors.slate50, marginTop: spacing.md },
+							pressed && styles.clearAllBtnPressed,
+						]}
+						onPress={handleShareSchedule}
+					>
+						<Text style={styles.clearAllBtnLabel}>Share schedule as text</Text>
+					</Pressable>
 					<Pressable
 						style={({ pressed }) => [
 							styles.clearAllBtn,

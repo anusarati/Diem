@@ -35,6 +35,8 @@ export interface HeuristicInjectorInput {
 	pairCounts: HNetPairCount[];
 	markovTransitions: MarkovTransitionCount[];
 	userBehavior: UserBehavior[];
+	horizonStart: Date;
+	totalSlots: number;
 }
 
 export interface HeuristicInjectorResult {
@@ -186,6 +188,12 @@ export class HeuristicInjector {
 		warnings: string[],
 	): HeatmapEntry[] {
 		const entries: HeatmapEntry[] = [];
+		const horizonMidnight = new Date(input.horizonStart);
+		horizonMidnight.setHours(0, 0, 0, 0);
+		const offsetMs = input.horizonStart.getTime() - horizonMidnight.getTime();
+		const offsetSlots = Math.trunc(offsetMs / (15 * 60 * 1000)); // Slots since midnight
+		const numDays = Math.ceil(input.totalSlots / 96) + 1;
+
 		for (const row of input.userBehavior) {
 			if (row.metric !== UserBehaviorMetric.HEATMAP_PROBABILITY) {
 				continue;
@@ -205,14 +213,19 @@ export class HeuristicInjector {
 			}
 
 			const slot = Number.parseInt(row.keyParam, 10);
-			if (!Number.isInteger(slot) || slot < 0) {
+			if (!Number.isInteger(slot) || slot < 0 || slot >= 96) {
 				warnings.push(
 					`Skipping heatmap row with invalid slot: ${row.keyParam}`,
 				);
 				continue;
 			}
 
-			entries.push([activityNumeric, slot, row.value]);
+			for (let d = 0; d < numDays; d += 1) {
+				const sAbs = d * 96 + slot - offsetSlots;
+				if (sAbs >= 0 && sAbs < input.totalSlots) {
+					entries.push([activityNumeric, sAbs, row.value]);
+				}
+			}
 		}
 		return entries;
 	}

@@ -1,21 +1,21 @@
 import { useEffect } from "react";
-import { StyleSheet, View, type ViewStyle } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, {
+	type SharedValue,
 	useAnimatedStyle,
 	useSharedValue,
-	withTiming,
 } from "react-native-reanimated";
 import { colors } from "../../../app/theme";
 
 type Props = {
-	hourHeight: number;
+	hourHeight: SharedValue<number> | number;
 	startHour: number;
-	width?: ViewStyle["width"];
-	left?: number;
+	width?: SharedValue<number> | number;
+	left?: SharedValue<number> | number;
 };
 
 export function NowIndicator({ hourHeight, startHour, width, left }: Props) {
-	const top = useSharedValue(0);
+	const minutesFromStart = useSharedValue(0);
 
 	useEffect(() => {
 		const updatePosition = () => {
@@ -23,20 +23,34 @@ export function NowIndicator({ hourHeight, startHour, width, left }: Props) {
 			const h = now.getHours();
 			const m = now.getMinutes();
 			const totalMinutes = (h - startHour) * 60 + m;
-			top.value = withTiming((totalMinutes / 60) * hourHeight);
+			minutesFromStart.value = totalMinutes;
 		};
 
 		updatePosition();
 		const interval = setInterval(updatePosition, 60000);
 		return () => clearInterval(interval);
-	}, [hourHeight, startHour, top]);
+	}, [startHour, minutesFromStart]);
 
-	const animatedStyle = useAnimatedStyle(() => ({
-		top: top.value,
-		opacity: top.value < 0 ? 0 : 1,
-		left: left ?? 0,
-		width: width ?? "100%",
-	}));
+	const animatedStyle = useAnimatedStyle(() => {
+		const hHeight =
+			typeof hourHeight === "object" && "value" in hourHeight
+				? hourHeight.value
+				: (hourHeight as number);
+		const top = (minutesFromStart.value / 60) * hHeight;
+		const l =
+			typeof left === "object" && "value" in left ? left.value : (left ?? 0);
+		const w =
+			typeof width === "object" && "value" in width
+				? width.value
+				: (width ?? "100%");
+
+		return {
+			top: top,
+			opacity: top < 0 ? 0 : 1,
+			left: l,
+			width: w,
+		};
+	});
 
 	return (
 		<Animated.View style={[styles.container, animatedStyle]}>
