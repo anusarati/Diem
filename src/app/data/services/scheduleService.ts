@@ -158,29 +158,38 @@ export async function removeScheduledActivity(id: string): Promise<boolean> {
 }
 
 /**
- * Removes all calendar events (all sources). For testing only.
+ * Removes all calendar events (all sources) and imported activities. For testing only.
  */
 export async function clearAllCalendarEvents(): Promise<number> {
 	console.log("[ClearAll] clearAllCalendarEvents() called");
 	return withScopedRepositories(async (repositories) => {
-		console.log("[ClearAll] Got repositories, listing all events");
-		const all = await repositories.schedule.listAll();
-		console.log("[ClearAll] listAll() returned", all.length, "events");
-		if (all.length === 0) {
-			console.log("[ClearAll] Nothing to delete");
-			return 0;
-		}
-		console.log("[ClearAll] Starting database.write batch delete");
+		console.log(
+			"[ClearAll] Got repositories, listing all events and activities",
+		);
+		const allEvents = await repositories.schedule.listAll();
+		const allActivities = await repositories.activity.listAll();
+		const icsActivities = allActivities.filter((a) => a.id.startsWith("ics_"));
+
+		console.log(
+			"[ClearAll] Found",
+			allEvents.length,
+			"events and",
+			icsActivities.length,
+			"imported activities",
+		);
+
 		await repositories.database.write(async () => {
-			for (let i = 0; i < all.length; i++) {
-				const event = all[i];
+			// Clear all events
+			for (const event of allEvents) {
 				await event.destroyPermanently();
-				if ((i + 1) % 10 === 0 || i === all.length - 1) {
-					console.log("[ClearAll] Deleted", i + 1, "/", all.length);
-				}
+			}
+			// Clear ics activities
+			for (const activity of icsActivities) {
+				await activity.destroyPermanently();
 			}
 		});
-		console.log("[ClearAll] Batch delete done, returning", all.length);
-		return all.length;
+
+		console.log("[ClearAll] Batch delete done");
+		return allEvents.length;
 	});
 }

@@ -37,6 +37,7 @@ export interface IcsParsedEvent {
 	end: Date;
 	title: string;
 	uid: string;
+	activityUid?: string;
 	status?: string;
 	rrule?: string;
 }
@@ -187,7 +188,7 @@ function expandRecurringEvents(
 	const startDay = event.start.getDay();
 	if (targetDays.length === 0 || targetDays.includes(startDay)) {
 		if (event.start >= rangeStart && event.start <= until) {
-			instances.push({ ...event, rrule: undefined });
+			instances.push({ ...event, rrule: undefined, activityUid: event.uid });
 		}
 	}
 
@@ -210,6 +211,7 @@ function expandRecurringEvents(
 					start,
 					end,
 					uid: `${event.uid}_${timestamp}`,
+					activityUid: event.uid,
 					rrule: undefined,
 				});
 			}
@@ -350,7 +352,7 @@ export async function importFromIcs(
 			externalId: ev.uid,
 		});
 
-		const eventActivityId = `${ICS_ACTIVITY_ID_PREFIX}${ev.uid}`;
+		const eventActivityId = `${ICS_ACTIVITY_ID_PREFIX}${ev.activityUid || ev.uid}`;
 		let eventActivity = await repos.activity.findById(eventActivityId);
 		if (!eventActivity) {
 			eventActivity = await repos.activity.create({
