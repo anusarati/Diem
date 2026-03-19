@@ -318,4 +318,40 @@ export class HistoryRepository {
 		});
 		return rows.length;
 	}
+
+	async deleteForActivityOnDate(
+		activityId: string,
+		date: Date,
+	): Promise<number> {
+		const { start, end } = dayRange(date);
+		const rows = await this.collection
+			.query(
+				Q.where("activity_id", activityId),
+				Q.where("predicted_start_time", Q.gte(start.getTime())),
+				Q.where("predicted_start_time", Q.lt(end.getTime())),
+			)
+			.fetch();
+		await this.database.write(async () => {
+			await Promise.all(rows.map((row) => row.destroyPermanently()));
+		});
+		return rows.length;
+	}
+
+	/**
+	 * Looks up history row for an activity at the exact predicted start time.
+	 * Used to make .ics imports idempotent and to avoid missing history for
+	 * recurring occurrences.
+	 */
+	async findForActivityAndPredictedStartTime(
+		activityId: string,
+		predictedStartTime: Date,
+	): Promise<ActivityHistory | null> {
+		const rows = await this.collection
+			.query(
+				Q.where("activity_id", activityId),
+				Q.where("predicted_start_time", predictedStartTime.getTime()),
+			)
+			.fetch();
+		return rows[0] ?? null;
+	}
 }
