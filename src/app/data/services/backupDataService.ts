@@ -197,6 +197,70 @@ export async function importData(): Promise<{
 					repositories.hnetArc,
 					repositories.hnetPair,
 				);
+
+				// 4. Compute Time Heatmap Probability
+				const slotCountsByActivity = new Map<string, Map<number, number>>();
+				const totalCountsByActivity = new Map<string, number>();
+
+				const heatmapFormatter = new Intl.DateTimeFormat("en-US", {
+					timeZone: tz,
+					hour: "2-digit",
+					minute: "2-digit",
+					hour12: false,
+				});
+
+				for (const event of completedEvents) {
+					const parts = heatmapFormatter.formatToParts(event.startTime);
+					const hourStr = parts.find((p) => p.type === "hour")?.value ?? "0";
+					const minStr = parts.find((p) => p.type === "minute")?.value ?? "0";
+					const hour = Number.parseInt(hourStr, 10) % 24;
+					const minute = Number.parseInt(minStr, 10);
+					const slot = Math.floor((hour * 60 + minute) / 15);
+
+					const activitySlots =
+						slotCountsByActivity.get(event.activityId) ??
+						new Map<number, number>();
+					activitySlots.set(slot, (activitySlots.get(slot) ?? 0) + 1);
+					slotCountsByActivity.set(event.activityId, activitySlots);
+
+					totalCountsByActivity.set(
+						event.activityId,
+						(totalCountsByActivity.get(event.activityId) ?? 0) + 1,
+					);
+				}
+
+				if (slotCountsByActivity.size > 0) {
+					const userBehaviorCollection =
+						database.collections.get("user_behavior");
+					const heatmapOps: any[] = [];
+					const nowTimestamp = Date.now();
+
+					for (const [activityId, slots] of slotCountsByActivity.entries()) {
+						const total = totalCountsByActivity.get(activityId) ?? 1;
+
+						for (const [slot, count] of slots.entries()) {
+							const probability = count / total;
+
+							heatmapOps.push(
+								userBehaviorCollection.prepareCreate((record: any) => {
+									record.activityId = activityId;
+									record.categoryId = "__activity__";
+									record.metric = "HEATMAP_PROBABILITY";
+									record.keyParam = slot.toString();
+									record.value = probability;
+									record.sampleSize = total;
+									record.lastUpdated = nowTimestamp;
+								}),
+							);
+						}
+					}
+
+					if (heatmapOps.length > 0) {
+						await database.write(async () => {
+							await database.batch(heatmapOps);
+						});
+					}
+				}
 			}
 
 			return { success: true, message: "Data imported successfully" };

@@ -209,6 +209,8 @@ export class ProblemBuilder {
 			pairCounts: input.hnetPairCounts,
 			markovTransitions: input.markovTransitions,
 			userBehavior: input.userBehavior,
+			horizonStart: input.horizonStart,
+			totalSlots: input.totalSlots,
 		});
 		warnings.push(...injected.warnings);
 
