@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
-import Svg, { Circle, Line, Rect, Text as SvgText } from "react-native-svg";
+import Svg, { Line, Rect, Text as SvgText } from "react-native-svg";
 import { colors } from "../theme";
 import type { CausalNetEdge, CausalNetNode } from "../types";
 
@@ -11,143 +11,74 @@ type Props = {
 	height?: number;
 };
 
-/** Hard-coded C-net (Causal net) to show intended look: places (black dots), activities (rounded rects), directed arcs. */
-const VIEW_W = 340;
-const VIEW_H = 140;
-const PLACE_R = 5;
-const ACT_W = 52;
+const ACT_W = 72;
 const ACT_H = 28;
 const ACT_RX = 6;
 
-const places = [
-	{ id: "p0", x: 24, y: 70 },
-	{ id: "p1a", x: 120, y: 40 },
-	{ id: "p1b", x: 120, y: 70 },
-	{ id: "p1c", x: 120, y: 100 },
-	{ id: "p2a", x: 216, y: 40 },
-	{ id: "p2b", x: 216, y: 70 },
-	{ id: "p2c", x: 216, y: 100 },
-	{ id: "p3", x: 316, y: 70 },
-] as const;
-
-const activities = [
-	{ id: "a", x: 72, y: 70, label: "a: plan day" },
-	{ id: "b", x: 168, y: 40, label: "b: deep work" },
-	{ id: "c", x: 168, y: 70, label: "c: meetings" },
-	{ id: "d", x: 168, y: 100, label: "d: review" },
-	{ id: "e", x: 264, y: 70, label: "e: wrap up" },
-] as const;
-
-/** Arcs: from place/activity center to another. Draw line from (x1,y1) to (x2,y2). */
-const arcs: { id: string; x1: number; y1: number; x2: number; y2: number }[] = [
-	{ id: "p0-a", x1: places[0].x, y1: places[0].y, x2: 72 - ACT_W / 2, y2: 70 },
-	{ id: "a-p1a", x1: 72 + ACT_W / 2, y1: 70, x2: places[1].x, y2: places[1].y },
-	{ id: "a-p1b", x1: 72 + ACT_W / 2, y1: 70, x2: places[2].x, y2: places[2].y },
-	{ id: "a-p1c", x1: 72 + ACT_W / 2, y1: 70, x2: places[3].x, y2: places[3].y },
-	{
-		id: "p1a-b",
-		x1: places[1].x,
-		y1: places[1].y,
-		x2: 168 - ACT_W / 2,
-		y2: 40,
-	},
-	{
-		id: "p1b-c",
-		x1: places[2].x,
-		y1: places[2].y,
-		x2: 168 - ACT_W / 2,
-		y2: 70,
-	},
-	{
-		id: "p1c-d",
-		x1: places[3].x,
-		y1: places[3].y,
-		x2: 168 - ACT_W / 2,
-		y2: 100,
-	},
-	{
-		id: "b-p2a",
-		x1: 168 + ACT_W / 2,
-		y1: 40,
-		x2: places[4].x,
-		y2: places[4].y,
-	},
-	{
-		id: "c-p2b",
-		x1: 168 + ACT_W / 2,
-		y1: 70,
-		x2: places[5].x,
-		y2: places[5].y,
-	},
-	{
-		id: "d-p2c",
-		x1: 168 + ACT_W / 2,
-		y1: 100,
-		x2: places[6].x,
-		y2: places[6].y,
-	},
-	{
-		id: "p2a-e",
-		x1: places[4].x,
-		y1: places[4].y,
-		x2: 264 - ACT_W / 2,
-		y2: 70,
-	},
-	{
-		id: "p2b-e",
-		x1: places[5].x,
-		y1: places[5].y,
-		x2: 264 - ACT_W / 2,
-		y2: 70,
-	},
-	{
-		id: "p2c-e",
-		x1: places[6].x,
-		y1: places[6].y,
-		x2: 264 - ACT_W / 2,
-		y2: 70,
-	},
-	{ id: "e-p3", x1: 264 + ACT_W / 2, y1: 70, x2: places[7].x, y2: places[7].y },
-];
-
-export function CausalNetView({ width: propWidth, height: propHeight }: Props) {
+export function CausalNetView({
+	nodes,
+	edges,
+	width: propWidth,
+	height: propHeight,
+}: Props) {
 	const { width: winW } = useWindowDimensions();
+
+	// Calculate bounding box dynamically so we don't clip dynamic layouts
+	const minX = Math.min(...nodes.map((n) => n.x - ACT_W), 0);
+	const maxX = Math.max(...nodes.map((n) => n.x + ACT_W), 340);
+	const minY = Math.min(...nodes.map((n) => n.y - ACT_H), 0);
+	const maxY = Math.max(...nodes.map((n) => n.y + ACT_H), 140);
+
+	const VIEW_W = maxX - minX;
+	const VIEW_H = maxY - minY;
+
 	const maxW = Math.min(propWidth ?? VIEW_W, winW - 48);
 	const w = maxW;
 	const h = propHeight ?? Math.round((VIEW_H / VIEW_W) * w);
+
+	const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+	if (nodes.length === 0) {
+		return (
+			<View
+				style={[
+					styles.wrap,
+					{ width: w, maxWidth: "100%", paddingVertical: 20 },
+				]}
+			>
+				<Text style={styles.caption}>No flow data yet.</Text>
+			</View>
+		);
+	}
 
 	return (
 		<View style={[styles.wrap, { width: w, maxWidth: "100%" }]}>
 			<Svg
 				width={w}
 				height={h}
-				viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+				viewBox={`${minX} ${minY} ${VIEW_W} ${VIEW_H}`}
 				preserveAspectRatio="xMidYMid meet"
 			>
 				{/* Arcs */}
-				{arcs.map((arc) => (
-					<Line
-						key={arc.id}
-						x1={arc.x1}
-						y1={arc.y1}
-						x2={arc.x2}
-						y2={arc.y2}
-						stroke={colors.slate600}
-						strokeWidth={1.5}
-					/>
-				))}
-				{/* Places (black circles) */}
-				{places.map((p) => (
-					<Circle
-						key={p.id}
-						cx={p.x}
-						cy={p.y}
-						r={PLACE_R}
-						fill={colors.slate800}
-					/>
-				))}
-				{/* Activities (rounded rectangles + labels) */}
-				{activities.map((act) => (
+				{edges.map((arc, i) => {
+					const nodeFrom = nodeMap.get(arc.from);
+					const nodeTo = nodeMap.get(arc.to);
+					if (!nodeFrom || !nodeTo) return null;
+					return (
+						<Line
+							key={`edge-${arc.from}-${arc.to}`}
+							x1={nodeFrom.x}
+							y1={nodeFrom.y}
+							x2={nodeTo.x}
+							y2={nodeTo.y}
+							stroke={colors.slate600}
+							strokeWidth={1.5}
+							markerEnd="url(#arrowhead)"
+						/>
+					);
+				})}
+				{/* Nodes (rounded rectangles + labels) */}
+				{nodes.map((act) => (
 					<React.Fragment key={act.id}>
 						<Rect
 							x={act.x - ACT_W / 2}
@@ -157,7 +88,7 @@ export function CausalNetView({ width: propWidth, height: propHeight }: Props) {
 							rx={ACT_RX}
 							ry={ACT_RX}
 							fill={colors.white}
-							stroke={colors.slate600}
+							stroke={colors.peachDark}
 							strokeWidth={1.5}
 						/>
 						<SvgText
@@ -165,20 +96,27 @@ export function CausalNetView({ width: propWidth, height: propHeight }: Props) {
 							y={act.y}
 							dy=".35em"
 							fill={colors.slate700}
-							fontSize={9}
+							fontSize={10}
 							fontWeight="600"
 							textAnchor="middle"
 						>
-							{act.label}
+							{act.activityLabel.length > 11
+								? `${act.activityLabel.substring(0, 10)}...`
+								: act.activityLabel}
 						</SvgText>
 					</React.Fragment>
 				))}
 			</Svg>
-			<Text style={styles.caption}>
-				Example workflow: plan day → parallel activities (deep work, meetings,
-				review) → wrap up. With more data, this will reflect your real activity
-				dependencies.
-			</Text>
+			{nodes.length > 1 ? (
+				<Text style={styles.caption}>
+					Markov transitions map showing how your activities flow into each
+					other based on actual history.
+				</Text>
+			) : (
+				<Text style={styles.caption}>
+					Log more activities sequentially to see the dependency graph grow.
+				</Text>
+			)}
 		</View>
 	);
 }

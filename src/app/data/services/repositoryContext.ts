@@ -3,7 +3,11 @@ import { getDatabase } from "../../../data/database";
 import {
 	ActivityRepository,
 	ConstraintRepository,
+	FrequencyEmaStateRepository,
+	HeuristicNetArcRepository,
+	HeuristicNetPairRepository,
 	HistoryRepository,
+	MarkovTransitionRepository,
 	ScheduleRepository,
 	UserBehaviorRepository,
 	UserRepository,
@@ -23,6 +27,10 @@ export interface RepoBundle {
 	schedule: ScheduleRepository;
 	userBehavior: UserBehaviorRepository;
 	user: UserRepository;
+	hnetArc: HeuristicNetArcRepository;
+	hnetPair: HeuristicNetPairRepository;
+	markov: MarkovTransitionRepository;
+	frequencyEma: FrequencyEmaStateRepository;
 }
 
 export function makeRepositories(scope: string): RepoBundle {
@@ -35,6 +43,10 @@ export function makeRepositories(scope: string): RepoBundle {
 		schedule: new ScheduleRepository(database),
 		userBehavior: new UserBehaviorRepository(database),
 		user: new UserRepository(getDatabase("default")),
+		hnetArc: new HeuristicNetArcRepository(database),
+		hnetPair: new HeuristicNetPairRepository(database),
+		markov: new MarkovTransitionRepository(database),
+		frequencyEma: new FrequencyEmaStateRepository(database),
 	};
 }
 
