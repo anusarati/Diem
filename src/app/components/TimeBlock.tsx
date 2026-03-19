@@ -23,6 +23,8 @@ export interface TimeBlockProps {
 	categoryColor?: string;
 	fullDate?: string; // NEW: full ISO date string
 	onPress?: () => void;
+	completed?: boolean; // ADDED
+	status?: string; // ADDED
 	// Positioning props would be calculated by parent, passing style here
 	style?: StyleProp<ViewStyle>;
 }
@@ -33,6 +35,7 @@ export function TimeBlock({
 	type,
 	categoryColor = colors.primary,
 	onPress,
+	completed,
 	style,
 }: TimeBlockProps) {
 	const isPredicted = type === "predicted";
@@ -44,6 +47,11 @@ export function TimeBlock({
 		{ backgroundColor: isPredicted ? `${categoryColor}20` : categoryColor }, // 20 hex = ~12% opacity
 		isFlexible && styles.flexibleContainer,
 		isPredicted && styles.predictedContainer,
+		completed && {
+			opacity: 0.65,
+			borderLeftColor: colors.slate400,
+			shadowOpacity: 0,
+		}, // Faded completed
 		style,
 	];
 
@@ -61,8 +69,15 @@ export function TimeBlock({
 			style={containerStyle}
 		>
 			<View style={styles.content}>
-				<Text numberOfLines={1} style={[styles.title, textStyle]}>
-					{title}
+				<Text
+					numberOfLines={1}
+					style={[
+						styles.title,
+						textStyle,
+						completed && { textDecorationLine: "line-through" },
+					]}
+				>
+					{completed ? `✅ ${title}` : title}
 				</Text>
 				{subtitle && (
 					<Text numberOfLines={1} style={[styles.subtitle, subTextStyle]}>

@@ -14,6 +14,8 @@ interface ActivityActionMenuProps {
 	onClose: () => void;
 	onEdit: () => void;
 	onDelete: () => void;
+	onComplete?: () => void; // ADDED
+	isCompleted?: boolean; // ADDED
 }
 
 export function ActivityActionMenu({
@@ -22,6 +24,8 @@ export function ActivityActionMenu({
 	onClose,
 	onEdit,
 	onDelete,
+	onComplete, // ADDED
+	isCompleted, // ADDED
 }: ActivityActionMenuProps) {
 	return (
 		<Modal
@@ -37,6 +41,18 @@ export function ActivityActionMenu({
 						<Text style={styles.title}>{activityTitle}</Text>
 
 						<View style={styles.divider} />
+
+						{onComplete && (
+							<>
+								<TouchableOpacity style={styles.actionRow} onPress={onComplete}>
+									<Text style={styles.actionText}>
+										{isCompleted ? "Mark as Incomplete" : "Mark Complete"}
+									</Text>
+									<Text style={styles.icon}>{isCompleted ? "↩️" : "✅"}</Text>
+								</TouchableOpacity>
+								<View style={styles.divider} />
+							</>
+						)}
 
 						<TouchableOpacity style={styles.actionRow} onPress={onEdit}>
 							<Text style={styles.actionText}>Edit Activity</Text>
