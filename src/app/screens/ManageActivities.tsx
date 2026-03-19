@@ -15,6 +15,7 @@ import { ActivityForm } from "../components/ActivityForm";
 import { ActivityRow } from "../components/ActivityRow";
 import {
 	createActivityGlobal,
+	getActivityConstraints,
 	getAllActivities,
 	observeAllActivities,
 	removeActivity,
@@ -35,6 +36,9 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 	const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(
 		null,
 	);
+	const [selectedConstraints, setSelectedConstraints] = useState<
+		Partial<ActivityFormData>
+	>({});
 
 	useEffect(() => {
 		let disposed = false;
@@ -64,8 +68,14 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 		};
 	}, []);
 
-	const handleEdit = useCallback((activity: ActivityItem) => {
+	const handleEdit = useCallback(async (activity: ActivityItem) => {
 		setSelectedActivity(activity);
+		try {
+			const constraints = await getActivityConstraints(activity.id);
+			setSelectedConstraints(constraints);
+		} catch (e) {
+			console.error("[ManageActivities] load constraints failed", e);
+		}
 		setEditModalVisible(true);
 	}, []);
 
@@ -95,6 +105,11 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 					isReplaceable: isReplaceableValue,
 					isRecurring: data.isRecurring,
 					recurrencePattern: data.recurrencePattern,
+					minFrequency: data.minFrequency,
+					maxFrequency: data.maxFrequency,
+					minDuration: data.minDuration,
+					maxDuration: data.maxDuration,
+					timeRestrictions: data.timeRestrictions,
 				});
 			} else {
 				await createActivityGlobal(
@@ -105,6 +120,7 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 					isReplaceableValue,
 					data.isRecurring,
 					data.recurrencePattern,
+					data, // constraints payload
 				);
 			}
 			setEditModalVisible(false);
@@ -198,6 +214,7 @@ export function ManageActivitiesScreen({ onNavigate: _onNavigate }: Props) {
 													: "HARD",
 												isRecurring: selectedActivity.isRecurring,
 												recurrencePattern: selectedActivity.recurrencePattern,
+												...selectedConstraints,
 											}
 										: undefined
 								}

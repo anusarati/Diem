@@ -20,6 +20,7 @@ export interface TimeBlockProps {
 	durationMinutes: number;
 	type: ActivityType;
 	priority?: PriorityLevel; // NEW
+	activityId?: string; // ADDED
 	categoryColor?: string;
 	fullDate?: string; // NEW: full ISO date string
 	onPress?: () => void;

@@ -146,7 +146,12 @@ function generateRecurrenceDates(
 
 export async function addScheduledActivity(
 	event: ScheduledActivityInput,
-	options?: { recurrencePattern?: RecurrencePattern },
+	options?: {
+		recurrencePattern?: RecurrencePattern;
+		constraints?: Partial<
+			import("../../hooks/useActivityValidation").ActivityFormData
+		>;
+	},
 ): Promise<ScheduledEventEntity> {
 	return withScopedRepositories(async (repositories) => {
 		const activityId = await ensureActivityForScheduledEvent(
@@ -154,6 +159,15 @@ export async function addScheduledActivity(
 			event,
 		);
 		const now = new Date();
+
+		if (options?.constraints) {
+			const { saveActivityConstraints } = await import("./homeService");
+			await saveActivityConstraints(
+				repositories,
+				activityId,
+				options.constraints,
+			);
+		}
 
 		const pattern = options?.recurrencePattern || {
 			frequency: "DAILY",
@@ -253,12 +267,26 @@ export async function addScheduledActivity(
 export async function updateScheduledActivity(
 	id: string,
 	patch: Partial<ScheduledActivityInput>,
-	options?: { recurrencePattern?: RecurrencePattern },
+	options?: {
+		recurrencePattern?: RecurrencePattern;
+		constraints?: Partial<
+			import("../../hooks/useActivityValidation").ActivityFormData
+		>;
+	},
 ): Promise<ScheduledEventEntity | null> {
 	return withScopedRepositories(async (repositories) => {
 		const existing = await repositories.schedule.findById(id);
 		if (!existing) {
 			return null;
+		}
+
+		if (options?.constraints) {
+			const { saveActivityConstraints } = await import("./homeService");
+			await saveActivityConstraints(
+				repositories,
+				existing.activityId,
+				options.constraints,
+			);
 		}
 
 		const updated = await repositories.schedule.update(id, {

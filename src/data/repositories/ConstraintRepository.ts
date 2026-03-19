@@ -38,6 +38,10 @@ export class ConstraintRepository {
 		return this.collection.query().fetch();
 	}
 
+	async listForActivity(activityId: string): Promise<Constraint[]> {
+		return this.collection.query(Q.where("activity_id", activityId)).fetch();
+	}
+
 	async list(): Promise<Constraint[]> {
 		return this.listAll();
 	}

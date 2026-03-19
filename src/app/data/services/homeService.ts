@@ -6,6 +6,7 @@ import type ActivityModel from "../../../data/models/Activity";
 import type ActivityHistory from "../../../data/models/ActivityHistory";
 import { HistoryWriteService } from "../../../mining";
 import { EventStatus, RecurrenceFrequency } from "../../../types/domain";
+import type { ActivityFormData } from "../../hooks/useActivityValidation";
 import type {
 	ActivityItem,
 	RecurrencePattern,
@@ -528,10 +529,37 @@ export async function updateActivityGlobal(
 		isReplaceable?: boolean;
 		isRecurring?: boolean;
 		recurrencePattern?: RecurrencePattern;
+		minFrequency?: number;
+		maxFrequency?: number;
+		minDuration?: number;
+		maxDuration?: number;
+		timeRestrictions?: {
+			id: string;
+			startTime: string;
+			endTime: string;
+			type: "ALLOW" | "DENY";
+		}[];
 	},
 ): Promise<void> {
 	return withScopedRepositories(async (repositories) => {
 		await repositories.activity.update(activityId, patch);
+
+		const hasConstraints =
+			patch.minFrequency !== undefined ||
+			patch.maxFrequency !== undefined ||
+			patch.minDuration !== undefined ||
+			patch.maxDuration !== undefined ||
+			patch.timeRestrictions !== undefined;
+
+		if (hasConstraints) {
+			await saveActivityConstraints(repositories, activityId, {
+				minFrequency: patch.minFrequency,
+				maxFrequency: patch.maxFrequency,
+				minDuration: patch.minDuration,
+				maxDuration: patch.maxDuration,
+				timeRestrictions: patch.timeRestrictions,
+			});
+		}
 
 		if (patch.isRecurring !== undefined) {
 			if (patch.isRecurring) {
@@ -620,6 +648,7 @@ export async function createActivityGlobal(
 	isReplaceable: boolean = true,
 	isRecurring: boolean = false,
 	recurrencePattern?: RecurrencePattern,
+	constraints?: Partial<ActivityFormData>,
 ): Promise<void> {
 	return withScopedRepositories(async (repositories) => {
 		const activity = await repositories.activity.create({
@@ -631,6 +660,10 @@ export async function createActivityGlobal(
 			color: DEFAULT_ACTIVITY_COLOR,
 			createdAt: new Date(),
 		});
+
+		if (constraints) {
+			await saveActivityConstraints(repositories, activity.id, constraints);
+		}
 
 		if (isRecurring) {
 			await repositories.recurringActivity.create({
@@ -649,5 +682,110 @@ export async function createActivityGlobal(
 				isActive: true,
 			});
 		}
+	});
+}
+
+export async function saveActivityConstraints(
+	repositories: RepoBundle,
+	activityId: string,
+	data: Partial<ActivityFormData>,
+) {
+	const { ConstraintType, TimeScope } = await import("../../../types/domain");
+
+	// 1. Clear existing constraints for this activity
+	const existing = await repositories.constraint.listForActivity(activityId);
+	if (existing.length > 0) {
+		await repositories.database.write(async () => {
+			for (const c of existing) {
+				await c.destroyPermanently();
+			}
+		});
+	}
+
+	// 2. Frequency Goal
+	if (data.minFrequency !== undefined || data.maxFrequency !== undefined) {
+		await repositories.constraint.create({
+			type: ConstraintType.USER_FREQUENCY_GOAL,
+			activityId,
+			isActive: true,
+			createdAt: new Date(),
+			value: {
+				scope: TimeScope.SAME_WEEK,
+				minCount: data.minFrequency || undefined,
+				maxCount: data.maxFrequency || undefined,
+			} as any,
+		});
+	}
+
+	// 3. Cumulative Time / Duration
+	if (data.minDuration !== undefined || data.maxDuration !== undefined) {
+		await repositories.constraint.create({
+			type: ConstraintType.GLOBAL_CUMULATIVE_TIME,
+			activityId,
+			isActive: true,
+			createdAt: new Date(),
+			value: {
+				periodSlots: 0,
+				minDuration: data.minDuration || 0,
+				maxDuration: data.maxDuration || 0,
+			} as any,
+		});
+	}
+
+	// 4. Time Restrictions
+	if (data.timeRestrictions && data.timeRestrictions.length > 0) {
+		for (const res of data.timeRestrictions) {
+			const [sh, sm] = res.startTime.split(":").map(Number);
+			const [eh, em] = res.endTime.split(":").map(Number);
+			const startSlot = Math.floor((sh * 60 + sm) / 15);
+			const endSlot = Math.floor((eh * 60 + em) / 15);
+
+			await repositories.constraint.create({
+				type: ConstraintType.GLOBAL_FORBIDDEN_ZONE,
+				activityId,
+				isActive: true,
+				createdAt: new Date(),
+				value: {
+					startSlot,
+					endSlot,
+				} as any,
+			});
+		}
+	}
+}
+
+export async function getActivityConstraints(
+	activityId: string,
+): Promise<Partial<ActivityFormData>> {
+	return withScopedRepositories(async (repositories) => {
+		const constraints =
+			await repositories.constraint.listForActivity(activityId);
+		const out: Partial<ActivityFormData> = {};
+
+		for (const c of constraints) {
+			const val = c.value as any;
+			if (c.type === "USER_FREQUENCY_GOAL") {
+				out.minFrequency = val.minCount;
+				out.maxFrequency = val.maxCount;
+			} else if (c.type === "GLOBAL_CUMULATIVE_TIME") {
+				out.minDuration = val.minDuration;
+				out.maxDuration = val.maxDuration;
+			} else if (c.type === "GLOBAL_FORBIDDEN_ZONE") {
+				if (!out.timeRestrictions) out.timeRestrictions = [];
+				const toStr = (h: number, m: number) =>
+					`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+				const sh = Math.floor((val.startSlot * 15) / 60);
+				const sm = (val.startSlot * 15) % 60;
+				const eh = Math.floor((val.endSlot * 15) / 60);
+				const em = (val.endSlot * 15) % 60;
+				out.timeRestrictions.push({
+					id: c.id,
+					startTime: toStr(sh, sm),
+					endTime: toStr(eh, em),
+					type: "DENY",
+				});
+			}
+		}
+		return out;
 	});
 }

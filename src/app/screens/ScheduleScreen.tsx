@@ -38,6 +38,7 @@ import { importFromIcs, parseIcsContent } from "../data/icsImport";
 import {
 	addScheduledActivity,
 	clearAllCalendarEvents,
+	getActivityConstraints,
 	getScheduledActivitiesForDate,
 	getScheduledActivitiesForMonth,
 	getScheduledActivitiesForWeek,
@@ -83,10 +84,12 @@ function entityToTimeBlock(e: ScheduledEventEntity): TimeBlockProps {
 
 	return {
 		id: e.id,
+		activityId: e.activityId,
 		title: e.title,
 		startTime,
 		durationMinutes: e.duration ?? e.durationMinutes ?? 60,
 		type,
+		priority: e.priority === 3 ? "high" : e.priority === 2 ? "medium" : "low",
 		day,
 		categoryColor: getColorForCategory(e.categoryId),
 		fullDate: e.startTime,
@@ -418,6 +421,9 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	}
 	const [editingActivity, setEditingActivity] =
 		useState<EditingActivity | null>(null);
+	const [selectedConstraints, setSelectedConstraints] = useState<
+		Partial<ActivityFormData>
+	>({});
 
 	// Helper to get color from priority
 	const _getColorForPriority = (
@@ -471,6 +477,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 						recurrencePattern: activityData.isRecurring
 							? (activityData.recurrencePattern as any)
 							: undefined,
+						constraints: activityData,
 					},
 				);
 				setEditingActivity(null);
@@ -503,6 +510,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 						recurrencePattern: activityData.isRecurring
 							? (activityData.recurrencePattern as any)
 							: undefined,
+						constraints: activityData,
 					},
 				);
 			}
@@ -546,7 +554,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		}
 	};
 
-	const startEditing = () => {
+	const startEditing = async () => {
 		const activity = activities.find((a) => a.id === selectedActivityId);
 		if (activity) {
 			setEditingActivity({
@@ -557,6 +565,12 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 				type: activity.type,
 				priority: activity.priority,
 			});
+			if (activity.activityId) {
+				try {
+					const constraints = await getActivityConstraints(activity.activityId);
+					setSelectedConstraints(constraints);
+				} catch (e) {}
+			}
 			setMenuVisible(false);
 			setInitialTime(activity.startTime);
 			setIsQuickAddOpen(true);
@@ -569,7 +583,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 		setIsQuickAddOpen(true);
 	};
 
-	const handleActivityDoublePress = (id: string) => {
+	const handleActivityDoublePress = async (id: string) => {
 		setSelectedActivityId(id);
 		const activity = activities.find((a) => a.id === id);
 		if (activity) {
@@ -581,6 +595,12 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 				type: activity.type,
 				priority: activity.priority,
 			});
+			if (activity.activityId) {
+				try {
+					const constraints = await getActivityConstraints(activity.activityId);
+					setSelectedConstraints(constraints);
+				} catch (e) {}
+			}
 			setMenuVisible(false);
 			setInitialTime(activity.startTime);
 			setIsQuickAddOpen(true);
@@ -647,6 +667,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 	const handleSheetClose = () => {
 		setIsQuickAddOpen(false);
 		setEditingActivity(null);
+		setSelectedConstraints({});
 	};
 
 	const handleSchedule = async (onlyEmptyTime: boolean) => {
@@ -1176,6 +1197,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 						style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
 						onPress={() => {
 							setEditingActivity(null);
+							setSelectedConstraints({});
 							setInitialTime("09:00");
 							setIsAddChoiceOpen(true);
 						}}
@@ -1207,6 +1229,7 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 									replaceabilityStatus:
 										editingActivity.type === "flexible" ? "SOFT" : "HARD",
 									priority: editingActivity.priority,
+									...selectedConstraints,
 								}
 							: undefined
 					}
