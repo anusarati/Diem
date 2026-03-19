@@ -258,7 +258,7 @@ export function ActivityForm({
 				)}
 			</View>
 
-			{showTimeFields && (
+			{showTimeFields ? (
 				<View style={styles.row}>
 					<View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
 						<Text style={styles.label}>Start Time</Text>
@@ -281,6 +281,18 @@ export function ActivityForm({
 							onChangeText={(v) => setValue("duration", parseInt(v, 10) || 0)}
 						/>
 					</View>
+				</View>
+			) : (
+				<View style={styles.inputGroup}>
+					<Text style={styles.label}>Default Duration (min)</Text>
+					<TextInput
+						style={styles.input}
+						placeholder="60"
+						placeholderTextColor={colors.slate400}
+						keyboardType="numeric"
+						value={duration?.toString()}
+						onChangeText={(v) => setValue("duration", parseInt(v, 10) || 0)}
+					/>
 				</View>
 			)}
 
