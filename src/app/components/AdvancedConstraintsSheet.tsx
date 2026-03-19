@@ -12,6 +12,12 @@ import { colors, spacing } from "../theme";
 import { DatePickerModal } from "./DatePickerModal";
 import { TimeRestrictionPicker } from "./TimeRestrictionPicker";
 
+const parseNumericInput = (v: string) => {
+	if (v === "") return undefined;
+	const parsed = parseInt(v, 10);
+	return isNaN(parsed) ? undefined : parsed;
+};
+
 type Props = {
 	values: ActivityFormData;
 	onChange: <T extends keyof ActivityFormData>(
@@ -50,9 +56,9 @@ export function AdvancedConstraintsSheet({ values, onChange, onClose }: Props) {
 						<TextInput
 							style={styles.input}
 							keyboardType="numeric"
-							value={String(values.minFrequency || "")}
+							value={String(values.minFrequency ?? "")}
 							onChangeText={(v) =>
-								onChange("minFrequency", parseInt(v, 10) || 0)
+								onChange("minFrequency", parseNumericInput(v))
 							}
 						/>
 					</View>
@@ -61,9 +67,9 @@ export function AdvancedConstraintsSheet({ values, onChange, onClose }: Props) {
 						<TextInput
 							style={styles.input}
 							keyboardType="numeric"
-							value={String(values.maxFrequency || "")}
+							value={String(values.maxFrequency ?? "")}
 							onChangeText={(v) =>
-								onChange("maxFrequency", parseInt(v, 10) || 0)
+								onChange("maxFrequency", parseNumericInput(v))
 							}
 						/>
 					</View>
@@ -75,9 +81,9 @@ export function AdvancedConstraintsSheet({ values, onChange, onClose }: Props) {
 						<TextInput
 							style={styles.input}
 							keyboardType="numeric"
-							value={String(values.minDuration || "")}
+							value={String(values.minDuration ?? "")}
 							onChangeText={(v) =>
-								onChange("minDuration", parseInt(v, 10) || 0)
+								onChange("minDuration", parseNumericInput(v))
 							}
 						/>
 					</View>
@@ -86,9 +92,9 @@ export function AdvancedConstraintsSheet({ values, onChange, onClose }: Props) {
 						<TextInput
 							style={styles.input}
 							keyboardType="numeric"
-							value={String(values.maxDuration || "")}
+							value={String(values.maxDuration ?? "")}
 							onChangeText={(v) =>
-								onChange("maxDuration", parseInt(v, 10) || 0)
+								onChange("maxDuration", parseNumericInput(v))
 							}
 						/>
 					</View>
@@ -103,13 +109,13 @@ export function AdvancedConstraintsSheet({ values, onChange, onClose }: Props) {
 								style={styles.input}
 								keyboardType="numeric"
 								placeholder="e.g. 15"
-								value={String(values.recurrencePattern?.dayOfMonth || "")}
+								value={String(values.recurrencePattern?.dayOfMonth ?? "")}
 								onChangeText={(v) =>
 									onChange("recurrencePattern", {
 										...values.recurrencePattern,
 										frequency: values.recurrencePattern?.frequency || "MONTHLY",
 										interval: values.recurrencePattern?.interval || 1,
-										dayOfMonth: parseInt(v, 10) || undefined,
+										dayOfMonth: parseNumericInput(v),
 									})
 								}
 							/>
