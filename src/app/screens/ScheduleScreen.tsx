@@ -803,6 +803,12 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 				);
 
 				if (match) {
+					if (
+						match.isLocked ||
+						match.replaceabilityStatus === (Replaceability.HARD as string)
+					) {
+						continue;
+					}
 					await repositories.schedule.update(match.id, {
 						startTime,
 						endTime,
@@ -819,10 +825,12 @@ export function ScheduleScreen({ onNavigate: _onNavigate }: Props) {
 							endTime,
 							duration: result.durationSlots * 15,
 							status: EventStatus.CONFIRMED,
-							replaceabilityStatus: Replaceability.SOFT,
+							replaceabilityStatus: activity.isReplaceable
+								? Replaceability.SOFT
+								: Replaceability.HARD,
 							priority: activity.priority,
 							source: ActivitySource.AUTONOMOUS,
-							isLocked: false,
+							isLocked: !activity.isReplaceable,
 							isRecurring: false,
 							createdAt: new Date(),
 							updatedAt: new Date(),

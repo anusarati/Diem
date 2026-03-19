@@ -1,0 +1,918 @@
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/7ccbd7f2efc8197b227a7079cfc6bb5d/results.bin b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/7ccbd7f2efc8197b227a7079cfc6bb5d/results.bin
+new file mode 100644
+index 0000000..0d259dd
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/7ccbd7f2efc8197b227a7079cfc6bb5d/results.bin
+@@ -0,0 +1 @@
++o/classes
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/7ccbd7f2efc8197b227a7079cfc6bb5d/transformed/classes/classes_dex/classes.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/7ccbd7f2efc8197b227a7079cfc6bb5d/transformed/classes/classes_dex/classes.dex
+new file mode 100644
+index 0000000..7ba72c4
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/7ccbd7f2efc8197b227a7079cfc6bb5d/transformed/classes/classes_dex/classes.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/results.bin b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/results.bin
+new file mode 100644
+index 0000000..7ed749e
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/results.bin
+@@ -0,0 +1 @@
++o/bundleLibRuntimeToDirDebug
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/BuildConfig.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/BuildConfig.dex
+new file mode 100644
+index 0000000..d2ae25b
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/BuildConfig.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/Database.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/Database.dex
+new file mode 100644
+index 0000000..0143cf7
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/Database.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Companion.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Companion.dex
+new file mode 100644
+index 0000000..c982a1f
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Companion.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Connection$Connected.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Connection$Connected.dex
+new file mode 100644
+index 0000000..887c0f6
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Connection$Connected.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Connection$Waiting.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Connection$Waiting.dex
+new file mode 100644
+index 0000000..7d67b91
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Connection$Waiting.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Connection.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Connection.dex
+new file mode 100644
+index 0000000..6a699ea
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge$Connection.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge.dex
+new file mode 100644
+index 0000000..f0e484e
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseBridge.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$MigrationNeededError.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$MigrationNeededError.dex
+new file mode 100644
+index 0000000..1759cba
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$MigrationNeededError.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$Compatible.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$Compatible.dex
+new file mode 100644
+index 0000000..196eb24
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$Compatible.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsMigration.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsMigration.dex
+new file mode 100644
+index 0000000..e22f1e9
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsMigration.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsSetup.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsSetup.dex
+new file mode 100644
+index 0000000..71ce5fe
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsSetup.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility.dex
+new file mode 100644
+index 0000000..92b09af
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaNeededError.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaNeededError.dex
+new file mode 100644
+index 0000000..7ca0879
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver$SchemaNeededError.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver.dex
+new file mode 100644
+index 0000000..4e57f42
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseDriver.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseUtilsKt.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseUtilsKt.dex
+new file mode 100644
+index 0000000..5ebdfcd
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/DatabaseUtilsKt.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/MigrationSet.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/MigrationSet.dex
+new file mode 100644
+index 0000000..ac9e7c9
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/MigrationSet.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/Queries.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/Queries.dex
+new file mode 100644
+index 0000000..7f8c583
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/Queries.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/Schema.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/Schema.dex
+new file mode 100644
+index 0000000..9697ca9
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/Schema.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/WatermelonDBPackage.dex b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/WatermelonDBPackage.dex
+new file mode 100644
+index 0000000..2e26592
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/nozbe/watermelondb/WatermelonDBPackage.dex differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin
+new file mode 100644
+index 0000000..601f245
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/.transforms/bd0403aaae4526a15e3eb42b4f3a182e/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/generated/source/buildConfig/debug/com/nozbe/watermelondb/BuildConfig.java b/node_modules/@nozbe/watermelondb/native/android/build/generated/source/buildConfig/debug/com/nozbe/watermelondb/BuildConfig.java
+new file mode 100644
+index 0000000..0173459
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/generated/source/buildConfig/debug/com/nozbe/watermelondb/BuildConfig.java
+@@ -0,0 +1,10 @@
++/**
++ * Automatically generated file. DO NOT MODIFY
++ */
++package com.nozbe.watermelondb;
++
++public final class BuildConfig {
++  public static final boolean DEBUG = Boolean.parseBoolean("true");
++  public static final String LIBRARY_PACKAGE_NAME = "com.nozbe.watermelondb";
++  public static final String BUILD_TYPE = "debug";
++}
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+new file mode 100644
+index 0000000..28b835f
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.nozbe.watermelondb" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+new file mode 100644
+index 0000000..c5ff69c
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+@@ -0,0 +1,18 @@
++{
++  "version": 3,
++  "artifactType": {
++    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
++    "kind": "Directory"
++  },
++  "applicationId": "com.nozbe.watermelondb",
++  "variantName": "debug",
++  "elements": [
++    {
++      "type": "SINGLE",
++      "filters": [],
++      "attributes": [],
++      "outputFile": "AndroidManifest.xml"
++    }
++  ],
++  "elementType": "File"
++}
+\ No newline at end of file
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+new file mode 100644
+index 0000000..1211b1e
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+@@ -0,0 +1,6 @@
++aarFormatVersion=1.0
++aarMetadataVersion=1.0
++minCompileSdk=1
++minCompileSdkExtension=0
++minAndroidGradlePluginVersion=1.0.0
++coreLibraryDesugaringEnabled=false
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+new file mode 100644
+index 0000000..9e26dfe
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+@@ -0,0 +1 @@
++{}
+\ No newline at end of file
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar
+new file mode 100644
+index 0000000..d8aa511
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar
+new file mode 100644
+index 0000000..037f6ca
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+new file mode 100644
+index 0000000..8817673
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+@@ -0,0 +1 @@
++#Wed Mar 18 16:51:30 PDT 2026
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+new file mode 100644
+index 0000000..c0d6fe6
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/build/generated/res/resValues/debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/build/generated/res/resValues/debug"/></dataSet><mergedItems/></merger>
+\ No newline at end of file
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/mergeDebugAssets/merger.xml b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
+new file mode 100644
+index 0000000..4d00299
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/hope on being final/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/assets"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/hope on being final/Diem/node_modules/@nozbe/watermelondb/native/android/src/debug/assets"/></dataSet><dataSet config="generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/hope on being final/Diem/node_modules/@nozbe/watermelondb/native/android/build/intermediates/shader_assets/debug/compileDebugShaders/out"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+new file mode 100644
+index 0000000..9a5c909
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/hope on being final/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/jniLibs"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/hope on being final/Diem/node_modules/@nozbe/watermelondb/native/android/src/debug/jniLibs"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/mergeDebugShaders/merger.xml b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+new file mode 100644
+index 0000000..2cfad7b
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/hope on being final/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/shaders"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/arshiyasalehi/Desktop/hope on being final/Diem/node_modules/@nozbe/watermelondb/native/android/src/debug/shaders"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/nozbe_watermelondb_debug.kotlin_module b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/nozbe_watermelondb_debug.kotlin_module
+new file mode 100644
+index 0000000..1f47223
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/nozbe_watermelondb_debug.kotlin_module differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/nozbe/watermelondb/BuildConfig.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/nozbe/watermelondb/BuildConfig.class
+new file mode 100644
+index 0000000..33f33e4
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/nozbe/watermelondb/BuildConfig.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+new file mode 100644
+index 0000000..78ac5b8
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+@@ -0,0 +1,2 @@
++R_DEF: Internal format may change without notice
++local
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+new file mode 100644
+index 0000000..8b83b44
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+@@ -0,0 +1,7 @@
++1<?xml version="1.0" encoding="utf-8"?>
++2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++3    package="com.nozbe.watermelondb" >
++4
++5    <uses-sdk android:minSdkVersion="24" />
++6
++7</manifest>
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+new file mode 100644
+index 0000000..28b835f
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.nozbe.watermelondb" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+new file mode 100644
+index 0000000..0637a08
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+@@ -0,0 +1 @@
++[]
+\ No newline at end of file
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+new file mode 100644
+index 0000000..08f4ebe
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+@@ -0,0 +1 @@
++0 Warning/Error
+\ No newline at end of file
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/META-INF/nozbe_watermelondb_debug.kotlin_module b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/META-INF/nozbe_watermelondb_debug.kotlin_module
+new file mode 100644
+index 0000000..1f47223
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/META-INF/nozbe_watermelondb_debug.kotlin_module differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/BuildConfig.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/BuildConfig.class
+new file mode 100644
+index 0000000..33f33e4
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/BuildConfig.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/Database.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/Database.class
+new file mode 100644
+index 0000000..45ae67b
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/Database.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Companion.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Companion.class
+new file mode 100644
+index 0000000..47e8814
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Companion.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Connection$Connected.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Connection$Connected.class
+new file mode 100644
+index 0000000..344dab4
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Connection$Connected.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Connection$Waiting.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Connection$Waiting.class
+new file mode 100644
+index 0000000..26ae3c9
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Connection$Waiting.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Connection.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Connection.class
+new file mode 100644
+index 0000000..22b8d88
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge$Connection.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge.class
+new file mode 100644
+index 0000000..70bc26a
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseBridge.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$MigrationNeededError.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$MigrationNeededError.class
+new file mode 100644
+index 0000000..4516466
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$MigrationNeededError.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$Compatible.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$Compatible.class
+new file mode 100644
+index 0000000..8a79998
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$Compatible.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsMigration.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsMigration.class
+new file mode 100644
+index 0000000..f380c46
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsMigration.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsSetup.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsSetup.class
+new file mode 100644
+index 0000000..26b3ef9
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsSetup.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility.class
+new file mode 100644
+index 0000000..0bc47c9
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaNeededError.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaNeededError.class
+new file mode 100644
+index 0000000..30ba1c2
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver$SchemaNeededError.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver.class
+new file mode 100644
+index 0000000..dd1cfb3
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseDriver.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseUtilsKt.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseUtilsKt.class
+new file mode 100644
+index 0000000..ccdb81b
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/DatabaseUtilsKt.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/MigrationSet.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/MigrationSet.class
+new file mode 100644
+index 0000000..c8fed44
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/MigrationSet.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/Queries.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/Queries.class
+new file mode 100644
+index 0000000..6e463b7
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/Queries.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/Schema.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/Schema.class
+new file mode 100644
+index 0000000..b399563
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/Schema.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/WatermelonDBPackage.class b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/WatermelonDBPackage.class
+new file mode 100644
+index 0000000..30004f3
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/nozbe/watermelondb/WatermelonDBPackage.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar
+new file mode 100644
+index 0000000..cb71f52
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+new file mode 100644
+index 0000000..236785c
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+@@ -0,0 +1 @@
++com.nozbe.watermelondb
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab
+new file mode 100644
+index 0000000..a656cb4
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream
+new file mode 100644
+index 0000000..feddac4
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len
+new file mode 100644
+index 0000000..052b2b1
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len
+new file mode 100644
+index 0000000..9e27f73
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at
+new file mode 100644
+index 0000000..610320c
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i
+new file mode 100644
+index 0000000..de4d573
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab
+new file mode 100644
+index 0000000..144f0ff
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream
+new file mode 100644
+index 0000000..5bc9195
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len
+new file mode 100644
+index 0000000..5c4bed8
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len
+new file mode 100644
+index 0000000..385642d
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at
+new file mode 100644
+index 0000000..ef1e899
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i
+new file mode 100644
+index 0000000..83d086f
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab
+new file mode 100644
+index 0000000..00809a5
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream
+new file mode 100644
+index 0000000..5bc9195
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len
+new file mode 100644
+index 0000000..5c4bed8
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len
+new file mode 100644
+index 0000000..385642d
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at
+new file mode 100644
+index 0000000..66823ff
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i
+new file mode 100644
+index 0000000..83d086f
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab
+new file mode 100644
+index 0000000..cbb2388
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream
+new file mode 100644
+index 0000000..597ac9c
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len
+new file mode 100644
+index 0000000..8af03de
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len
+new file mode 100644
+index 0000000..01bdaa1
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at
+new file mode 100644
+index 0000000..a6c804e
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i
+new file mode 100644
+index 0000000..64cbe14
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab
+new file mode 100644
+index 0000000..553b5a1
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream
+new file mode 100644
+index 0000000..fadac16
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len
+new file mode 100644
+index 0000000..2ea3f9a
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len
+new file mode 100644
+index 0000000..09407ef
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at
+new file mode 100644
+index 0000000..ea271d2
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i
+new file mode 100644
+index 0000000..b46072f
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab
+new file mode 100644
+index 0000000..bdf584a
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream
+new file mode 100644
+index 0000000..a418e10
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream.len
+new file mode 100644
+index 0000000..c259288
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.len
+new file mode 100644
+index 0000000..2a17e6e
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.values.at
+new file mode 100644
+index 0000000..46d6744
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i
+new file mode 100644
+index 0000000..f5c1adf
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab
+new file mode 100644
+index 0000000..283cbf3
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream
+new file mode 100644
+index 0000000..069902a
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len
+new file mode 100644
+index 0000000..6c854f4
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len
+new file mode 100644
+index 0000000..14f7c06
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at
+new file mode 100644
+index 0000000..4601204
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i
+new file mode 100644
+index 0000000..b1d2904
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab
+new file mode 100644
+index 0000000..bdd32b5
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream
+new file mode 100644
+index 0000000..feddac4
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len
+new file mode 100644
+index 0000000..052b2b1
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len
+new file mode 100644
+index 0000000..9e27f73
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at
+new file mode 100644
+index 0000000..36817ac
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i
+new file mode 100644
+index 0000000..de4d573
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab
+new file mode 100644
+index 0000000..28184e0
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream
+new file mode 100644
+index 0000000..f98bd4d
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len
+new file mode 100644
+index 0000000..c6582fd
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len
+new file mode 100644
+index 0000000..ec8f944
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at
+new file mode 100644
+index 0000000..c29ba1d
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i
+new file mode 100644
+index 0000000..cba1e97
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab
+new file mode 100644
+index 0000000..87bff5c
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream
+new file mode 100644
+index 0000000..ab5a7e4
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len
+new file mode 100644
+index 0000000..4ce85ea
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len
+new file mode 100644
+index 0000000..eb0b8a0
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at
+new file mode 100644
+index 0000000..9149e96
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i
+new file mode 100644
+index 0000000..9195879
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab
+new file mode 100644
+index 0000000..888a92d
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab
+@@ -0,0 +1,2 @@
++6
++0
+\ No newline at end of file
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab
+new file mode 100644
+index 0000000..abacee2
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream
+new file mode 100644
+index 0000000..feddac4
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len
+new file mode 100644
+index 0000000..052b2b1
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len
+new file mode 100644
+index 0000000..9e27f73
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at
+new file mode 100644
+index 0000000..87c4282
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i
+new file mode 100644
+index 0000000..de4d573
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab
+new file mode 100644
+index 0000000..4f193bc
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream
+new file mode 100644
+index 0000000..3d5fe7a
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len
+new file mode 100644
+index 0000000..fa902fa
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len
+new file mode 100644
+index 0000000..9e27f73
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at
+new file mode 100644
+index 0000000..86f51af
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i
+new file mode 100644
+index 0000000..b7dc911
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab
+new file mode 100644
+index 0000000..5c34bf8
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream
+new file mode 100644
+index 0000000..2306473
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len
+new file mode 100644
+index 0000000..115c12a
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len
+new file mode 100644
+index 0000000..fbd34cd
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at
+new file mode 100644
+index 0000000..184ed35
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i
+new file mode 100644
+index 0000000..63885bd
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin
+new file mode 100644
+index 0000000..9339a83
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin
+new file mode 100644
+index 0000000..b9acadf
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin
+new file mode 100644
+index 0000000..32d3246
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/outputs/logs/manifest-merger-debug-report.txt b/node_modules/@nozbe/watermelondb/native/android/build/outputs/logs/manifest-merger-debug-report.txt
+new file mode 100644
+index 0000000..902650c
+--- /dev/null
++++ b/node_modules/@nozbe/watermelondb/native/android/build/outputs/logs/manifest-merger-debug-report.txt
+@@ -0,0 +1,15 @@
++-- Merging decision tree log ---
++manifest
++ADDED from /Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/AndroidManifest.xml:2:1-46
++INJECTED from /Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/AndroidManifest.xml:2:1-46
++	package
++		ADDED from /Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/AndroidManifest.xml:2:11-43
++		INJECTED from /Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/AndroidManifest.xml
++uses-sdk
++INJECTED from /Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
++INJECTED from /Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/AndroidManifest.xml
++INJECTED from /Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/AndroidManifest.xml
++	android:targetSdkVersion
++		INJECTED from /Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/AndroidManifest.xml
++	android:minSdkVersion
++		INJECTED from /Users/arshiyasalehi/Desktop/cd 125-final submition/Diem/node_modules/@nozbe/watermelondb/native/android/src/main/AndroidManifest.xml
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin b/node_modules/@nozbe/watermelondb/native/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin
+new file mode 100644
+index 0000000..fa2f82b
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/META-INF/nozbe_watermelondb_debug.kotlin_module b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/META-INF/nozbe_watermelondb_debug.kotlin_module
+new file mode 100644
+index 0000000..1f47223
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/META-INF/nozbe_watermelondb_debug.kotlin_module differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/Database.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/Database.class
+new file mode 100644
+index 0000000..45ae67b
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/Database.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Companion.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Companion.class
+new file mode 100644
+index 0000000..47e8814
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Companion.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Connection$Connected.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Connection$Connected.class
+new file mode 100644
+index 0000000..344dab4
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Connection$Connected.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Connection$Waiting.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Connection$Waiting.class
+new file mode 100644
+index 0000000..26ae3c9
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Connection$Waiting.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Connection.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Connection.class
+new file mode 100644
+index 0000000..22b8d88
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge$Connection.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge.class
+new file mode 100644
+index 0000000..70bc26a
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseBridge.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$MigrationNeededError.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$MigrationNeededError.class
+new file mode 100644
+index 0000000..4516466
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$MigrationNeededError.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$Compatible.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$Compatible.class
+new file mode 100644
+index 0000000..8a79998
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$Compatible.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsMigration.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsMigration.class
+new file mode 100644
+index 0000000..f380c46
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsMigration.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsSetup.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsSetup.class
+new file mode 100644
+index 0000000..26b3ef9
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility$NeedsSetup.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility.class
+new file mode 100644
+index 0000000..0bc47c9
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaCompatibility.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaNeededError.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaNeededError.class
+new file mode 100644
+index 0000000..30ba1c2
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver$SchemaNeededError.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver.class
+new file mode 100644
+index 0000000..dd1cfb3
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseDriver.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseUtilsKt.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseUtilsKt.class
+new file mode 100644
+index 0000000..ccdb81b
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/DatabaseUtilsKt.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/MigrationSet.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/MigrationSet.class
+new file mode 100644
+index 0000000..c8fed44
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/MigrationSet.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/Queries.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/Queries.class
+new file mode 100644
+index 0000000..6e463b7
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/Queries.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/Schema.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/Schema.class
+new file mode 100644
+index 0000000..b399563
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/Schema.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/WatermelonDBPackage.class b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/WatermelonDBPackage.class
+new file mode 100644
+index 0000000..30004f3
+Binary files /dev/null and b/node_modules/@nozbe/watermelondb/native/android/build/tmp/kotlin-classes/debug/com/nozbe/watermelondb/WatermelonDBPackage.class differ
+diff --git a/node_modules/@nozbe/watermelondb/native/android/src/main/java/com/nozbe/watermelondb/Database.kt b/node_modules/@nozbe/watermelondb/native/android/src/main/java/com/nozbe/watermelondb/Database.kt
+index ca31e20..8fe42d1 100644
+--- a/node_modules/@nozbe/watermelondb/native/android/src/main/java/com/nozbe/watermelondb/Database.kt
++++ b/node_modules/@nozbe/watermelondb/native/android/src/main/java/com/nozbe/watermelondb/Database.kt
+@@ -68,7 +68,7 @@ class Database(
+                     }
+                 }
+                 SQLiteCursor(driver, editTable, query)
+-            }, sql, rawArgs, null, null
++            }, sql, rawArgs, "", null
+         )
+     }
+ 
+diff --git a/node_modules/@nozbe/watermelondb/native/android/src/main/java/com/nozbe/watermelondb/DatabaseBridge.kt b/node_modules/@nozbe/watermelondb/native/android/src/main/java/com/nozbe/watermelondb/DatabaseBridge.kt
+index ae26b17..68313b4 100644
+--- a/node_modules/@nozbe/watermelondb/native/android/src/main/java/com/nozbe/watermelondb/DatabaseBridge.kt
++++ b/node_modules/@nozbe/watermelondb/native/android/src/main/java/com/nozbe/watermelondb/DatabaseBridge.kt
+@@ -180,7 +180,7 @@ class DatabaseBridge(private val reactContext: ReactApplicationContext) :
+                 }
+             }
+         } catch (e: SQLException) {
+-            promise.reject(functionName, e)
++            promise.reject(functionName ?: "unknown", e)
+         } finally {
+             Trace.endSection()
+         }
+@@ -222,16 +222,20 @@ class DatabaseBridge(private val reactContext: ReactApplicationContext) :
+     override fun onCatalystInstanceDestroy() {
+         // NOTE: See Database::install() for explanation
+         super.onCatalystInstanceDestroy()
+-        reactContext.catalystInstance.reactQueueConfiguration.jsQueueThread.runOnQueue {
+-            try {
+-                val clazz = Class.forName("com.nozbe.watermelondb.jsi.WatermelonJSI")
+-                val method = clazz.getDeclaredMethod("onCatalystInstanceDestroy")
+-                method.invoke(null)
+-            } catch (e: Exception) {
+-                if (BuildConfig.DEBUG) {
+-                    Logger.getLogger("DB_Bridge").info("Could not find JSI onCatalystInstanceDestroy")
++        try {
++            reactContext.runOnJSQueueThread {
++                try {
++                    val clazz = Class.forName("com.nozbe.watermelondb.jsi.WatermelonJSI")
++                    val method = clazz.getDeclaredMethod("onCatalystInstanceDestroy")
++                    method.invoke(null)
++                } catch (e: Exception) {
++                    if (BuildConfig.DEBUG) {
++                        Logger.getLogger("DB_Bridge").info("Could not find JSI onCatalystInstanceDestroy")
++                    }
+                 }
+             }
++        } catch (e: Exception) {
++            // runOnJSQueueThread might fail if context is already inactive
+         }
+     }
+ }
