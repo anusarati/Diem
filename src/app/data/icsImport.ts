@@ -288,21 +288,6 @@ export async function importFromIcs(
 	const { scope } = await resolveCurrentScope();
 	const repos = makeRepositories(scope);
 
-	let activity = await repos.activity.findById(ICS_ACTIVITY_ID);
-	if (!activity) {
-		activity = await repos.activity.create({
-			id: ICS_ACTIVITY_ID,
-			categoryId: DEFAULT_CATEGORY_ID,
-			name: "ICS Import",
-			priority: DEFAULT_PRIORITY,
-			defaultDuration: 30,
-			isReplaceable: true,
-			color: DEFAULT_ACTIVITY_COLOR,
-			createdAt: new Date(),
-		});
-	}
-
-	const activityId = activity.id;
 	let imported = 0;
 	let skipped = 0;
 	let cancelled = 0;
@@ -420,7 +405,7 @@ export async function importFromIcs(
 		const existingSchedule = await repos.schedule.findByExternalId(ev.uid);
 		if (!existingSchedule) {
 			await repos.schedule.create({
-				activityId,
+				activityId: eventActivityId,
 				categoryId: safeCategoryId,
 				title: ev.title,
 				startTime: ev.start,

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export PATH="$HOME/.cargo/bin:$PATH"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 RUST_ROOT="${PROJECT_ROOT}/rust"
@@ -39,7 +41,13 @@ detect_host_tag() {
   arch="$(uname -m)"
   case "${os}-${arch}" in
     Linux-x86_64) echo "linux-x86_64" ;;
-    Darwin-arm64) echo "darwin-arm64" ;;
+    Darwin-arm64)
+      if [[ -d "${NDK_ROOT}/toolchains/llvm/prebuilt/darwin-arm64" ]]; then
+        echo "darwin-arm64"
+      else
+        echo "darwin-x86_64"
+      fi
+      ;;
     Darwin-x86_64) echo "darwin-x86_64" ;;
     *)
       echo "Unsupported host: ${os}-${arch}" >&2
