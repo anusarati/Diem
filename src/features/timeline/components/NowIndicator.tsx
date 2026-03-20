@@ -12,9 +12,16 @@ type Props = {
 	startHour: number;
 	width?: SharedValue<number> | number;
 	left?: SharedValue<number> | number;
+	dayIdx?: number;
 };
 
-export function NowIndicator({ hourHeight, startHour, width, left }: Props) {
+export function NowIndicator({
+	hourHeight,
+	startHour,
+	width,
+	left,
+	dayIdx,
+}: Props) {
 	const minutesFromStart = useSharedValue(0);
 
 	useEffect(() => {
@@ -44,10 +51,15 @@ export function NowIndicator({ hourHeight, startHour, width, left }: Props) {
 				? width.value
 				: (width ?? "100%");
 
+		const finalLeft =
+			dayIdx !== undefined && typeof width === "object" && "value" in width
+				? dayIdx * width.value
+				: l;
+
 		return {
 			top: top,
 			opacity: top < 0 ? 0 : 1,
-			left: l,
+			left: finalLeft,
 			width: w,
 		};
 	});

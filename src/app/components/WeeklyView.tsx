@@ -534,7 +534,7 @@ export function WeeklyView({
 													hourHeight={hourHeight}
 													startHour={startHour}
 													width={columnWidth}
-													left={dayIdx * columnWidth.value}
+													dayIdx={dayIdx}
 												/>
 											);
 										}

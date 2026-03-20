@@ -76,6 +76,8 @@ pub enum GlobalConstraint {
     ForbiddenZone {
         start: TimeSlot,
         end: TimeSlot,
+        #[serde(default)]
+        activity_id: Option<ActivityId>,
     },
     CumulativeTime {
         #[serde(default)]

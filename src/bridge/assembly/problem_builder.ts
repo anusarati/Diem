@@ -199,6 +199,8 @@ export class ProblemBuilder {
 			activitiesByNumericId,
 			activityIdToNumeric,
 			categoryIdToNumeric,
+			totalSlots: input.totalSlots,
+			horizonStart: input.horizonStart,
 		});
 		warnings.push(...mappedConstraintResult.warnings);
 

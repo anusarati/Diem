@@ -146,15 +146,25 @@ fn build_scenario(name: &'static str, with_hard_frequency: bool) -> DemoScenario
             floating_indices: vec![0, 1, 2],
             fixed_indices: vec![3, 4, 5],
             global_constraints: vec![
-                GlobalConstraint::ForbiddenZone { start: 0, end: 24 },
-                GlobalConstraint::ForbiddenZone { start: 80, end: 95 },
+                GlobalConstraint::ForbiddenZone {
+                    start: 0,
+                    end: 24,
+                    activity_id: None,
+                },
+                GlobalConstraint::ForbiddenZone {
+                    start: 80,
+                    end: 95,
+                    activity_id: None,
+                },
                 GlobalConstraint::ForbiddenZone {
                     start: DAY_SLOTS,
                     end: DAY_SLOTS + 32,
+                    activity_id: None,
                 },
                 GlobalConstraint::ForbiddenZone {
                     start: DAY_SLOTS + 80,
                     end: DAY_SLOTS + 95,
+                    activity_id: None,
                 },
             ],
             // Soft timing preference:
@@ -329,7 +339,7 @@ fn print_plain_english_rules(scenario: &DemoScenario) {
 
     for constraint in &scenario.problem.global_constraints {
         match constraint {
-            GlobalConstraint::ForbiddenZone { start, end } => {
+            GlobalConstraint::ForbiddenZone { start, end, .. } => {
                 println!(
                     "    - ForbiddenZone: no activity can start between {} and {}.",
                     slot_to_label(*start),

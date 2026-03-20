@@ -2,7 +2,11 @@ use crate::solver::types::{ActivityId, GlobalConstraint, Problem, TimeScope, Tim
 use genetic_algorithm::chromosome::Chromosome;
 use genetic_algorithm::fitness::{Fitness, FitnessValue};
 use genetic_algorithm::genotype::RangeGenotype;
+use genetic_algorithm::strategy::{StrategyAction, StrategyConfig, StrategyState};
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::time::Instant;
+use thread_local::ThreadLocal;
 
 #[derive(Clone, Debug, Default)]
 struct DurationPrefixIndex {
@@ -62,7 +66,7 @@ impl DiemFitness {
     const WEIGHT_PRIORITY: f32 = 10.0;
     const WEIGHT_HEATMAP: f32 = 100.0;
     const WEIGHT_MARKOV: f32 = 5.0;
-    const FREQUENCY_OVERSHOOT_MULTIPLIER: f32 = 6.0;
+    const FREQUENCY_OVERSHOOT_MULTIPLIER: f32 = 100.0;
     const REWARD_NO_ACTIVITY: f32 = 0.01;
     const PRIORITY_REPEAT_DECAY: f32 = 0.65;
 
@@ -84,6 +88,46 @@ impl DiemFitness {
 impl Fitness for DiemFitness {
     type Genotype = RangeGenotype<u16>;
 
+    fn call_for_state_population<S: StrategyState<Self::Genotype>, C: StrategyConfig>(
+        &mut self,
+        genotype: &Self::Genotype,
+        state: &mut S,
+        config: &C,
+        thread_local: Option<&ThreadLocal<RefCell<Self>>>,
+    ) {
+        if state.current_generation() == 0 {
+            let population = state.population_as_mut();
+            if let Some(chromosome) = population.chromosomes.first_mut() {
+                for gene in &mut chromosome.genes {
+                    *gene = self.no_activity_allele;
+                }
+                for &(act_id, start_time, prob) in &self.problem.heatmap {
+                    if prob > 0.5 {
+                        if let Some(pos) = self
+                            .candidate_start_slots
+                            .iter()
+                            .position(|&s| s == start_time)
+                        {
+                            if act_id < self.no_activity_allele as usize {
+                                chromosome.genes[pos] = act_id as u16;
+                            }
+                        }
+                    }
+                }
+                chromosome.reset_metadata(false);
+            }
+        }
+
+        let now = Instant::now();
+        self.call_for_population(
+            state.population_as_mut(),
+            genotype,
+            thread_local,
+            config.fitness_cache(),
+        );
+        state.add_duration(StrategyAction::Fitness, now.elapsed());
+    }
+
     fn calculate_for_chromosome(
         &mut self,
         chromosome: &Chromosome<u16>,
@@ -98,13 +142,18 @@ impl Fitness for DiemFitness {
         let num_days = (self.problem.total_slots / 96) as usize + 1;
         let num_weeks = (self.problem.total_slots / 672) as usize + 1;
         let floating_count = self.problem.floating_indices.len();
-        let forbidden_zones: Vec<(u16, u16)> = self
+        let forbidden_zones: Vec<(u16, u16, Option<ActivityId>)> = self
             .problem
             .global_constraints
             .iter()
             .filter_map(|constraint| {
-                if let GlobalConstraint::ForbiddenZone { start, end } = constraint {
-                    Some((*start, *end))
+                if let GlobalConstraint::ForbiddenZone {
+                    start,
+                    end,
+                    activity_id,
+                } = constraint
+                {
+                    Some((*start, *end, *activity_id))
                 } else {
                     None
                 }
@@ -227,9 +276,11 @@ impl Fitness for DiemFitness {
             }
 
             // --- A. Global Constraints (Forbidden Zones) ---
-            for (start, end) in &forbidden_zones {
+            for (start, end, act_id) in &forbidden_zones {
                 if curr.start < *end && curr.end > *start {
-                    penalties += Self::PENALTY_FORBIDDEN;
+                    if act_id.is_none() || *act_id == Some(activity.id) {
+                        penalties += Self::PENALTY_FORBIDDEN;
+                    }
                 }
             }
 
@@ -488,7 +539,10 @@ impl Fitness for DiemFitness {
         }
 
         // --- 5. SOFT FREQUENCY TARGETS (Reward + Overshoot Penalty) ---
-        let horizon_days = (self.problem.total_slots as f32 / 96.0).max(1.0);
+        // If an activity exceeds its soft learned history cap, apply a strict 200 pt penalty per excess.
+        // This stops flooding from priority rewards since 200 > 20.
+        // If the activity HAS a user constraint (e.g., Min 5/week), the user
+        // reward (50,000 pt per shortfall solved) massively outweighs the 200 pt soft penalty.
         for activity in &self.problem.activities {
             for target in &activity.frequency_targets {
                 let reward_for_count = |actual: u16| -> f32 {
@@ -505,8 +559,13 @@ impl Fitness for DiemFitness {
                         for d in 0..num_days {
                             let actual = total_day_counts[d][activity.id];
                             score += reward_for_count(actual);
-                            if actual > target.target_count {
-                                let excess = (actual - target.target_count) as f32;
+                            let cap = if target.target_count == 0 {
+                                1
+                            } else {
+                                target.target_count
+                            };
+                            if actual > cap {
+                                let excess = (actual - cap) as f32;
                                 penalties +=
                                     target.weight * Self::FREQUENCY_OVERSHOOT_MULTIPLIER * excess;
                             }
@@ -516,22 +575,30 @@ impl Fitness for DiemFitness {
                         for w in 0..num_weeks {
                             let actual = total_week_counts[w][activity.id];
                             score += reward_for_count(actual);
-                            if actual > target.target_count {
-                                let excess = (actual - target.target_count) as f32;
-                                penalties += target.weight
-                                    * Self::FREQUENCY_OVERSHOOT_MULTIPLIER
-                                    * (excess / 7.0);
+                            let cap = if target.target_count == 0 {
+                                1
+                            } else {
+                                target.target_count
+                            };
+                            if actual > cap {
+                                let excess = (actual - cap) as f32;
+                                penalties +=
+                                    target.weight * Self::FREQUENCY_OVERSHOOT_MULTIPLIER * excess;
                             }
                         }
                     }
                     TimeScope::SameMonth => {
                         let actual = total_month_counts[activity.id];
                         score += reward_for_count(actual);
-                        if actual > target.target_count {
-                            let excess = (actual - target.target_count) as f32;
-                            penalties += target.weight
-                                * Self::FREQUENCY_OVERSHOOT_MULTIPLIER
-                                * (excess / horizon_days);
+                        let cap = if target.target_count == 0 {
+                            1
+                        } else {
+                            target.target_count
+                        };
+                        if actual > cap {
+                            let excess = (actual - cap) as f32;
+                            penalties +=
+                                target.weight * Self::FREQUENCY_OVERSHOOT_MULTIPLIER * excess;
                         }
                     }
                 }

@@ -10,10 +10,10 @@ use std::error::Error;
 use types::{Problem, TimeSlot};
 
 // Default GA tuning for on-device solves with slot-indexed chromosomes.
-const GA_TARGET_POPULATION_SIZE: usize = 160;
-const GA_MAX_STALE_GENERATIONS: usize = 60;
+const GA_TARGET_POPULATION_SIZE: usize = 600;
+const GA_MAX_STALE_GENERATIONS: usize = 120;
 const GA_MULTI_GENE_MUTATION_COUNT: usize = 2;
-const GA_MUTATION_PROBABILITY: f32 = 0.28;
+const GA_MUTATION_PROBABILITY: f32 = 0.4;
 
 pub fn solve(
     problem: Problem,
@@ -57,6 +57,11 @@ pub fn solve(
         .map_err(|e| format!("Evolve strategy failed: {:?}", e))?;
 
     if let Some(best_chromosome) = evolve.best_chromosome() {
+        println!(
+            "-> GA solver finished. Best fitness score: {:?}",
+            best_chromosome.fitness_score()
+        );
+
         let mut result = Vec::new();
         for (gene_idx, &activity_choice) in best_chromosome.genes.iter().enumerate() {
             if activity_choice == no_activity_allele {
@@ -109,7 +114,11 @@ mod tests {
             activities: vec![a, b],
             floating_indices: vec![0, 1],
             fixed_indices: vec![],
-            global_constraints: vec![GlobalConstraint::ForbiddenZone { start: 0, end: 2 }],
+            global_constraints: vec![GlobalConstraint::ForbiddenZone {
+                start: 0,
+                end: 2,
+                activity_id: None,
+            }],
             heatmap: vec![(0, 2, 6.0), (0, 4, 6.0), (0, 6, 6.0)],
             markov_matrix: vec![],
             total_slots: 10,

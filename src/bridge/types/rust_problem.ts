@@ -41,6 +41,7 @@ export type RustGlobalConstraint =
 			ForbiddenZone: {
 				start: number;
 				end: number;
+				activity_id: number | null;
 			};
 	  }
 	| {
