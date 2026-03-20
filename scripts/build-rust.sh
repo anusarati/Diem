@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ensure rustup toolchain is prioritized
+export PATH="${HOME}/.cargo/bin:${PATH}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 RUST_ROOT="${PROJECT_ROOT}/rust"
@@ -52,8 +55,16 @@ NDK_ROOT="$(detect_ndk)" || {
   echo "Could not locate Android NDK. Set ANDROID_NDK_HOME or ANDROID_NDK_ROOT." >&2
   exit 1
 }
+
 HOST_TAG="$(detect_host_tag)"
 TOOLCHAIN_BIN="${NDK_ROOT}/toolchains/llvm/prebuilt/${HOST_TAG}/bin"
+
+# Fallback: On macOS arm64, if darwin-arm64 is not found, try darwin-x86_64
+if [[ "${HOST_TAG}" == "darwin-arm64" && ! -d "${TOOLCHAIN_BIN}" ]]; then
+  echo "Warning: darwin-arm64 toolchain not found. Falling back to darwin-x86_64." >&2
+  HOST_TAG="darwin-x86_64"
+  TOOLCHAIN_BIN="${NDK_ROOT}/toolchains/llvm/prebuilt/${HOST_TAG}/bin"
+fi
 
 if [[ ! -d "${TOOLCHAIN_BIN}" ]]; then
   echo "NDK toolchain not found: ${TOOLCHAIN_BIN}" >&2
